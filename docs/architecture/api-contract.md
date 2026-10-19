@@ -89,7 +89,27 @@ El usuario indicado en `administrators` debe haber iniciado sesión al menos una
 | `POST /api/tenant/support-access/{id}/approve` | `institution.support-access.manage` | 204 |
 | `POST /api/tenant/support-access/{id}/reject` | `institution.support-access.manage` | 204 |
 | `POST /api/tenant/support-access/{id}/revoke` | `institution.support-access.manage` | 204 |
+| `GET /api/tenant/audit-logs?limit=50` | `institution.audit.read` | `AuditLogEntryDto[]` |
 
 - `MemberDto`: `{ "membershipId", "userId", "displayName", "email", "status": "Active" | "Revoked", "roles": ["InstitutionAdmin"], "createdAt" }`.
 - `RoleDto`: `{ "id", "code", "name", "isSystem", "permissions": ["..."] }`.
 - `SupportAccessGrantDto`: `{ "id", "tenantId", "requestedByUserId", "reason", "permissions": [], "durationMinutes", "status": "Requested" | "Approved" | "Rejected" | "Revoked", "requestedAt", "approvedAt", "expiresAt", "revokedAt" }`.
+
+## Estructura Académica Institucional (host `{slug}.*`, `/api/tenant/academic/*`)
+
+| Método y ruta | Permiso | Cuerpo | Respuesta |
+| --- | --- | --- | --- |
+| `GET /api/tenant/academic/overview` | `institution.academic.read` | — | `AcademicStructureOverviewDto` |
+| `GET /api/tenant/academic/years` | `institution.academic.read` | — | `AcademicYearDto[]` |
+| `POST /api/tenant/academic/years` | `institution.academic.manage` | `{ "code", "name", "startDate", "endDate" }` | 201 `AcademicYearDto` |
+| `POST /api/tenant/academic/years/{id}/close` | `institution.academic.manage` | — | 204 |
+| `POST /api/tenant/academic/years/{id}/reopen` | `institution.academic.manage` | — | 204 |
+| `GET /api/tenant/academic/grade-levels` | `institution.academic.read` | — | `GradeLevelDto[]` |
+| `POST /api/tenant/academic/grade-levels` | `institution.academic.manage` | `{ "stage", "officialGradeNumber", "code", "displayName" }` | 201 `GradeLevelDto` |
+| `GET /api/tenant/academic/sections` | `institution.academic.read` | — | `SchoolSectionDto[]` |
+| `POST /api/tenant/academic/sections` | `institution.academic.manage` | `{ "academicYearId", "gradeLevelId", "code", "shift", "capacity" }` | 201 `SchoolSectionDto` |
+| `GET /api/tenant/academic/subjects` | `institution.academic.read` | — | `SubjectDto[]` |
+| `POST /api/tenant/academic/subjects` | `institution.academic.manage` | `{ "code", "name" }` | 201 `SubjectDto` |
+| `GET /api/tenant/academic/teacher-assignments` | `institution.academic.read` | — | `TeacherAssignmentDto[]` |
+| `POST /api/tenant/academic/teacher-assignments` | `institution.academic.manage` | `{ "sectionId", "subjectId", "teacherMembershipId", "weeklyHours" }` | 201 `TeacherAssignmentDto` |
+

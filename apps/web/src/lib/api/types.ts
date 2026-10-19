@@ -115,6 +115,112 @@ export interface RoleDto {
   permissions: string[];
 }
 
+export type EducationalStage = "EarlyChildhood" | "Primary" | "Secondary";
+
+export type SchoolShift = "Morning" | "Afternoon" | "FullDay";
+
+export interface AcademicYearDto {
+  id: string;
+  code: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  isClosed: boolean;
+  sectionsCount: number;
+  createdAtUtc: string;
+}
+
+export interface GradeLevelDto {
+  id: string;
+  stage: EducationalStage;
+  officialGradeNumber: number;
+  code: string;
+  displayName: string;
+  sectionsCount: number;
+  createdAtUtc: string;
+}
+
+export interface SchoolSectionDto {
+  id: string;
+  academicYearId: string;
+  academicYearCode: string;
+  gradeLevelId: string;
+  gradeLevelCode: string;
+  gradeLevelName: string;
+  code: string;
+  shift: SchoolShift;
+  capacity: number;
+  assignedSubjectsCount: number;
+  createdAtUtc: string;
+}
+
+export interface SubjectDto {
+  id: string;
+  code: string;
+  name: string;
+  assignedSectionsCount: number;
+  createdAtUtc: string;
+}
+
+export interface TeacherAssignmentDto {
+  id: string;
+  academicYearId: string;
+  academicYearCode: string;
+  sectionId: string;
+  sectionCode: string;
+  gradeLevelName: string;
+  subjectId: string;
+  subjectCode: string;
+  subjectName: string;
+  teacherMembershipId: string;
+  teacherDisplayName: string;
+  teacherEmail: string;
+  weeklyHours: number;
+  createdAtUtc: string;
+}
+
+export interface AcademicStructureOverviewDto {
+  academicYears: AcademicYearDto[];
+  gradeLevels: GradeLevelDto[];
+  sections: SchoolSectionDto[];
+  subjects: SubjectDto[];
+  teacherAssignments: TeacherAssignmentDto[];
+}
+
+export interface CreateAcademicYearRequest {
+  code: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+}
+
+export interface CreateGradeLevelRequest {
+  stage: EducationalStage;
+  officialGradeNumber: number;
+  code: string;
+  displayName: string;
+}
+
+export interface CreateSchoolSectionRequest {
+  academicYearId: string;
+  gradeLevelId: string;
+  code: string;
+  shift: SchoolShift;
+  capacity: number;
+}
+
+export interface CreateSubjectRequest {
+  code: string;
+  name: string;
+}
+
+export interface AssignTeacherRequest {
+  sectionId: string;
+  subjectId: string;
+  teacherMembershipId: string;
+  weeklyHours: number;
+}
+
 export type ApiResult<T> =
   | {
       ok: true;

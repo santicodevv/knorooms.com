@@ -59,12 +59,40 @@ public sealed class AcademicYear : TenantScopedEntity
         {
             Id = Guid.CreateVersion7(),
             TenantId = tenantId,
-            Code = code.Trim(),
+            Code = code.Trim().ToUpperInvariant(),
             Name = name.Trim(),
             StartDate = startDate,
             EndDate = endDate,
             IsClosed = false
         });
+    }
+
+    public Result Close()
+    {
+        if (IsClosed)
+        {
+            return Result.Failure(Error.Conflict(
+                "AcademicYear.AlreadyClosed",
+                "El año escolar ya se encuentra cerrado."));
+        }
+
+        IsClosed = true;
+        MarkUpdated();
+        return Result.Success();
+    }
+
+    public Result Reopen()
+    {
+        if (!IsClosed)
+        {
+            return Result.Failure(Error.Conflict(
+                "AcademicYear.AlreadyOpen",
+                "El año escolar ya se encuentra abierto."));
+        }
+
+        IsClosed = false;
+        MarkUpdated();
+        return Result.Success();
     }
 }
 

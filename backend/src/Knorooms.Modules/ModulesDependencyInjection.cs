@@ -1,4 +1,6 @@
 using Knorooms.Modules.Common.Persistence;
+using Knorooms.Modules.Modules.Academic.Application;
+using Knorooms.Modules.Modules.Academic.Contracts;
 using Knorooms.Modules.Modules.Audit.Application;
 using Knorooms.Modules.Modules.Audit.Contracts;
 using Knorooms.Modules.Modules.Authorization.Application;
@@ -50,6 +52,7 @@ public static class ModulesDependencyInjection
         services.AddScoped<ITenantAuthorizationService, TenantAuthorizationService>();
         services.AddScoped<ISupportAccessService, SupportAccessService>();
         services.AddScoped<IAuditQueryService, AuditQueryService>();
+        services.AddScoped<IAcademicStructureService, AcademicStructureService>();
         services.AddScoped<IPlatformInstitutionService, PlatformInstitutionService>();
 
         if (enableOutboxBackgroundWorker)
