@@ -187,9 +187,9 @@ pnpm --dir apps/web build
   - [Multi-Tenancy y PostgreSQL RLS](./docs/architecture/multi-tenancy-and-rls.md)
   - [Seguridad, Autenticación OIDC, BFF y Operaciones](./docs/architecture/security-auth-and-operations.md)
   - [Contrato HTTP de la API](./docs/architecture/api-contract.md)
-  - [ADR-0001: Monolito Modular](./docs/decisions/0001-modular-monolith-architecture.md)
-  - [ADR-0002: PostgreSQL Compartido + RLS](./docs/decisions/0002-shared-postgresql-with-rls-multi-tenancy.md)
-  - [ADR-0003: BFF en Next.js con OIDC PKCE](./docs/decisions/0003-nextjs-bff-with-agnostic-oidc.md)
+  - [ADR-0001: Monolito Modular](./docs/decisions/0001-modular-monolith-dotnet.md)
+  - [ADR-0002: PostgreSQL Compartido + RLS](./docs/decisions/0002-multi-tenancy-postgres-rls.md)
+  - [ADR-0003: BFF en Next.js con OIDC PKCE](./docs/decisions/0003-oidc-bff-and-rbac-abac.md)
 
 ---
 
