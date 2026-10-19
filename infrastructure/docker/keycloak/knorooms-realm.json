@@ -1,0 +1,74 @@
+{
+  "realm": "knorooms",
+  "enabled": true,
+  "displayName": "KNOROOMS Local Dev OIDC",
+  "sslRequired": "none",
+  "AccessTokenLifespan": 900,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 28800,
+  "roles": {
+    "realm": [
+      {
+        "name": "PlatformAdmin",
+        "description": "Superadministrador global de KNOROOMS"
+      },
+      {
+        "name": "PlatformSupport",
+        "description": "Soporte técnico de KNOROOMS"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "knorooms-web",
+      "name": "KNOROOMS Next.js BFF",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "knorooms-local-dev-oidc-secret-change-me",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "redirectUris": [
+        "http://localhost:3000/api/auth/callback",
+        "http://admin.localhost:3000/api/auth/callback",
+        "http://*.localhost:3000/api/auth/callback"
+      ],
+      "webOrigins": [
+        "http://localhost:3000",
+        "http://admin.localhost:3000",
+        "http://*.localhost:3000"
+      ],
+      "protocolMappers": [
+        {
+          "name": "knorooms-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.custom.audience": "knorooms-api",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        },
+        {
+          "name": "realm-roles-claim",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "claim.name": "roles",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ]
+}

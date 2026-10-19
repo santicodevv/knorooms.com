@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Knorooms.Api/Knorooms.Api.csproj" />
+    <Project Path="src/Knorooms.Modules/Knorooms.Modules.csproj" />
+    <Project Path="src/Knorooms.SharedKernel/Knorooms.SharedKernel.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Knorooms.IntegrationTests/Knorooms.IntegrationTests.csproj" />
+    <Project Path="tests/Knorooms.UnitTests/Knorooms.UnitTests.csproj" />
+  </Folder>
+</Solution>

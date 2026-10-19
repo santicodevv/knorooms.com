@@ -1,0 +1,39 @@
+# Entorno y secretos (NUNCA versionar archivos .env reales)
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
+**/appsettings.Local.json
+**/*.pfx
+**/*.pem
+**/*.key
+
+# .NET
+**/[Bb]in/
+**/[Oo]bj/
+**/[Tt]est[Rr]esults/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+
+# Node / Next.js / pnpm
+node_modules/
+**/node_modules/
+.next/
+**/.next/
+out/
+**/out/
+coverage/
+**/coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# OS / IDEs
+.DS_Store
+Thumbs.db
+.idea/
+*.swp

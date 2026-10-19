@@ -1,0 +1,6 @@
+@Knorooms.Api_HostAddress = http://localhost:5186
+
+GET {{Knorooms.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

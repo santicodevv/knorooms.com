@@ -1,1 +1,201 @@
-# knorooms.com
+# KNOROOMS — Plataforma SaaS Multi-Tenant de Gestión Académica
+
+[![KNOROOMS CI](https://github.com/santicodevv/knorooms.com/actions/workflows/ci.yml/badge.svg)](https://github.com/santicodevv/knorooms.com/actions/workflows/ci.yml)
+
+**KNOROOMS** es una plataforma SaaS multi-tenant de gestión académica e institucional diseñada inicialmente para **colegios de la República Dominicana** (alineada con la estructura del MINERD, RNE, SIGERD y currículos por competencias/numéricos), con capacidad de expansión futura hacia educación superior y universidades (MESCyT).
+
+---
+
+## 1. Resumen de Arquitectura
+
+KNOROOMS implementa un **Monolito Modular** con defensa en profundidad para el aislamiento multi-tenant:
+
+| Capa | Tecnología | Responsabilidad |
+| :--- | :--- | :--- |
+| **Frontend + BFF** | Next.js 16 (App Router), React 19, TypeScript 5, Tailwind CSS v4, shadcn/ui | Enrutamiento por subdominio (`src/proxy.ts`), Backend for Frontend (BFF), OIDC Authorization Code Flow + PKCE (`openid-client` v6), sesiones cifradas (AES-256-GCM) en Redis, cookies `HttpOnly` host-only, protección CSRF y arquitectura Feature-Sliced (`schemas/`, `api/`, `hooks/`, `components/`). |
+| **Backend API** | ASP.NET Core Web API (.NET 10 LTS), C#, FluentValidation, OpenAPI | Controladores REST delgados, validación de tokens OIDC Bearer, resolución de tenant e identidad, autorización RBAC + ABAC con denegación por defecto y respuestas `ProblemDetails` (RFC 9457). |
+| **Módulos de Dominio** | `Knorooms.Modules` + `Knorooms.SharedKernel` | 12 módulos lógicos (`Tenants`, `Identity`, `Authorization`, `SupportAccess`, `Audit`, `Platform`, `Students`, `Academic`, `Enrollments`, `Attendance`, `Grading`, `ReportCards`), contratos síncronos y **Transactional Outbox** (`outbox_messages`). |
+| **Persistencia y Aislamiento** | PostgreSQL 17 + Entity Framework Core 10 (`Npgsql`) | Base de datos y esquema (`public`) compartidos, `TenantId` (`UUID`), **Row-Level Security (`ENABLE` + `FORCE ROW LEVEL SECURITY`)**, rol de aplicación `knorooms_app` con `NOBYPASSRLS`, filtros globales de EF Core y claves foráneas compuestas `(tenant_id, <fk>_id)`. |
+
+### Identificación por Subdominio
+- `knorooms.com` (`localhost:3000`) → Sitio público.
+- `admin.knorooms.com` (`admin.localhost:3000`) → Consola de administración global de plataforma.
+- `<colegio>.knorooms.com` (`colegio-a.localhost:3000`) → Portal institucional del colegio.
+
+> **Invariante crítica de seguridad:** El subdominio únicamente identifica el tenant solicitado; **nunca autoriza al usuario**. Todo acceso institucional exige membresía activa en el colegio o una solicitud de soporte temporal (`SupportAccessRequest`) aprobada por la institución, vigente y auditada.
+
+---
+
+## 2. Estructura del Repositorio
+
+```text
+knorooms.com/
+├── AGENTS.md                           # Guía operativa maestra para agentes de IA (raíz)
+├── .agents/
+│   └── skills/                         # 10 Skills especializadas del proyecto KNOROOMS
+├── .github/
+│   └── workflows/
+│       └── ci.yml                      # Pipeline CI (Backend .NET 10 + PostgreSQL 17 + Frontend Next.js 16)
+├── apps/
+│   └── web/                            # Aplicación Next.js 16 (App Router) + BFF OIDC
+│       ├── AGENTS.md                   # Instrucciones de agentes para Frontend y BFF
+│       ├── .env.example                # Variables de entorno de ejemplo del BFF
+│       └── src/
+│           ├── app/                    # Rutas App Router (público, /platform, /school, /api/auth, /api/bff)
+│           ├── components/             # Primitivas shadcn/ui (ui/) y bloques reutilizables (shared/)
+│           ├── features/               # Módulos desacoplados (platform, school: schemas, api, hooks, components)
+│           ├── lib/                    # BFF OIDC, sesiones Redis AES-256-GCM, CSRF, host parser
+│           └── proxy.ts                # Enrutamiento multi-tenant por subdominio (Next.js 16)
+├── backend/
+│   ├── AGENTS.md                       # Instrucciones de agentes para Backend .NET y PostgreSQL RLS
+│   ├── Directory.Build.props           # Configuración común (.NET 10, Nullable, analizadores)
+│   ├── Knorooms.slnx                   # Solución .NET 10
+│   ├── src/
+│   │   ├── Knorooms.SharedKernel/      # Primitivas compartidas (Entity, TenantEntity, Result, Permisos)
+│   │   ├── Knorooms.Modules/           # 12 módulos, ApplicationDbContext, PostgresRlsInterceptor y Migraciones
+│   │   └── Knorooms.Api/               # Host ASP.NET Core, Controllers, Middlewares y Validaciones
+│   └── tests/
+│       ├── Knorooms.UnitTests/         # Pruebas unitarias y de arquitectura modular (NetArchTest)
+│       └── Knorooms.IntegrationTests/  # Pruebas reales con PostgreSQL 17 (Testcontainers) de RLS y API
+├── docs/
+│   ├── architecture/                   # Documentación de arquitectura, multi-tenancy RLS, seguridad y API
+│   └── decisions/                      # Architecture Decision Records (ADRs 0001, 0002, 0003)
+├── infrastructure/
+│   └── docker/
+│       ├── docker-compose.yml          # PostgreSQL 17, Redis 7.4 y Keycloak 26.1 (perfil oidc opcional)
+│       ├── postgres/init/              # Inicialización de roles knorooms_migrator y knorooms_app (NOBYPASSRLS)
+│       └── keycloak/                   # Realm local de ejemplo (knorooms-realm.json)
+├── .editorconfig
+├── .env.example
+├── .gitattributes
+├── .gitignore
+└── README.md
+```
+
+---
+
+## 3. Requisitos Previos
+
+- **.NET SDK 10.0 LTS** (`10.0.100` o superior) + herramienta `dotnet-ef`.
+- **Node.js 22 LTS** y **pnpm 10+**.
+- **Docker Desktop** (o Docker Engine + Docker Compose v2) en ejecución para PostgreSQL 17, Redis 7 y para ejecutar las pruebas de integración con Testcontainers.
+
+---
+
+## 4. Configuración Local Paso a Paso
+
+### 4.1. Variables de entorno
+Copia los archivos de ejemplo (no contienen secretos reales de producción):
+
+```powershell
+Copy-Item .env.example .env
+Copy-Item apps/web/.env.example apps/web/.env.local
+```
+
+### 4.2. Levantar infraestructura local (PostgreSQL 17 y Redis 7)
+```powershell
+docker compose -f infrastructure/docker/docker-compose.yml up -d postgres redis
+```
+> El contenedor de PostgreSQL ejecuta automáticamente [`01-init-roles.sql`](./infrastructure/docker/postgres/init/01-init-roles.sql), creando el rol de migraciones (`knorooms_migrator`) y el rol de ejecución de la aplicación (`knorooms_app` con `NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS`).
+
+Si deseas levantar también el servidor OIDC local de desarrollo (**Keycloak 26** con el realm `knorooms` preconfigurado en el puerto `8080`):
+```powershell
+docker compose -f infrastructure/docker/docker-compose.yml --profile oidc up -d
+```
+
+### 4.3. Aplicar migraciones de base de datos y políticas RLS
+Desde la raíz del repositorio:
+```powershell
+dotnet ef database update --project backend/src/Knorooms.Modules/Knorooms.Modules.csproj --startup-project backend/src/Knorooms.Api/Knorooms.Api.csproj --connection "Host=localhost;Port=5432;Database=knorooms;Username=knorooms_migrator;Password=knorooms_local_dev_migrator"
+```
+
+### 4.4. Ejecutar el Backend (`Knorooms.Api`)
+```powershell
+dotnet run --project backend/src/Knorooms.Api/Knorooms.Api.csproj
+```
+- API escuchando en `http://localhost:5080`.
+- Health checks: `http://localhost:5080/health/live` y `http://localhost:5080/health/ready`.
+- Documento OpenAPI (en `Development`): `http://localhost:5080/openapi/v1.json`.
+
+### 4.5. Ejecutar el Frontend + BFF (`apps/web`)
+```powershell
+pnpm --dir apps/web install
+pnpm --dir apps/web dev
+```
+- Sitio público: `http://localhost:3000`
+- Consola de plataforma: `http://admin.localhost:3000`
+- Portal de colegio de prueba: `http://colegio-a.localhost:3000` y `http://colegio-b.localhost:3000`
+
+---
+
+## 5. Ejecución de Pruebas y Verificación de Calidad
+
+### Backend (.NET 10)
+```powershell
+# Verificar formato y estilo de código C#
+dotnet format backend/Knorooms.slnx --verify-no-changes
+
+# Compilar toda la solución
+dotnet build backend/Knorooms.slnx -c Release
+
+# Ejecutar pruebas unitarias y de arquitectura modular (NetArchTest)
+dotnet test backend/tests/Knorooms.UnitTests/Knorooms.UnitTests.csproj
+
+# Ejecutar pruebas de integración contra PostgreSQL 17 real (Testcontainers)
+dotnet test backend/tests/Knorooms.IntegrationTests/Knorooms.IntegrationTests.csproj
+```
+
+### Frontend y BFF (Next.js 16)
+```powershell
+pnpm --dir apps/web format:check
+pnpm --dir apps/web lint
+pnpm --dir apps/web typecheck
+pnpm --dir apps/web test
+pnpm --dir apps/web build
+```
+
+---
+
+## 6. Estrategia de Ramas y Convenciones Git
+
+- **Rama principal**: `main` (protegida; todo código integrado debe compilar sin advertencias y pasar el pipeline de CI).
+- **Ramas de trabajo**: `feat/<modulo>-<descripcion>`, `fix/<modulo>-<descripcion>`, `docs/<descripcion>`, `chore/<descripcion>`.
+- **Commits**: mensajes semánticos (`feat(tenants): ...`, `fix(security): ...`, `test(rls): ...`).
+- **Regla de idioma**: código, identificadores, clases, tablas y rutas técnicas en **inglés**; documentación, comentarios explicativos, ADRs, Skills e interfaz de usuario en **español**.
+
+---
+
+## 7. Documentación, Agentes y Skills
+
+- **Instrucciones para Agentes**:
+  - [`AGENTS.md` (Raíz)](./AGENTS.md)
+  - [`backend/AGENTS.md`](./backend/AGENTS.md)
+  - [`apps/web/AGENTS.md`](./apps/web/AGENTS.md)
+- **Skills Especializadas (`.agents/skills/`)**:
+  - [`knorooms-architecture`](./.agents/skills/knorooms-architecture/SKILL.md)
+  - [`knorooms-backend-dotnet`](./.agents/skills/knorooms-backend-dotnet/SKILL.md)
+  - [`knorooms-efcore-postgresql`](./.agents/skills/knorooms-efcore-postgresql/SKILL.md)
+  - [`knorooms-multi-tenancy`](./.agents/skills/knorooms-multi-tenancy/SKILL.md)
+  - [`knorooms-security-auth`](./.agents/skills/knorooms-security-auth/SKILL.md)
+  - [`knorooms-frontend-nextjs`](./.agents/skills/knorooms-frontend-nextjs/SKILL.md)
+  - [`knorooms-module-development`](./.agents/skills/knorooms-module-development/SKILL.md)
+  - [`knorooms-testing`](./.agents/skills/knorooms-testing/SKILL.md)
+  - [`knorooms-database-migrations`](./.agents/skills/knorooms-database-migrations/SKILL.md)
+  - [`knorooms-code-review`](./.agents/skills/knorooms-code-review/SKILL.md)
+- **Documentación Arquitectónica y ADRs**:
+  - [Visión General y Módulos](./docs/architecture/overview-and-modules.md)
+  - [Multi-Tenancy y PostgreSQL RLS](./docs/architecture/multi-tenancy-and-rls.md)
+  - [Seguridad, Autenticación OIDC, BFF y Operaciones](./docs/architecture/security-auth-and-operations.md)
+  - [Contrato HTTP de la API](./docs/architecture/api-contract.md)
+  - [ADR-0001: Monolito Modular](./docs/decisions/0001-modular-monolith-architecture.md)
+  - [ADR-0002: PostgreSQL Compartido + RLS](./docs/decisions/0002-shared-postgresql-with-rls-multi-tenancy.md)
+  - [ADR-0003: BFF en Next.js con OIDC PKCE](./docs/decisions/0003-nextjs-bff-with-agnostic-oidc.md)
+
+---
+
+## 8. Configuraciones Externas Pendientes para Producción
+
+1. **Proveedor de Identidad OIDC de Producción**: seleccionar y aprovisionar el proveedor definitivo (Keycloak gestionado, Microsoft Entra External ID, Auth0 o AWS Cognito) y configurar `OIDC_ISSUER`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET` y `Authentication__Oidc__Authority`.
+2. **DNS Wildcard y Certificados TLS**: configurar los registros DNS (`A`/`CNAME`) para `knorooms.com`, `admin.knorooms.com` y `*.knorooms.com` junto con certificados TLS comodín (`*.knorooms.com`).
+3. **Gestor de Secretos y Claves**: inyectar en el entorno de despliegue una clave criptográfica real de 32 bytes para `SESSION_ENCRYPTION_KEY` y las contraseñas diferenciadas de `knorooms_migrator` y `knorooms_app` desde un gestor de secretos (AWS Secrets Manager, Azure Key Vault o GitHub Secrets).
+4. **Almacenamiento S3-Compatible**: aprovisionar el bucket privado (AWS S3 / Cloudflare R2) para adjuntos de expedientes y boletines PDF firmados.

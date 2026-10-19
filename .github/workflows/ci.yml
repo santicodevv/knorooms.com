@@ -1,0 +1,79 @@
+name: KNOROOMS CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend (.NET 10 Build + Unit & PostgreSQL RLS Tests)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore dependencies
+        working-directory: backend
+        run: dotnet restore Knorooms.slnx
+
+      - name: Verify formatting (.editorconfig)
+        working-directory: backend
+        run: dotnet format Knorooms.slnx --verify-no-changes --exclude src/Knorooms.Modules/Common/Persistence/Migrations
+
+      - name: Build solution
+        working-directory: backend
+        run: dotnet build Knorooms.slnx --no-restore --configuration Release
+
+      - name: Run Unit, Architecture & PostgreSQL Integration Tests
+        working-directory: backend
+        run: dotnet test Knorooms.slnx --no-build --configuration Release --logger "trx;LogFileName=test-results.trx"
+
+  frontend:
+    name: Frontend (Next.js BFF Lint, Typecheck, Vitest & Build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+          cache-dependency-path: apps/web/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check formatting (Prettier)
+        run: pnpm format:check
+
+      - name: Run ESLint
+        run: pnpm lint
+
+      - name: Run TypeScript typecheck
+        run: pnpm typecheck
+
+      - name: Run Vitest unit tests
+        run: pnpm test
+
+      - name: Build Next.js production bundle
+        run: pnpm build
