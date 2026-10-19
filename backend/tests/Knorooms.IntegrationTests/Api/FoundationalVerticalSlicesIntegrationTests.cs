@@ -706,6 +706,300 @@ public sealed class FoundationalVerticalSlicesIntegrationTests(PostgresIntegrati
         }
     }
 
+    [Fact]
+    public async Task StudentsAndEnrollments_VerticalSlice_EnforcesCapacityGuardiansAndTenantIsolation()
+    {
+        await using var factory = new TestApiFactory(fixture.AppRoleConnectionString);
+        using var client = factory.CreateClient();
+
+        var suffix = Guid.NewGuid().ToString("N")[..6];
+        var slugA = $"colegio-est-a-{suffix}";
+        var slugB = $"colegio-est-b-{suffix}";
+
+        var superAdminSub = $"superadmin-est-{suffix}";
+        var directorASub = $"director-est-a-{suffix}";
+        var directorBSub = $"director-est-b-{suffix}";
+
+        var superAdminEmail = $"admin-est-{suffix}@knorooms.com";
+        var directorAEmail = $"director@{slugA}.edu.do";
+        var directorBEmail = $"director@{slugB}.edu.do";
+
+        foreach (var (sub, email, roles) in new[]
+        {
+            (superAdminSub, superAdminEmail, "PlatformAdmin"),
+            (directorASub, directorAEmail, ""),
+            (directorBSub, directorBEmail, "")
+        })
+        {
+            using var meReq = CreateRequest(HttpMethod.Get, "/api/me", "localhost:3000", sub, email, roles);
+            var meRes = await client.SendAsync(meReq);
+            Assert.Equal(HttpStatusCode.OK, meRes.StatusCode);
+        }
+
+        InstitutionDto institutionA;
+        InstitutionDto institutionB;
+
+        using (var createAReq = CreateRequest(
+            HttpMethod.Post,
+            "/api/platform/institutions",
+            "admin.localhost:3000",
+            superAdminSub,
+            superAdminEmail,
+            "PlatformAdmin",
+            new CreateInstitutionRequest(slugA, "Colegio San Ignacio RD")))
+        {
+            var res = await client.SendAsync(createAReq);
+            Assert.Equal(HttpStatusCode.Created, res.StatusCode);
+            institutionA = (await res.Content.ReadFromJsonAsync<InstitutionDto>())!;
+        }
+
+        using (var createBReq = CreateRequest(
+            HttpMethod.Post,
+            "/api/platform/institutions",
+            "admin.localhost:3000",
+            superAdminSub,
+            superAdminEmail,
+            "PlatformAdmin",
+            new CreateInstitutionRequest(slugB, "Colegio Santa Teresa RD")))
+        {
+            var res = await client.SendAsync(createBReq);
+            Assert.Equal(HttpStatusCode.Created, res.StatusCode);
+            institutionB = (await res.Content.ReadFromJsonAsync<InstitutionDto>())!;
+        }
+
+        foreach (var (instId, email) in new[]
+        {
+            (institutionA.Id, directorAEmail),
+            (institutionB.Id, directorBEmail)
+        })
+        {
+            using var assignReq = CreateRequest(
+                HttpMethod.Post,
+                $"/api/platform/institutions/{instId}/administrators",
+                "admin.localhost:3000",
+                superAdminSub,
+                superAdminEmail,
+                "PlatformAdmin",
+                new AssignInstitutionAdministratorRequest(email));
+            var res = await client.SendAsync(assignReq);
+            Assert.Equal(HttpStatusCode.Created, res.StatusCode);
+        }
+
+        // 1. Preparar Año Escolar, Grado y dos secciones en Colegio A (Sección A con capacidad=1, Sección B con capacidad=2)
+        Knorooms.Modules.Modules.Academic.Contracts.AcademicYearDto yearA;
+        using (var createYearReq = CreateRequest(
+            HttpMethod.Post,
+            "/api/tenant/academic/years",
+            $"{slugA}.localhost:3000",
+            directorASub,
+            directorAEmail,
+            body: new CreateAcademicYearRequest(
+                "2026-2027",
+                "Año Escolar 2026-2027",
+                new DateOnly(2026, 8, 24),
+                new DateOnly(2027, 6, 25))))
+        {
+            var res = await client.SendAsync(createYearReq);
+            yearA = (await res.Content.ReadFromJsonAsync<Knorooms.Modules.Modules.Academic.Contracts.AcademicYearDto>())!;
+        }
+
+        Knorooms.Modules.Modules.Academic.Contracts.GradeLevelDto gradeA;
+        using (var createGradeReq = CreateRequest(
+            HttpMethod.Post,
+            "/api/tenant/academic/grade-levels",
+            $"{slugA}.localhost:3000",
+            directorASub,
+            directorAEmail,
+            body: new CreateGradeLevelRequest("Primary", 3, "P3", "3.º de Primaria")))
+        {
+            var res = await client.SendAsync(createGradeReq);
+            gradeA = (await res.Content.ReadFromJsonAsync<Knorooms.Modules.Modules.Academic.Contracts.GradeLevelDto>())!;
+        }
+
+        Knorooms.Modules.Modules.Academic.Contracts.SchoolSectionDto sectionCap1;
+        using (var createSecAReq = CreateRequest(
+            HttpMethod.Post,
+            "/api/tenant/academic/sections",
+            $"{slugA}.localhost:3000",
+            directorASub,
+            directorAEmail,
+            body: new CreateSchoolSectionRequest(yearA.Id, gradeA.Id, "A", "Morning", 1)))
+        {
+            var res = await client.SendAsync(createSecAReq);
+            sectionCap1 = (await res.Content.ReadFromJsonAsync<Knorooms.Modules.Modules.Academic.Contracts.SchoolSectionDto>())!;
+        }
+
+        Knorooms.Modules.Modules.Academic.Contracts.SchoolSectionDto sectionCap2;
+        using (var createSecBReq = CreateRequest(
+            HttpMethod.Post,
+            "/api/tenant/academic/sections",
+            $"{slugA}.localhost:3000",
+            directorASub,
+            directorAEmail,
+            body: new CreateSchoolSectionRequest(yearA.Id, gradeA.Id, "B", "Afternoon", 2)))
+        {
+            var res = await client.SendAsync(createSecBReq);
+            sectionCap2 = (await res.Content.ReadFromJsonAsync<Knorooms.Modules.Modules.Academic.Contracts.SchoolSectionDto>())!;
+        }
+
+        // 2. Registrar dos estudiantes y un tutor familiar vinculado en Colegio A
+        Knorooms.Modules.Modules.Students.Contracts.StudentDto student1;
+        using (var createStu1Req = CreateRequest(
+            HttpMethod.Post,
+            "/api/tenant/students",
+            $"{slugA}.localhost:3000",
+            directorASub,
+            directorAEmail,
+            body: new CreateStudentRequest(
+                "EST-2026-001",
+                "Camila",
+                "Rodríguez Ureña",
+                new DateOnly(2017, 5, 14),
+                "SIGERD-99001")))
+        {
+            var res = await client.SendAsync(createStu1Req);
+            Assert.Equal(HttpStatusCode.Created, res.StatusCode);
+            student1 = (await res.Content.ReadFromJsonAsync<Knorooms.Modules.Modules.Students.Contracts.StudentDto>())!;
+        }
+
+        Knorooms.Modules.Modules.Students.Contracts.StudentDto student2;
+        using (var createStu2Req = CreateRequest(
+            HttpMethod.Post,
+            "/api/tenant/students",
+            $"{slugA}.localhost:3000",
+            directorASub,
+            directorAEmail,
+            body: new CreateStudentRequest(
+                "EST-2026-002",
+                "Mateo",
+                "Sánchez Almonte",
+                new DateOnly(2017, 9, 3),
+                "SIGERD-99002")))
+        {
+            var res = await client.SendAsync(createStu2Req);
+            Assert.Equal(HttpStatusCode.Created, res.StatusCode);
+            student2 = (await res.Content.ReadFromJsonAsync<Knorooms.Modules.Modules.Students.Contracts.StudentDto>())!;
+        }
+
+        Knorooms.Modules.Modules.Students.Contracts.GuardianDto guardian;
+        using (var createGuardianReq = CreateRequest(
+            HttpMethod.Post,
+            "/api/tenant/students/guardians",
+            $"{slugA}.localhost:3000",
+            directorASub,
+            directorAEmail,
+            body: new CreateGuardianRequest(
+                "Laura Ureña de Rodríguez",
+                $"laura.urena.{suffix}@familia.do",
+                "809-555-0192")))
+        {
+            var res = await client.SendAsync(createGuardianReq);
+            Assert.Equal(HttpStatusCode.Created, res.StatusCode);
+            guardian = (await res.Content.ReadFromJsonAsync<Knorooms.Modules.Modules.Students.Contracts.GuardianDto>())!;
+        }
+
+        using (var linkReq = CreateRequest(
+            HttpMethod.Post,
+            $"/api/tenant/students/{student1.Id}/guardians",
+            $"{slugA}.localhost:3000",
+            directorASub,
+            directorAEmail,
+            body: new LinkStudentGuardianRequest(
+                guardian.Id,
+                "Madre",
+                HasAcademicAccess: true,
+                HasFinancialResponsibility: true,
+                HasPickupAuthorization: true)))
+        {
+            var res = await client.SendAsync(linkReq);
+            Assert.Equal(HttpStatusCode.Created, res.StatusCode);
+        }
+
+        // 3. Matricular Estudiante 1 en Sección A (capacidad = 1) -> 201 Created
+        Knorooms.Modules.Modules.Enrollments.Contracts.StudentEnrollmentDto enrollment1;
+        using (var enroll1Req = CreateRequest(
+            HttpMethod.Post,
+            "/api/tenant/enrollments",
+            $"{slugA}.localhost:3000",
+            directorASub,
+            directorAEmail,
+            body: new EnrollStudentRequest(student1.Id, sectionCap1.Id)))
+        {
+            var res = await client.SendAsync(enroll1Req);
+            Assert.Equal(HttpStatusCode.Created, res.StatusCode);
+            enrollment1 = (await res.Content.ReadFromJsonAsync<Knorooms.Modules.Modules.Enrollments.Contracts.StudentEnrollmentDto>())!;
+        }
+
+        // 4. Intentar matricular Estudiante 2 en Sección A (ya llena) -> 409 Conflict (SectionCapacityExceeded)
+        using (var enrollOverflowReq = CreateRequest(
+            HttpMethod.Post,
+            "/api/tenant/enrollments",
+            $"{slugA}.localhost:3000",
+            directorASub,
+            directorAEmail,
+            body: new EnrollStudentRequest(student2.Id, sectionCap1.Id)))
+        {
+            var res = await client.SendAsync(enrollOverflowReq);
+            Assert.Equal(HttpStatusCode.Conflict, res.StatusCode);
+        }
+
+        // 5. Matricular Estudiante 2 en Sección B (capacidad = 2) -> 201 Created
+        Knorooms.Modules.Modules.Enrollments.Contracts.StudentEnrollmentDto enrollment2;
+        using (var enroll2Req = CreateRequest(
+            HttpMethod.Post,
+            "/api/tenant/enrollments",
+            $"{slugA}.localhost:3000",
+            directorASub,
+            directorAEmail,
+            body: new EnrollStudentRequest(student2.Id, sectionCap2.Id)))
+        {
+            var res = await client.SendAsync(enroll2Req);
+            Assert.Equal(HttpStatusCode.Created, res.StatusCode);
+            enrollment2 = (await res.Content.ReadFromJsonAsync<Knorooms.Modules.Modules.Enrollments.Contracts.StudentEnrollmentDto>())!;
+        }
+
+        // 6. Retirar matrícula de Estudiante 1 en Sección A -> libera cupo -> Trasladar Estudiante 2 a Sección A -> 200 OK
+        using (var withdraw1Req = CreateRequest(
+            HttpMethod.Post,
+            $"/api/tenant/enrollments/{enrollment1.Id}/withdraw",
+            $"{slugA}.localhost:3000",
+            directorASub,
+            directorAEmail))
+        {
+            var res = await client.SendAsync(withdraw1Req);
+            Assert.Equal(HttpStatusCode.NoContent, res.StatusCode);
+        }
+
+        using (var transfer2Req = CreateRequest(
+            HttpMethod.Post,
+            $"/api/tenant/enrollments/{enrollment2.Id}/transfer-section",
+            $"{slugA}.localhost:3000",
+            directorASub,
+            directorAEmail,
+            body: new TransferStudentSectionRequest(sectionCap1.Id)))
+        {
+            var res = await client.SendAsync(transfer2Req);
+            Assert.Equal(HttpStatusCode.OK, res.StatusCode);
+            var transferred = (await res.Content.ReadFromJsonAsync<Knorooms.Modules.Modules.Enrollments.Contracts.StudentEnrollmentDto>())!;
+            Assert.Equal(sectionCap1.Id, transferred.SectionId);
+        }
+
+        // 7. Aislamiento Multi-Tenant: Colegio B ve 0 estudiantes, 0 tutores y 0 matrículas
+        using (var studentsOverviewBReq = CreateRequest(
+            HttpMethod.Get,
+            "/api/tenant/students/overview",
+            $"{slugB}.localhost:3000",
+            directorBSub,
+            directorBEmail))
+        {
+            var res = await client.SendAsync(studentsOverviewBReq);
+            Assert.Equal(HttpStatusCode.OK, res.StatusCode);
+            var overviewB = (await res.Content.ReadFromJsonAsync<Knorooms.Modules.Modules.Students.Contracts.StudentDirectoryOverviewDto>())!;
+            Assert.Empty(overviewB.Students);
+            Assert.Empty(overviewB.Guardians);
+        }
+    }
+
     private static HttpRequestMessage CreateRequest(
         HttpMethod method,
         string path,

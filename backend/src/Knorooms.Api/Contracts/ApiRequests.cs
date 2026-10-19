@@ -196,3 +196,113 @@ public sealed class AssignTeacherRequestValidator : AbstractValidator<AssignTeac
             .WithMessage("Las horas semanales deben estar entre 1 y 40.");
     }
 }
+
+public sealed record CreateStudentRequest(
+    string StudentCode,
+    string FirstName,
+    string LastName,
+    DateOnly BirthDate,
+    string? SigerdExternalId = null);
+
+public sealed record CreateGuardianRequest(
+    string FullName,
+    string Email,
+    string? PhoneNumber = null);
+
+public sealed record LinkStudentGuardianRequest(
+    Guid GuardianId,
+    string RelationshipType,
+    bool HasAcademicAccess = true,
+    bool HasFinancialResponsibility = false,
+    bool HasPickupAuthorization = true);
+
+public sealed record EnrollStudentRequest(
+    Guid StudentId,
+    Guid SectionId);
+
+public sealed record TransferStudentSectionRequest(
+    Guid TargetSectionId);
+
+public sealed class CreateStudentRequestValidator : AbstractValidator<CreateStudentRequest>
+{
+    public CreateStudentRequestValidator()
+    {
+        RuleFor(x => x.StudentCode)
+            .NotEmpty().WithMessage("El código de expediente estudiantil es obligatorio (ej. EST-2026-001).")
+            .MaximumLength(32);
+
+        RuleFor(x => x.FirstName)
+            .NotEmpty().WithMessage("Los nombres del estudiante son obligatorios.")
+            .MinimumLength(2)
+            .MaximumLength(100);
+
+        RuleFor(x => x.LastName)
+            .NotEmpty().WithMessage("Los apellidos del estudiante son obligatorios.")
+            .MinimumLength(2)
+            .MaximumLength(100);
+
+        RuleFor(x => x.BirthDate)
+            .Must(d => d.Year >= 1995 && d <= DateOnly.FromDateTime(DateTime.UtcNow))
+            .WithMessage("Indique una fecha de nacimiento válida.");
+
+        RuleFor(x => x.SigerdExternalId)
+            .MaximumLength(64)
+            .When(x => !string.IsNullOrWhiteSpace(x.SigerdExternalId));
+    }
+}
+
+public sealed class CreateGuardianRequestValidator : AbstractValidator<CreateGuardianRequest>
+{
+    public CreateGuardianRequestValidator()
+    {
+        RuleFor(x => x.FullName)
+            .NotEmpty().WithMessage("El nombre completo del responsable familiar es obligatorio.")
+            .MinimumLength(3)
+            .MaximumLength(160);
+
+        RuleFor(x => x.Email)
+            .NotEmpty().WithMessage("El correo electrónico del responsable es obligatorio.")
+            .EmailAddress().WithMessage("El formato del correo electrónico no es válido.")
+            .MaximumLength(254);
+
+        RuleFor(x => x.PhoneNumber)
+            .MaximumLength(32)
+            .When(x => !string.IsNullOrWhiteSpace(x.PhoneNumber));
+    }
+}
+
+public sealed class LinkStudentGuardianRequestValidator : AbstractValidator<LinkStudentGuardianRequest>
+{
+    public LinkStudentGuardianRequestValidator()
+    {
+        RuleFor(x => x.GuardianId)
+            .NotEmpty().WithMessage("Debe seleccionar un responsable familiar.");
+
+        RuleFor(x => x.RelationshipType)
+            .NotEmpty().WithMessage("El parentesco o tipo de vínculo es obligatorio (ej. Madre, Padre, Tutor Legal).")
+            .MinimumLength(2)
+            .MaximumLength(64);
+    }
+}
+
+public sealed class EnrollStudentRequestValidator : AbstractValidator<EnrollStudentRequest>
+{
+    public EnrollStudentRequestValidator()
+    {
+        RuleFor(x => x.StudentId)
+            .NotEmpty().WithMessage("Debe seleccionar un expediente estudiantil activo.");
+
+        RuleFor(x => x.SectionId)
+            .NotEmpty().WithMessage("Debe seleccionar una sección con cupos disponibles.");
+    }
+}
+
+public sealed class TransferStudentSectionRequestValidator : AbstractValidator<TransferStudentSectionRequest>
+{
+    public TransferStudentSectionRequestValidator()
+    {
+        RuleFor(x => x.TargetSectionId)
+            .NotEmpty().WithMessage("Debe indicar la sección de destino para el traslado.");
+    }
+}
+

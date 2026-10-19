@@ -221,6 +221,128 @@ export interface AssignTeacherRequest {
   weeklyHours: number;
 }
 
+export type EnrollmentStatus = "Active" | "Transferred" | "Withdrawn" | "Promoted";
+
+export interface StudentGuardianSummaryDto {
+  linkId: string;
+  guardianId: string;
+  fullName: string;
+  email: string;
+  phoneNumber: string | null;
+  relationshipType: string;
+  hasAcademicAccess: boolean;
+  hasFinancialResponsibility: boolean;
+  hasPickupAuthorization: boolean;
+}
+
+export interface StudentEnrollmentSummaryDto {
+  enrollmentId: string;
+  academicYearId: string;
+  academicYearCode: string;
+  sectionId: string;
+  sectionCode: string;
+  gradeLevelCode: string;
+  gradeLevelName: string;
+  status: EnrollmentStatus;
+}
+
+export interface StudentDto {
+  id: string;
+  studentCode: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  birthDate: string;
+  sigerdExternalId: string | null;
+  isActive: boolean;
+  guardians: StudentGuardianSummaryDto[];
+  latestEnrollment: StudentEnrollmentSummaryDto | null;
+  createdAtUtc: string;
+}
+
+export interface GuardianDto {
+  id: string;
+  fullName: string;
+  email: string;
+  phoneNumber: string | null;
+  userAccountId: string | null;
+  linkedStudentsCount: number;
+  createdAtUtc: string;
+}
+
+export interface StudentDirectoryOverviewDto {
+  students: StudentDto[];
+  guardians: GuardianDto[];
+}
+
+export interface SectionCapacitySnapshotDto {
+  sectionId: string;
+  academicYearId: string;
+  academicYearCode: string;
+  isAcademicYearClosed: boolean;
+  gradeLevelId: string;
+  gradeLevelCode: string;
+  gradeLevelName: string;
+  sectionCode: string;
+  shift: SchoolShift;
+  capacity: number;
+  activeEnrollmentsCount: number;
+  availableSeats: number;
+}
+
+export interface StudentEnrollmentDto {
+  id: string;
+  studentId: string;
+  studentCode: string;
+  studentFullName: string;
+  sigerdExternalId: string | null;
+  academicYearId: string;
+  academicYearCode: string;
+  sectionId: string;
+  sectionCode: string;
+  gradeLevelCode: string;
+  gradeLevelName: string;
+  shift: SchoolShift;
+  status: EnrollmentStatus;
+  enrolledAtUtc: string;
+}
+
+export interface EnrollmentsOverviewDto {
+  enrollments: StudentEnrollmentDto[];
+  sectionCapacities: SectionCapacitySnapshotDto[];
+}
+
+export interface CreateStudentRequest {
+  studentCode: string;
+  firstName: string;
+  lastName: string;
+  birthDate: string;
+  sigerdExternalId?: string | null;
+}
+
+export interface CreateGuardianRequest {
+  fullName: string;
+  email: string;
+  phoneNumber?: string | null;
+}
+
+export interface LinkStudentGuardianRequest {
+  guardianId: string;
+  relationshipType: string;
+  hasAcademicAccess: boolean;
+  hasFinancialResponsibility: boolean;
+  hasPickupAuthorization: boolean;
+}
+
+export interface EnrollStudentRequest {
+  studentId: string;
+  sectionId: string;
+}
+
+export interface TransferStudentSectionRequest {
+  targetSectionId: string;
+}
+
 export type ApiResult<T> =
   | {
       ok: true;

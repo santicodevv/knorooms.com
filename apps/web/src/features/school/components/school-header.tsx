@@ -1,11 +1,19 @@
 import Link from "next/link";
-import { Building2, GraduationCap, ShieldAlert, ShieldCheck, Users } from "lucide-react";
+import {
+  Building2,
+  ContactRound,
+  GraduationCap,
+  ShieldAlert,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { AccessTypeBadge, InstitutionStatusBadge } from "@/components/shared/status-badge";
 import { Badge } from "@/components/ui/badge";
 import type { TenantContextDto } from "@/lib/api/types";
 
-export type SchoolNavigationTab = "overview" | "academic" | "members" | "support-access";
+export type SchoolNavigationTab =
+  "overview" | "academic" | "students" | "members" | "support-access";
 
 interface SchoolHeaderProps {
   context: TenantContextDto;
@@ -24,6 +32,7 @@ const NAV_ITEMS: Array<{
 }> = [
   { tab: "overview", href: "/", label: "Contexto y Permisos", Icon: ShieldCheck },
   { tab: "academic", href: "/academic", label: "Estructura Académica", Icon: GraduationCap },
+  { tab: "students", href: "/students", label: "Estudiantes y Matrículas", Icon: ContactRound },
   { tab: "members", href: "/members", label: "Miembros Institucionales", Icon: Users },
   { tab: "support-access", href: "/support-access", label: "Acceso de Soporte", Icon: ShieldAlert },
 ];

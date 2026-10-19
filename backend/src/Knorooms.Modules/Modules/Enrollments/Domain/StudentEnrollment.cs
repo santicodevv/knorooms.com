@@ -55,4 +55,46 @@ public sealed class StudentEnrollment : TenantScopedEntity
             EnrolledAtUtc = DateTimeOffset.UtcNow
         });
     }
+
+    public Result TransferToSection(Guid targetSectionId)
+    {
+        if (targetSectionId == Guid.Empty)
+        {
+            return Result.Failure(Error.Validation(
+                "Enrollment.InvalidTargetSection",
+                "Debe indicar la sección de destino para el traslado."));
+        }
+
+        if (Status != EnrollmentStatus.Active)
+        {
+            return Result.Failure(Error.Conflict(
+                "Enrollment.NotActive",
+                "Solo se pueden trasladar de sección matrículas que estén en estado Activo."));
+        }
+
+        if (SectionId == targetSectionId)
+        {
+            return Result.Failure(Error.Conflict(
+                "Enrollment.SameSection",
+                "El estudiante ya se encuentra matriculado en la sección indicada."));
+        }
+
+        SectionId = targetSectionId;
+        MarkUpdated();
+        return Result.Success();
+    }
+
+    public Result Withdraw()
+    {
+        if (Status == EnrollmentStatus.Withdrawn)
+        {
+            return Result.Failure(Error.Conflict(
+                "Enrollment.AlreadyWithdrawn",
+                "La matrícula del estudiante ya figura como retirada."));
+        }
+
+        Status = EnrollmentStatus.Withdrawn;
+        MarkUpdated();
+        return Result.Success();
+    }
 }

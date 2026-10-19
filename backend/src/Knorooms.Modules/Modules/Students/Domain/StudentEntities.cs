@@ -60,6 +60,34 @@ public sealed class StudentRecord : TenantScopedEntity
             IsActive = true
         });
     }
+
+    public Result Deactivate()
+    {
+        if (!IsActive)
+        {
+            return Result.Failure(Error.Conflict(
+                "Student.AlreadyInactive",
+                "El expediente estudiantil ya se encuentra inactivo."));
+        }
+
+        IsActive = false;
+        MarkUpdated();
+        return Result.Success();
+    }
+
+    public Result Activate()
+    {
+        if (IsActive)
+        {
+            return Result.Failure(Error.Conflict(
+                "Student.AlreadyActive",
+                "El expediente estudiantil ya se encuentra activo."));
+        }
+
+        IsActive = true;
+        MarkUpdated();
+        return Result.Success();
+    }
 }
 
 /// <summary>

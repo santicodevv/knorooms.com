@@ -113,3 +113,27 @@ El usuario indicado en `administrators` debe haber iniciado sesión al menos una
 | `GET /api/tenant/academic/teacher-assignments` | `institution.academic.read` | — | `TeacherAssignmentDto[]` |
 | `POST /api/tenant/academic/teacher-assignments` | `institution.academic.manage` | `{ "sectionId", "subjectId", "teacherMembershipId", "weeklyHours" }` | 201 `TeacherAssignmentDto` |
 
+## Expedientes Estudiantiles y Tutores (host `{slug}.*`, `/api/tenant/students/*`)
+
+| Método y ruta | Permiso | Cuerpo | Respuesta |
+| --- | --- | --- | --- |
+| `GET /api/tenant/students/overview` | `institution.students.read` | — | `StudentDirectoryOverviewDto` |
+| `GET /api/tenant/students` | `institution.students.read` | — | `StudentDto[]` |
+| `POST /api/tenant/students` | `institution.students.manage` | `{ "studentCode", "firstName", "lastName", "birthDate", "sigerdExternalId" }` | 201 `StudentDto` |
+| `POST /api/tenant/students/{id}/deactivate` | `institution.students.manage` | — | 204 |
+| `POST /api/tenant/students/{id}/activate` | `institution.students.manage` | — | 204 |
+| `GET /api/tenant/students/guardians` | `institution.students.read` | — | `GuardianDto[]` |
+| `POST /api/tenant/students/guardians` | `institution.students.manage` | `{ "fullName", "email", "phoneNumber" }` | 201 `GuardianDto` |
+| `POST /api/tenant/students/{studentId}/guardians` | `institution.students.manage` | `{ "guardianId", "relationshipType", "hasAcademicAccess", "hasFinancialResponsibility", "hasPickupAuthorization" }` | 201 `StudentGuardianSummaryDto` |
+
+## Matrículas por Año Escolar y Cupos de Aula (host `{slug}.*`, `/api/tenant/enrollments/*`)
+
+| Método y ruta | Permiso | Cuerpo | Respuesta |
+| --- | --- | --- | --- |
+| `GET /api/tenant/enrollments/overview` | `institution.enrollments.read` | — | `EnrollmentsOverviewDto` |
+| `GET /api/tenant/enrollments` | `institution.enrollments.read` | — | `StudentEnrollmentDto[]` |
+| `POST /api/tenant/enrollments` | `institution.enrollments.manage` | `{ "studentId", "sectionId" }` | 201 `StudentEnrollmentDto` (valida cupo disponible en sección) |
+| `POST /api/tenant/enrollments/{id}/transfer-section` | `institution.enrollments.manage` | `{ "targetSectionId" }` | 200 `StudentEnrollmentDto` |
+| `POST /api/tenant/enrollments/{id}/withdraw` | `institution.enrollments.manage` | — | 204 (libera cupo en sección) |
+
+

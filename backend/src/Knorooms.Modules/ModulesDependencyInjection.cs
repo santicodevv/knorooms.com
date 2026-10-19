@@ -5,11 +5,15 @@ using Knorooms.Modules.Modules.Audit.Application;
 using Knorooms.Modules.Modules.Audit.Contracts;
 using Knorooms.Modules.Modules.Authorization.Application;
 using Knorooms.Modules.Modules.Authorization.Contracts;
+using Knorooms.Modules.Modules.Enrollments.Application;
+using Knorooms.Modules.Modules.Enrollments.Contracts;
 using Knorooms.Modules.Modules.Identity.Application;
 using Knorooms.Modules.Modules.Identity.Contracts;
 using Knorooms.Modules.Modules.Platform.Application;
 using Knorooms.Modules.Modules.Platform.Contracts;
 using Knorooms.Modules.Modules.Platform.Infrastructure;
+using Knorooms.Modules.Modules.Students.Application;
+using Knorooms.Modules.Modules.Students.Contracts;
 using Knorooms.Modules.Modules.SupportAccess.Application;
 using Knorooms.Modules.Modules.SupportAccess.Contracts;
 using Knorooms.Modules.Modules.Tenants.Application;
@@ -53,6 +57,8 @@ public static class ModulesDependencyInjection
         services.AddScoped<ISupportAccessService, SupportAccessService>();
         services.AddScoped<IAuditQueryService, AuditQueryService>();
         services.AddScoped<IAcademicStructureService, AcademicStructureService>();
+        services.AddScoped<IStudentDirectoryService, StudentDirectoryService>();
+        services.AddScoped<IStudentEnrollmentService, StudentEnrollmentService>();
         services.AddScoped<IPlatformInstitutionService, PlatformInstitutionService>();
 
         if (enableOutboxBackgroundWorker)
