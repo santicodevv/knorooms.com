@@ -57,4 +57,23 @@ public sealed class AttendanceRecord : TenantScopedEntity
             JustificationNote = string.IsNullOrWhiteSpace(justificationNote) ? null : justificationNote.Trim()
         });
     }
+
+    public Result Update(
+        AttendanceStatus status,
+        Guid recordedByMembershipId,
+        string? justificationNote = null)
+    {
+        if (recordedByMembershipId == Guid.Empty)
+        {
+            return Result.Failure(Error.Validation(
+                "Attendance.InvalidRecorder",
+                "Se requiere la membresía institucional que actualiza la asistencia."));
+        }
+
+        Status = status;
+        RecordedByMembershipId = recordedByMembershipId;
+        JustificationNote = string.IsNullOrWhiteSpace(justificationNote) ? null : justificationNote.Trim();
+        MarkUpdated();
+        return Result.Success();
+    }
 }

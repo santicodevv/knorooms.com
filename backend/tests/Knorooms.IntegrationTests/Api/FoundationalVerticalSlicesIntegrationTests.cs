@@ -1000,6 +1000,364 @@ public sealed class FoundationalVerticalSlicesIntegrationTests(PostgresIntegrati
         }
     }
 
+    [Fact]
+    public async Task AttendanceGradingAndReportCards_VerticalSlice_EnforcesSeparationOfDutiesImmutableSnapshotsAndTenantIsolation()
+    {
+        await using var factory = new TestApiFactory(fixture.AppRoleConnectionString);
+        using var client = factory.CreateClient();
+
+        var suffix = Guid.NewGuid().ToString("N")[..6];
+        var slugA = $"colegio-eval-a-{suffix}";
+        var slugB = $"colegio-eval-b-{suffix}";
+
+        var superAdminSub = $"superadmin-eval-{suffix}";
+        var directorASub = $"director-eval-a-{suffix}";
+        var teacherASub = $"teacher-eval-a-{suffix}";
+        var directorBSub = $"director-eval-b-{suffix}";
+
+        var superAdminEmail = $"admin-eval-{suffix}@knorooms.com";
+        var directorAEmail = $"director@{slugA}.edu.do";
+        var teacherAEmail = $"docente@{slugA}.edu.do";
+        var directorBEmail = $"director@{slugB}.edu.do";
+
+        foreach (var (sub, email, roles) in new[]
+        {
+            (superAdminSub, superAdminEmail, "PlatformAdmin"),
+            (directorASub, directorAEmail, ""),
+            (teacherASub, teacherAEmail, ""),
+            (directorBSub, directorBEmail, "")
+        })
+        {
+            using var meReq = CreateRequest(HttpMethod.Get, "/api/me", "localhost:3000", sub, email, roles);
+            var meRes = await client.SendAsync(meReq);
+            Assert.Equal(HttpStatusCode.OK, meRes.StatusCode);
+        }
+
+        InstitutionDto institutionA;
+        InstitutionDto institutionB;
+
+        using (var createAReq = CreateRequest(
+            HttpMethod.Post,
+            "/api/platform/institutions",
+            "admin.localhost:3000",
+            superAdminSub,
+            superAdminEmail,
+            "PlatformAdmin",
+            new CreateInstitutionRequest(slugA, "Liceo Politécnico Duarte RD")))
+        {
+            var res = await client.SendAsync(createAReq);
+            institutionA = (await res.Content.ReadFromJsonAsync<InstitutionDto>())!;
+        }
+
+        using (var createBReq = CreateRequest(
+            HttpMethod.Post,
+            "/api/platform/institutions",
+            "admin.localhost:3000",
+            superAdminSub,
+            superAdminEmail,
+            "PlatformAdmin",
+            new CreateInstitutionRequest(slugB, "Colegio Mirador del Sur RD")))
+        {
+            var res = await client.SendAsync(createBReq);
+            institutionB = (await res.Content.ReadFromJsonAsync<InstitutionDto>())!;
+        }
+
+        foreach (var (instId, email) in new[]
+        {
+            (institutionA.Id, directorAEmail),
+            (institutionA.Id, teacherAEmail),
+            (institutionB.Id, directorBEmail)
+        })
+        {
+            using var assignReq = CreateRequest(
+                HttpMethod.Post,
+                $"/api/platform/institutions/{instId}/administrators",
+                "admin.localhost:3000",
+                superAdminSub,
+                superAdminEmail,
+                "PlatformAdmin",
+                new AssignInstitutionAdministratorRequest(email));
+            var res = await client.SendAsync(assignReq);
+            Assert.Equal(HttpStatusCode.Created, res.StatusCode);
+        }
+
+        // 1. Preparar estructura académica, estudiante y matrícula en Colegio A
+        Knorooms.Modules.Modules.Academic.Contracts.AcademicYearDto yearA;
+        using (var req = CreateRequest(
+            HttpMethod.Post,
+            "/api/tenant/academic/years",
+            $"{slugA}.localhost:3000",
+            directorASub,
+            directorAEmail,
+            body: new CreateAcademicYearRequest("2026-2027", "Año Escolar 2026-2027", new DateOnly(2026, 8, 24), new DateOnly(2027, 6, 25))))
+        {
+            var res = await client.SendAsync(req);
+            yearA = (await res.Content.ReadFromJsonAsync<Knorooms.Modules.Modules.Academic.Contracts.AcademicYearDto>())!;
+        }
+
+        Knorooms.Modules.Modules.Academic.Contracts.GradeLevelDto gradeA;
+        using (var req = CreateRequest(
+            HttpMethod.Post,
+            "/api/tenant/academic/grade-levels",
+            $"{slugA}.localhost:3000",
+            directorASub,
+            directorAEmail,
+            body: new CreateGradeLevelRequest("Secondary", 11, "S5", "5.º de Secundaria")))
+        {
+            var res = await client.SendAsync(req);
+            gradeA = (await res.Content.ReadFromJsonAsync<Knorooms.Modules.Modules.Academic.Contracts.GradeLevelDto>())!;
+        }
+
+        Knorooms.Modules.Modules.Academic.Contracts.SchoolSectionDto sectionA;
+        using (var req = CreateRequest(
+            HttpMethod.Post,
+            "/api/tenant/academic/sections",
+            $"{slugA}.localhost:3000",
+            directorASub,
+            directorAEmail,
+            body: new CreateSchoolSectionRequest(yearA.Id, gradeA.Id, "A", "Morning", 28)))
+        {
+            var res = await client.SendAsync(req);
+            sectionA = (await res.Content.ReadFromJsonAsync<Knorooms.Modules.Modules.Academic.Contracts.SchoolSectionDto>())!;
+        }
+
+        Knorooms.Modules.Modules.Academic.Contracts.SubjectDto subjectMath;
+        using (var req = CreateRequest(
+            HttpMethod.Post,
+            "/api/tenant/academic/subjects",
+            $"{slugA}.localhost:3000",
+            directorASub,
+            directorAEmail,
+            body: new CreateSubjectRequest("MAT-S5", "Trigonometría y Cálculo Inicial")))
+        {
+            var res = await client.SendAsync(req);
+            subjectMath = (await res.Content.ReadFromJsonAsync<Knorooms.Modules.Modules.Academic.Contracts.SubjectDto>())!;
+        }
+
+        Knorooms.Modules.Modules.Students.Contracts.StudentDto student;
+        using (var req = CreateRequest(
+            HttpMethod.Post,
+            "/api/tenant/students",
+            $"{slugA}.localhost:3000",
+            directorASub,
+            directorAEmail,
+            body: new CreateStudentRequest("EST-2026-501", "Valeria", "Peralta Guzmán", new DateOnly(2010, 4, 18), "SIGERD-501")))
+        {
+            var res = await client.SendAsync(req);
+            student = (await res.Content.ReadFromJsonAsync<Knorooms.Modules.Modules.Students.Contracts.StudentDto>())!;
+        }
+
+        Knorooms.Modules.Modules.Enrollments.Contracts.StudentEnrollmentDto enrollment;
+        using (var req = CreateRequest(
+            HttpMethod.Post,
+            "/api/tenant/enrollments",
+            $"{slugA}.localhost:3000",
+            directorASub,
+            directorAEmail,
+            body: new EnrollStudentRequest(student.Id, sectionA.Id)))
+        {
+            var res = await client.SendAsync(req);
+            enrollment = (await res.Content.ReadFromJsonAsync<Knorooms.Modules.Modules.Enrollments.Contracts.StudentEnrollmentDto>())!;
+        }
+
+        // 2. Pase de lista de asistencia y actualización idempotente en la misma fecha
+        var classDate = new DateOnly(2026, 9, 15);
+        using (var attReq = CreateRequest(
+            HttpMethod.Post,
+            "/api/tenant/attendance/batch",
+            $"{slugA}.localhost:3000",
+            teacherASub,
+            teacherAEmail,
+            body: new RecordSectionAttendanceBatchRequest(
+                sectionA.Id,
+                classDate,
+                [new AttendanceEntryItemRequest(enrollment.Id, "Late", "Tráfico en Av. 27 de Febrero")])))
+        {
+            var res = await client.SendAsync(attReq);
+            Assert.Equal(HttpStatusCode.OK, res.StatusCode);
+            var batchRes = (await res.Content.ReadFromJsonAsync<Knorooms.Modules.Modules.Attendance.Contracts.AttendanceBatchRecordResultDto>())!;
+            Assert.Equal(1, batchRes.CreatedCount);
+            Assert.Equal(0, batchRes.UpdatedCount);
+        }
+
+        using (var attOverviewReq = CreateRequest(
+            HttpMethod.Get,
+            $"/api/tenant/attendance?academicYearId={yearA.Id}&sectionId={sectionA.Id}&attendanceDate=2026-09-15",
+            $"{slugA}.localhost:3000",
+            teacherASub,
+            teacherAEmail))
+        {
+            var res = await client.SendAsync(attOverviewReq);
+            Assert.Equal(HttpStatusCode.OK, res.StatusCode);
+            var overview = (await res.Content.ReadFromJsonAsync<Knorooms.Modules.Modules.Attendance.Contracts.SectionAttendanceOverviewDto>())!;
+            Assert.Single(overview.Roster);
+            Assert.Equal("Late", overview.Roster[0].Status);
+        }
+
+        // 3. Crear Política de Evaluación MINERD y registrar calificación por Docente
+        Knorooms.Modules.Modules.Grading.Contracts.EvaluationPolicyVersionDto policy;
+        using (var polReq = CreateRequest(
+            HttpMethod.Post,
+            "/api/tenant/grading/policies",
+            $"{slugA}.localhost:3000",
+            directorASub,
+            directorAEmail,
+            body: new CreateEvaluationPolicyRequest(
+                yearA.Id,
+                "MINERD-SEC-ORD22",
+                1,
+                "Política Secundaria Ordenanza 22-2017",
+                70m,
+                ["P1", "P2", "P3", "P4"],
+                "Evaluación por períodos parciales",
+                true)))
+        {
+            var res = await client.SendAsync(polReq);
+            Assert.Equal(HttpStatusCode.Created, res.StatusCode);
+            policy = (await res.Content.ReadFromJsonAsync<Knorooms.Modules.Modules.Grading.Contracts.EvaluationPolicyVersionDto>())!;
+        }
+
+        using (var gradeBatchReq = CreateRequest(
+            HttpMethod.Post,
+            "/api/tenant/grading/entries/batch",
+            $"{slugA}.localhost:3000",
+            teacherASub,
+            teacherAEmail,
+            body: new RecordSectionGradesBatchRequest(
+                sectionA.Id,
+                subjectMath.Id,
+                policy.Id,
+                "P1",
+                [new StudentGradeItemRequest(enrollment.Id, 86m)])))
+        {
+            var res = await client.SendAsync(gradeBatchReq);
+            Assert.Equal(HttpStatusCode.OK, res.StatusCode);
+        }
+
+        Guid gradeEntryId;
+        using (var gradingOverviewReq = CreateRequest(
+            HttpMethod.Get,
+            $"/api/tenant/grading?academicYearId={yearA.Id}&sectionId={sectionA.Id}&subjectId={subjectMath.Id}&periodCode=P1",
+            $"{slugA}.localhost:3000",
+            teacherASub,
+            teacherAEmail))
+        {
+            var res = await client.SendAsync(gradingOverviewReq);
+            Assert.Equal(HttpStatusCode.OK, res.StatusCode);
+            var overview = (await res.Content.ReadFromJsonAsync<Knorooms.Modules.Modules.Grading.Contracts.GradingWorkspaceOverviewDto>())!;
+            gradeEntryId = overview.GradebookRows.Single().GradeEntryId!.Value;
+        }
+
+        // 4. Separación de funciones: el docente que registró la nota NO puede aprobarla él mismo (403 Forbidden)
+        using (var selfApproveReq = CreateRequest(
+            HttpMethod.Post,
+            $"/api/tenant/grading/entries/{gradeEntryId}/approve",
+            $"{slugA}.localhost:3000",
+            teacherASub,
+            teacherAEmail))
+        {
+            var res = await client.SendAsync(selfApproveReq);
+            Assert.Equal(HttpStatusCode.Forbidden, res.StatusCode);
+        }
+
+        // Dirección aprueba la calificación -> 200 OK
+        using (var directorApproveReq = CreateRequest(
+            HttpMethod.Post,
+            $"/api/tenant/grading/entries/{gradeEntryId}/approve",
+            $"{slugA}.localhost:3000",
+            directorASub,
+            directorAEmail))
+        {
+            var res = await client.SendAsync(directorApproveReq);
+            Assert.Equal(HttpStatusCode.OK, res.StatusCode);
+            var approved = (await res.Content.ReadFromJsonAsync<Knorooms.Modules.Modules.Grading.Contracts.GradeEntryDto>())!;
+            Assert.Equal("Approved", approved.Status);
+        }
+
+        // 5. Publicar Boletín Inmutable v1 -> luego rectificar calificación con motivo -> publicar Boletín Rectificado v2
+        Knorooms.Modules.Modules.ReportCards.Contracts.ReportCardSnapshotDto snapshotV1;
+        using (var pubV1Req = CreateRequest(
+            HttpMethod.Post,
+            "/api/tenant/report-cards/publish",
+            $"{slugA}.localhost:3000",
+            directorASub,
+            directorAEmail,
+            body: new PublishReportCardRequest(enrollment.Id, policy.Id, "P1")))
+        {
+            var res = await client.SendAsync(pubV1Req);
+            Assert.Equal(HttpStatusCode.Created, res.StatusCode);
+            snapshotV1 = (await res.Content.ReadFromJsonAsync<Knorooms.Modules.Modules.ReportCards.Contracts.ReportCardSnapshotDto>())!;
+            Assert.Equal(1, snapshotV1.VersionNumber);
+            Assert.Null(snapshotV1.SupersedesSnapshotId);
+        }
+
+        // Intentar re-publicar sin motivo de rectificación de >= 10 caracteres -> 400 Bad Request
+        using (var pubMissingReasonReq = CreateRequest(
+            HttpMethod.Post,
+            "/api/tenant/report-cards/publish",
+            $"{slugA}.localhost:3000",
+            directorASub,
+            directorAEmail,
+            body: new PublishReportCardRequest(enrollment.Id, policy.Id, "P1", "corto")))
+        {
+            var res = await client.SendAsync(pubMissingReasonReq);
+            Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
+        }
+
+        // Corregir calificación con motivo y emitir v2 que referencia SupersedesSnapshotId = v1.Id
+        using (var gradeFixReq = CreateRequest(
+            HttpMethod.Post,
+            "/api/tenant/grading/entries/batch",
+            $"{slugA}.localhost:3000",
+            teacherASub,
+            teacherAEmail,
+            body: new RecordSectionGradesBatchRequest(
+                sectionA.Id,
+                subjectMath.Id,
+                policy.Id,
+                "P1",
+                [new StudentGradeItemRequest(enrollment.Id, 94m, "Revisión de proyecto práctico validada por coordinación")])))
+        {
+            var res = await client.SendAsync(gradeFixReq);
+            Assert.Equal(HttpStatusCode.OK, res.StatusCode);
+        }
+
+        using (var pubV2Req = CreateRequest(
+            HttpMethod.Post,
+            "/api/tenant/report-cards/publish",
+            $"{slugA}.localhost:3000",
+            directorASub,
+            directorAEmail,
+            body: new PublishReportCardRequest(
+                enrollment.Id,
+                policy.Id,
+                "P1",
+                "Rectificación oficial por acta del consejo técnico #204")))
+        {
+            var res = await client.SendAsync(pubV2Req);
+            Assert.Equal(HttpStatusCode.Created, res.StatusCode);
+            var snapshotV2 = (await res.Content.ReadFromJsonAsync<Knorooms.Modules.Modules.ReportCards.Contracts.ReportCardSnapshotDto>())!;
+            Assert.Equal(2, snapshotV2.VersionNumber);
+            Assert.Equal(snapshotV1.Id, snapshotV2.SupersedesSnapshotId);
+            Assert.Contains("94", snapshotV2.ImmutablePayloadJson, StringComparison.Ordinal);
+        }
+
+        // 6. Aislamiento Multi-Tenant: Colegio B no ve asistencia, calificaciones ni boletines de Colegio A
+        using (var rcBReq = CreateRequest(
+            HttpMethod.Get,
+            "/api/tenant/report-cards",
+            $"{slugB}.localhost:3000",
+            directorBSub,
+            directorBEmail))
+        {
+            var res = await client.SendAsync(rcBReq);
+            Assert.Equal(HttpStatusCode.OK, res.StatusCode);
+            var overviewB = (await res.Content.ReadFromJsonAsync<Knorooms.Modules.Modules.ReportCards.Contracts.ReportCardsOverviewDto>())!;
+            Assert.Empty(overviewB.Snapshots);
+            Assert.Empty(overviewB.StudentReadiness);
+        }
+    }
+
     private static HttpRequestMessage CreateRequest(
         HttpMethod method,
         string path,

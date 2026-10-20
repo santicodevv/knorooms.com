@@ -146,4 +146,72 @@ public sealed class GradeEntry : TenantScopedEntity
         MarkUpdated();
         return Result.Success();
     }
+
+    public Result UpdateScore(
+        decimal numericScore,
+        Guid recordedByMembershipId,
+        string? correctionReason = null)
+    {
+        if (recordedByMembershipId == Guid.Empty)
+        {
+            return Result.Failure(Error.Validation(
+                "GradeEntry.InvalidRecorder",
+                "Se requiere la membresía institucional que registra o corrige la calificación."));
+        }
+
+        if (numericScore is < 0 or > 100)
+        {
+            return Result.Failure(Error.Validation(
+                "GradeEntry.InvalidScore",
+                "La calificación debe estar en el rango [0, 100]."));
+        }
+
+        var requiresCorrectionReason =
+            (Status is GradeWorkflowStatus.Approved or GradeWorkflowStatus.Published) &&
+            NumericScore != numericScore;
+
+        if (requiresCorrectionReason &&
+            (string.IsNullOrWhiteSpace(correctionReason) || correctionReason.Trim().Length < 5))
+        {
+            return Result.Failure(Error.Validation(
+                "GradeEntry.CorrectionReasonRequired",
+                "Modificar una calificación aprobada o publicada exige un motivo de corrección de al menos 5 caracteres."));
+        }
+
+        NumericScore = numericScore;
+        RecordedByMembershipId = recordedByMembershipId;
+        if (!string.IsNullOrWhiteSpace(correctionReason))
+        {
+            CorrectionReason = correctionReason.Trim();
+        }
+
+        if (requiresCorrectionReason)
+        {
+            Status = GradeWorkflowStatus.Draft;
+            ApprovedByMembershipId = null;
+        }
+
+        MarkUpdated();
+        return Result.Success();
+    }
+
+    public Result Submit()
+    {
+        if (Status == GradeWorkflowStatus.Published)
+        {
+            return Result.Failure(Error.Conflict(
+                "GradeEntry.AlreadyPublished",
+                "No se puede reenviar a revisión una calificación ya publicada sin registrar una corrección."));
+        }
+
+        Status = GradeWorkflowStatus.Submitted;
+        MarkUpdated();
+        return Result.Success();
+    }
+
+    public void MarkPublished()
+    {
+        Status = GradeWorkflowStatus.Published;
+        MarkUpdated();
+    }
 }

@@ -343,6 +343,230 @@ export interface TransferStudentSectionRequest {
   targetSectionId: string;
 }
 
+export type AttendanceStatus = "Present" | "Absent" | "Late" | "Excused";
+export type GradeWorkflowStatus = "Draft" | "Submitted" | "Approved" | "Published";
+
+export interface AttendanceDailyMetricsDto {
+  totalEnrolled: number;
+  recordedCount: number;
+  presentCount: number;
+  absentCount: number;
+  lateCount: number;
+  excusedCount: number;
+  dailyAttendancePercentage: number;
+}
+
+export interface StudentAttendanceSummaryDto {
+  totalDaysRecorded: number;
+  presentDays: number;
+  absentDays: number;
+  lateDays: number;
+  excusedDays: number;
+  cumulativeAttendancePercentage: number;
+}
+
+export interface SectionAttendanceRosterItemDto {
+  enrollmentId: string;
+  studentId: string;
+  studentCode: string;
+  studentFullName: string;
+  nationalStudentId: string | null;
+  attendanceRecordId: string | null;
+  status: AttendanceStatus | null;
+  justificationNote: string | null;
+  recordedByMembershipId: string | null;
+  recordedByDisplayName: string | null;
+  updatedAtUtc: string | null;
+  cumulativeSummary: StudentAttendanceSummaryDto;
+}
+
+export interface SectionAttendanceOverviewDto {
+  selectedAcademicYearId: string | null;
+  selectedAcademicYearName: string | null;
+  selectedSectionId: string | null;
+  selectedSectionLabel: string | null;
+  selectedDate: string;
+  metrics: AttendanceDailyMetricsDto;
+  roster: SectionAttendanceRosterItemDto[];
+}
+
+export interface AttendanceEntryItemRequest {
+  enrollmentId: string;
+  status: AttendanceStatus;
+  justificationNote?: string | null;
+}
+
+export interface RecordSectionAttendanceBatchRequest {
+  sectionId: string;
+  attendanceDate: string;
+  entries: AttendanceEntryItemRequest[];
+}
+
+export interface AttendanceBatchRecordResultDto {
+  sectionId: string;
+  attendanceDate: string;
+  processedCount: number;
+  createdCount: number;
+  updatedCount: number;
+}
+
+export interface EvaluationPolicyVersionDto {
+  id: string;
+  academicYearId: string;
+  academicYearName: string;
+  policyCode: string;
+  versionNumber: number;
+  name: string;
+  rulesSpecificationJson: string;
+  minPassingScore: number;
+  enabledPeriods: string[];
+  isValidatedWithPilotSchool: boolean;
+  createdAtUtc: string;
+}
+
+export interface GradingMetricsDto {
+  totalStudentsInSection: number;
+  gradedStudentsCount: number;
+  approvedEntriesCount: number;
+  publishedEntriesCount: number;
+  averageScore: number;
+  passingStudentsCount: number;
+  minPassingScore: number;
+}
+
+export interface StudentGradebookRowDto {
+  enrollmentId: string;
+  studentId: string;
+  studentCode: string;
+  studentFullName: string;
+  gradeEntryId: string | null;
+  numericScore: number | null;
+  status: GradeWorkflowStatus | null;
+  isPassing: boolean | null;
+  recordedByMembershipId: string | null;
+  recordedByDisplayName: string | null;
+  approvedByMembershipId: string | null;
+  approvedByDisplayName: string | null;
+  correctionReason: string | null;
+  updatedAtUtc: string | null;
+  periodScores: Record<string, number>;
+}
+
+export interface GradingWorkspaceOverviewDto {
+  selectedAcademicYearId: string | null;
+  selectedAcademicYearName: string | null;
+  selectedSectionId: string | null;
+  selectedSectionLabel: string | null;
+  selectedSubjectId: string | null;
+  selectedSubjectName: string | null;
+  selectedPeriodCode: string;
+  policies: EvaluationPolicyVersionDto[];
+  activePolicy: EvaluationPolicyVersionDto | null;
+  metrics: GradingMetricsDto;
+  gradebookRows: StudentGradebookRowDto[];
+}
+
+export interface CreateEvaluationPolicyRequest {
+  academicYearId: string;
+  policyCode: string;
+  versionNumber: number;
+  name: string;
+  minPassingScore: number;
+  enabledPeriods?: string[];
+  notes?: string | null;
+  isValidatedWithPilotSchool: boolean;
+}
+
+export interface StudentGradeItemRequest {
+  enrollmentId: string;
+  numericScore: number;
+  correctionReason?: string | null;
+}
+
+export interface RecordSectionGradesBatchRequest {
+  sectionId: string;
+  subjectId: string;
+  evaluationPolicyVersionId: string;
+  periodCode: string;
+  grades: StudentGradeItemRequest[];
+}
+
+export interface GradesBatchRecordResultDto {
+  sectionId: string;
+  subjectId: string;
+  periodCode: string;
+  processedCount: number;
+  createdCount: number;
+  updatedCount: number;
+}
+
+export interface GradeEntryDto {
+  id: string;
+  enrollmentId: string;
+  subjectId: string;
+  evaluationPolicyVersionId: string;
+  periodCode: string;
+  numericScore: number;
+  status: GradeWorkflowStatus;
+  recordedByMembershipId: string;
+  approvedByMembershipId: string | null;
+  correctionReason: string | null;
+  updatedAtUtc: string;
+}
+
+export interface StudentReportCardReadinessDto {
+  enrollmentId: string;
+  studentId: string;
+  studentCode: string;
+  studentFullName: string;
+  nationalStudentId: string | null;
+  recordedSubjectsCount: number;
+  totalGradeSubjectsCount: number;
+  periodAverageScore: number | null;
+  latestPublishedVersion: number;
+  latestSnapshotId: string | null;
+  latestPublishedAtUtc: string | null;
+}
+
+export interface ReportCardSnapshotDto {
+  id: string;
+  enrollmentId: string;
+  studentId: string;
+  studentCode: string;
+  studentFullName: string;
+  gradeAndSectionLabel: string;
+  academicYearName: string;
+  evaluationPolicyVersionId: string;
+  evaluationPolicyName: string;
+  periodCode: string;
+  versionNumber: number;
+  immutablePayloadJson: string;
+  publishedByMembershipId: string;
+  publishedByDisplayName: string;
+  publishedAtUtc: string;
+  supersedesSnapshotId: string | null;
+  correctionReason: string | null;
+}
+
+export interface ReportCardsOverviewDto {
+  selectedAcademicYearId: string | null;
+  selectedAcademicYearName: string | null;
+  selectedSectionId: string | null;
+  selectedSectionLabel: string | null;
+  selectedPeriodCode: string;
+  activeEvaluationPolicyVersionId: string | null;
+  activeEvaluationPolicyName: string | null;
+  studentReadiness: StudentReportCardReadinessDto[];
+  snapshots: ReportCardSnapshotDto[];
+}
+
+export interface PublishReportCardRequest {
+  enrollmentId: string;
+  evaluationPolicyVersionId: string;
+  periodCode: string;
+  correctionReason?: string | null;
+}
+
 export type ApiResult<T> =
   | {
       ok: true;
