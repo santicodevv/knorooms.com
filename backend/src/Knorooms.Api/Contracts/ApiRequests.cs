@@ -306,3 +306,173 @@ public sealed class TransferStudentSectionRequestValidator : AbstractValidator<T
     }
 }
 
+public sealed record AttendanceEntryItemRequest(
+    Guid EnrollmentId,
+    string Status,
+    string? JustificationNote = null);
+
+public sealed record RecordSectionAttendanceBatchRequest(
+    Guid SectionId,
+    DateOnly AttendanceDate,
+    IReadOnlyList<AttendanceEntryItemRequest> Entries);
+
+public sealed record CreateEvaluationPolicyRequest(
+    Guid AcademicYearId,
+    string PolicyCode,
+    int VersionNumber,
+    string Name,
+    decimal MinPassingScore = 70m,
+    IReadOnlyList<string>? EnabledPeriods = null,
+    string? Notes = null,
+    bool IsValidatedWithPilotSchool = false);
+
+public sealed record StudentGradeItemRequest(
+    Guid EnrollmentId,
+    decimal NumericScore,
+    string? CorrectionReason = null);
+
+public sealed record RecordSectionGradesBatchRequest(
+    Guid SectionId,
+    Guid SubjectId,
+    Guid EvaluationPolicyVersionId,
+    string PeriodCode,
+    IReadOnlyList<StudentGradeItemRequest> Grades);
+
+public sealed record PublishReportCardRequest(
+    Guid EnrollmentId,
+    Guid EvaluationPolicyVersionId,
+    string PeriodCode,
+    string? CorrectionReason = null);
+
+public sealed class RecordSectionAttendanceBatchRequestValidator : AbstractValidator<RecordSectionAttendanceBatchRequest>
+{
+    public RecordSectionAttendanceBatchRequestValidator()
+    {
+        RuleFor(x => x.SectionId)
+            .NotEmpty().WithMessage("Debe especificar la sección escolar.");
+
+        RuleFor(x => x.Entries)
+            .NotEmpty().WithMessage("Debe incluir al menos un estudiante en el registro de asistencia.");
+
+        RuleForEach(x => x.Entries).ChildRules(entry =>
+        {
+            entry.RuleFor(e => e.EnrollmentId)
+                .NotEmpty().WithMessage("El identificador de matrícula es obligatorio.");
+
+            entry.RuleFor(e => e.Status)
+                .NotEmpty().WithMessage("El estado de asistencia es obligatorio (Present, Absent, Late, Excused).");
+
+            entry.RuleFor(e => e.JustificationNote)
+                .MaximumLength(300).WithMessage("La nota de justificación no puede exceder 300 caracteres.");
+        });
+    }
+}
+
+public sealed class CreateEvaluationPolicyRequestValidator : AbstractValidator<CreateEvaluationPolicyRequest>
+{
+    public CreateEvaluationPolicyRequestValidator()
+    {
+        RuleFor(x => x.AcademicYearId)
+            .NotEmpty().WithMessage("Debe seleccionar el año escolar de la política de evaluación.");
+
+        RuleFor(x => x.PolicyCode)
+            .NotEmpty().WithMessage("El código de la política (ej. MINERD-SEC-ORD22) es obligatorio.")
+            .MinimumLength(2)
+            .MaximumLength(64);
+
+        RuleFor(x => x.VersionNumber)
+            .GreaterThanOrEqualTo(1).WithMessage("El número de versión debe ser mayor o igual a 1.");
+
+        RuleFor(x => x.Name)
+            .NotEmpty().WithMessage("El nombre descriptivo de la política es obligatorio.")
+            .MinimumLength(3)
+            .MaximumLength(160);
+
+        RuleFor(x => x.MinPassingScore)
+            .InclusiveBetween(1m, 100m).WithMessage("La calificación mínima aprobatoria debe estar entre 1 y 100 puntos.");
+    }
+}
+
+public sealed class RecordSectionGradesBatchRequestValidator : AbstractValidator<RecordSectionGradesBatchRequest>
+{
+    public RecordSectionGradesBatchRequestValidator()
+    {
+        RuleFor(x => x.SectionId)
+            .NotEmpty().WithMessage("Debe especificar la sección escolar.");
+
+        RuleFor(x => x.SubjectId)
+            .NotEmpty().WithMessage("Debe especificar la asignatura evaluada.");
+
+        RuleFor(x => x.EvaluationPolicyVersionId)
+            .NotEmpty().WithMessage("Debe especificar la versión de la política de evaluación vigente.");
+
+        RuleFor(x => x.PeriodCode)
+            .NotEmpty().WithMessage("El período de evaluación (ej. P1, P2, P3, P4, FINAL) es obligatorio.")
+            .MaximumLength(16);
+
+        RuleFor(x => x.Grades)
+            .NotEmpty().WithMessage("Debe proporcionar al menos una calificación para guardar.");
+
+        RuleForEach(x => x.Grades).ChildRules(grade =>
+        {
+            grade.RuleFor(g => g.EnrollmentId)
+                .NotEmpty().WithMessage("El identificador de matrícula es obligatorio.");
+
+            grade.RuleFor(g => g.NumericScore)
+                .InclusiveBetween(0m, 100m).WithMessage("La calificación debe estar en el rango de 0 a 100 puntos.");
+
+            grade.RuleFor(g => g.CorrectionReason)
+                .MaximumLength(400).WithMessage("El motivo de corrección no puede exceder 400 caracteres.");
+        });
+    }
+}
+
+public sealed class PublishReportCardRequestValidator : AbstractValidator<PublishReportCardRequest>
+{
+    public PublishReportCardRequestValidator()
+    {
+        RuleFor(x => x.EnrollmentId)
+            .NotEmpty().WithMessage("Debe seleccionar la matrícula estudiantil.");
+
+        RuleFor(x => x.EvaluationPolicyVersionId)
+            .NotEmpty().WithMessage("Debe seleccionar la política de evaluación aplicable.");
+
+        RuleFor(x => x.PeriodCode)
+            .NotEmpty().WithMessage("El período del boletín (ej. P1, P2, P3, P4, FINAL) es obligatorio.")
+            .MaximumLength(16);
+
+        RuleFor(x => x.CorrectionReason)
+            .MaximumLength(400).WithMessage("El motivo de rectificación no puede exceder 400 caracteres.");
+    }
+}
+
+public sealed record LoginRequest(string Email, string Password);
+
+public sealed record RefreshTokenRequest(string RefreshToken);
+
+public sealed class LoginRequestValidator : AbstractValidator<LoginRequest>
+{
+    public LoginRequestValidator()
+    {
+        RuleFor(x => x.Email)
+            .NotEmpty().WithMessage("El correo electrónico es obligatorio.")
+            .EmailAddress().WithMessage("El formato del correo electrónico no es válido.")
+            .MaximumLength(254);
+
+        RuleFor(x => x.Password)
+            .NotEmpty().WithMessage("La contraseña es obligatoria.")
+            .MaximumLength(256);
+    }
+}
+
+public sealed class RefreshTokenRequestValidator : AbstractValidator<RefreshTokenRequest>
+{
+    public RefreshTokenRequestValidator()
+    {
+        RuleFor(x => x.RefreshToken)
+            .NotEmpty().WithMessage("El refresh token es obligatorio.")
+            .MaximumLength(512);
+    }
+}
+
+

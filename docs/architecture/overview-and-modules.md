@@ -11,18 +11,19 @@
 ```mermaid
 flowchart LR
     Browser["Navegador Web\n(Sin tokens en JS)"]
-    BFF["Next.js App Router BFF\n(PKCE + Cookie HttpOnly + Redis AES-256-GCM)"]
-    IdP["Proveedor OIDC\n(Keycloak / Auth0 / Entra ID)"]
+    BFF["Next.js App Router BFF\n(Cookie HttpOnly + Redis AES-256-GCM)"]
     API["ASP.NET Core Web API\n(Knorooms.Api)"]
     Modules["Monolito Modular\n(Knorooms.Modules - 12 módulos)"]
     PG[("PostgreSQL 17\nShared Schema + RLS FORCED\nRol: knorooms_app (NOBYPASSRLS)")]
 
     Browser <-->|"Cookie __Host-knorooms_session\n+ X-CSRF-Token"| BFF
-    BFF <-->|"OAuth 2.0 / OIDC\nAuth Code + PKCE"| IdP
-    BFF -->|"Bearer Access Token\n+ X-Forwarded-Host"| API
+    BFF <-->|"POST /api/auth/login\nUsuario + Contraseña"| API
+    BFF -->|"Bearer Access Token (JWT HS256)\n+ X-Forwarded-Host"| API
     API --> Modules
     Modules -->|"set_config(app.current_tenant_id, ..., is_local)"| PG
 ```
+
+Los JWT y refresh tokens son emitidos por el propio backend de KNOROOMS (no hay proveedor de identidad externo). Ver `docs/decisions/0004-local-credentials-and-backend-issued-jwt.md`.
 
 ---
 
@@ -31,7 +32,7 @@ flowchart LR
 | # | Módulo | Ámbito | Responsabilidad principal | Estado en Bootstrap |
 |---|---|---|---|---|
 | 1 | `Tenants` | Global / Tenant | Registro de instituciones educativas (`Institution`), estado (`Active`/`Suspended`), resolución por `Slug`. | Vertical slice operativo |
-| 2 | `Identity` | Global | Cuentas federadas OIDC (`UserAccount`), aprovisionamiento JIT, revocación global de sesiones (`SessionRevokedBeforeUtc`). | Vertical slice operativo |
+| 2 | `Identity` | Global | Cuentas con credenciales locales (`UserAccount`), hash PBKDF2, emisión de JWT propios y refresh tokens opacos con rotación, bloqueo por intentos fallidos y revocación global de sesiones (`SessionRevokedBeforeUtc`). | Vertical slice operativo |
 | 3 | `Platform` | Global | Administración SaaS (`IPlatformInstitutionService`), alta de colegios, asignación de administrador inicial y `OutboxMessage` (Transactional Outbox). | Vertical slice operativo |
 | 4 | `Authorization` | Global / Tenant | Catálogo central de permisos (`PermissionCatalog`), roles por colegio (`InstitutionRole`), membresías (`TenantMembership`) y evaluación RBAC + ABAC. | Vertical slice operativo |
 | 5 | `SupportAccess` | Global / Tenant | Solicitud, aprobación institucional, expiración temporal y revocación inmediata de acceso de soporte (`SupportAccessGrant`). | Vertical slice operativo |

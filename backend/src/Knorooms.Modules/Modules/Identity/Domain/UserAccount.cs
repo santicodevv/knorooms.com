@@ -4,8 +4,8 @@ using Knorooms.SharedKernel.Results;
 namespace Knorooms.Modules.Modules.Identity.Domain;
 
 /// <summary>
-/// Identidad federada de usuario en KNOROOMS vinculada a un sujeto OIDC externo.
-/// KNOROOMS no almacena contraseñas locales; delega la autenticación a un proveedor OIDC compatible.
+/// Cuenta de usuario global de KNOROOMS con credencial local (hash de contraseña)
+/// y vínculo estable con el emisor de tokens de la plataforma.
 /// </summary>
 public sealed class UserAccount : Entity
 {
@@ -22,6 +22,12 @@ public sealed class UserAccount : Entity
     public bool IsPlatformSupport { get; private set; }
 
     public bool IsActive { get; private set; } = true;
+
+    public string? PasswordHash { get; private set; }
+
+    public int FailedLoginAttempts { get; private set; }
+
+    public DateTimeOffset? LockedUntilUtc { get; private set; }
 
     public DateTimeOffset? LastAuthenticatedAtUtc { get; private set; }
 
@@ -42,12 +48,12 @@ public sealed class UserAccount : Entity
     {
         if (string.IsNullOrWhiteSpace(externalSubject))
         {
-            return Result.Failure<UserAccount>(Error.Validation("User.InvalidSubject", "OIDC subject (sub) is required."));
+            return Result.Failure<UserAccount>(Error.Validation("User.InvalidSubject", "Token subject (sub) is required."));
         }
 
         if (string.IsNullOrWhiteSpace(issuer))
         {
-            return Result.Failure<UserAccount>(Error.Validation("User.InvalidIssuer", "OIDC issuer (iss) is required."));
+            return Result.Failure<UserAccount>(Error.Validation("User.InvalidIssuer", "Token issuer (iss) is required."));
         }
 
         var normalizedEmail = email?.Trim().ToLowerInvariant() ?? string.Empty;
@@ -76,8 +82,20 @@ public sealed class UserAccount : Entity
         string email,
         string displayName,
         bool isPlatformAdmin,
-        bool isPlatformSupport)
+        bool isPlatformSupport,
+        string? externalSubject = null,
+        string? issuer = null)
     {
+        if (!string.IsNullOrWhiteSpace(externalSubject))
+        {
+            ExternalSubject = externalSubject.Trim();
+        }
+
+        if (!string.IsNullOrWhiteSpace(issuer))
+        {
+            IdentityProviderIssuer = issuer.Trim();
+        }
+
         if (!string.IsNullOrWhiteSpace(email))
         {
             Email = email.Trim().ToLowerInvariant();
@@ -98,5 +116,51 @@ public sealed class UserAccount : Entity
     {
         SessionRevokedBeforeUtc = DateTimeOffset.UtcNow;
         MarkUpdated();
+    }
+
+    public void SetPasswordHash(string passwordHash)
+    {
+        if (string.IsNullOrWhiteSpace(passwordHash))
+        {
+            throw new ArgumentException("A hashed password value is required.", nameof(passwordHash));
+        }
+
+        PasswordHash = passwordHash;
+        FailedLoginAttempts = 0;
+        LockedUntilUtc = null;
+        MarkUpdated();
+    }
+
+    public bool VerifyPassword(string password)
+    {
+        return PasswordHash is not null && LocalPassword.Verify(password, PasswordHash);
+    }
+
+    public bool IsLockedOut(DateTimeOffset now)
+    {
+        return LockedUntilUtc.HasValue && LockedUntilUtc.Value > now;
+    }
+
+    public void RegisterFailedLoginAttempt(DateTimeOffset now, int maxAttempts, TimeSpan lockoutDuration)
+    {
+        FailedLoginAttempts++;
+        if (FailedLoginAttempts >= maxAttempts)
+        {
+            LockedUntilUtc = now.Add(lockoutDuration);
+        }
+
+        MarkUpdated(now);
+    }
+
+    public void ClearLoginFailures(DateTimeOffset now)
+    {
+        if (FailedLoginAttempts == 0 && LockedUntilUtc is null)
+        {
+            return;
+        }
+
+        FailedLoginAttempts = 0;
+        LockedUntilUtc = null;
+        MarkUpdated(now);
     }
 }

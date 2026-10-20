@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isMutatingMethod, verifyCsrfProtection } from "@/lib/auth/csrf";
-import { deriveRequestOrigin } from "@/lib/auth/oidc";
+import { deriveRequestOrigin } from "@/lib/auth/request-origin";
 import { getSessionCookieName, getValidSessionById } from "@/lib/auth/session-store";
 
 export function isAllowedBffPath(segments: string[]): boolean {

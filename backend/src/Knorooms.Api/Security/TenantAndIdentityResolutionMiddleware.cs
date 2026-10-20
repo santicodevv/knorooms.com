@@ -12,7 +12,7 @@ namespace Knorooms.Api.Security;
 
 /// <summary>
 /// Middleware central de resolución de subdominio, validación de estado del colegio,
-/// aprovisionamiento JIT de identidad OIDC y carga de membresía/permisos en base de datos.
+/// aprovisionamiento JIT de identidad a partir del token propio de KNOROOMS y carga de membresía/permisos en base de datos.
 ///
 /// Reglas críticas:
 /// 1. Nunca lee TenantId desde query string, body ni cabeceras arbitrarias del cliente.
@@ -31,7 +31,7 @@ public sealed class TenantAndIdentityResolutionMiddleware(RequestDelegate next)
         IIdentityService identityService,
         ITenantAuthorizationService tenantAuthorizationService,
         IOptions<TenancyOptions> tenancyOptions,
-        IOptions<OidcAuthenticationOptions> oidcOptions)
+        IOptions<TokenSigningOptions> tokenOptions)
     {
         var path = httpContext.Request.Path.Value ?? string.Empty;
         if (path.StartsWith("/health", StringComparison.OrdinalIgnoreCase) ||
@@ -76,16 +76,16 @@ public sealed class TenantAndIdentityResolutionMiddleware(RequestDelegate next)
             return;
         }
 
-        // 1. Si el usuario está autenticado vía OIDC Bearer, sincronizar/verificar su cuenta y revocación.
+        // 1. Si el usuario está autenticado con un token propio de KNOROOMS, sincronizar/verificar su cuenta y revocación.
         AuthenticatedRequestIdentity? authenticatedIdentity = null;
         if (httpContext.User.Identity?.IsAuthenticated == true)
         {
             var subject = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
                 ?? httpContext.User.FindFirstValue("sub");
-            var issuer = httpContext.User.FindFirstValue("iss") ?? oidcOptions.Value.Authority;
+            var issuer = httpContext.User.FindFirstValue("iss") ?? tokenOptions.Value.Issuer;
             var email = httpContext.User.FindFirstValue(ClaimTypes.Email)
                 ?? httpContext.User.FindFirstValue("email")
-                ?? $"{subject}@oidc.local";
+                ?? $"{subject}@knorooms.local";
             var displayName = httpContext.User.FindFirstValue("name")
                 ?? httpContext.User.FindFirstValue(ClaimTypes.Name)
                 ?? email;
@@ -98,14 +98,14 @@ public sealed class TenantAndIdentityResolutionMiddleware(RequestDelegate next)
 
             var (isPlatformAdminClaim, isPlatformSupportClaim) =
                 ClaimsPrincipalOidcExtractor.ExtractPlatformRoleFlags(httpContext.User);
-            var hasMfa = ClaimsPrincipalOidcExtractor.HasMultiFactorClaim(httpContext.User, oidcOptions.Value);
+            var hasMfa = ClaimsPrincipalOidcExtractor.HasMultiFactorClaim(httpContext.User, tokenOptions.Value);
 
             if (string.IsNullOrWhiteSpace(subject) || string.IsNullOrWhiteSpace(issuer))
             {
                 await WriteProblemAsync(
                     httpContext,
                     StatusCodes.Status401Unauthorized,
-                    "Invalid OIDC Token",
+                    "Invalid Access Token",
                     "El token de acceso no contiene los claims estándar obligatorios (sub, iss).",
                     "https://knorooms.com/problems/invalid-token");
                 return;
@@ -121,7 +121,7 @@ public sealed class TenantAndIdentityResolutionMiddleware(RequestDelegate next)
                 ExecutionMode: DatabaseExecutionMode.Platform)))
             {
                 var userId = await identityService.EnsureUserSynchronizedAsync(
-                    new OidcAuthenticatedPrincipal(
+                    new AuthenticatedPrincipal(
                         subject,
                         issuer,
                         email,

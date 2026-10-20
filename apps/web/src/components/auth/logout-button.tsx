@@ -27,11 +27,9 @@ export function LogoutButton({ csrfToken }: LogoutButtonProps) {
       });
 
       if (response.ok) {
-        const data = (await response.json()) as { logoutUrl?: string };
-        if (data.logoutUrl) {
-          window.location.assign(data.logoutUrl);
-          return;
-        }
+        const data = (await response.json()) as { redirectTo?: string };
+        window.location.assign(data.redirectTo ?? "/");
+        return;
       }
       window.location.reload();
     } catch {

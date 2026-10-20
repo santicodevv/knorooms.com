@@ -9,7 +9,7 @@ Contrato de los endpoints fundacionales. La API es **interna**: solo la consume 
 - JSON en `camelCase`. Fechas ISO-8601 en UTC. Identificadores UUID.
 - Errores: `application/problem+json` (RFC 9457) con `title`, `status`, `detail`, `traceId` y,
   en validaciones, `errors: { campo: [mensajes] }`.
-- Autenticación: `Authorization: Bearer <access_token OIDC>` emitido por el proveedor configurado.
+- Autenticación: `Authorization: Bearer <access_token>` (JWT HS256 emitido por el backend de KNOROOMS).
 - Resolución de tenant: el BFF reenvía el host original en `X-Forwarded-Host`
   (p. ej. `colegio-a.localhost:3000`). La API extrae el *slug* del subdominio. El host **no autoriza**:
   la API exige además una membresía activa (o un acceso de soporte aprobado).
@@ -136,4 +136,26 @@ El usuario indicado en `administrators` debe haber iniciado sesión al menos una
 | `POST /api/tenant/enrollments/{id}/transfer-section` | `institution.enrollments.manage` | `{ "targetSectionId" }` | 200 `StudentEnrollmentDto` |
 | `POST /api/tenant/enrollments/{id}/withdraw` | `institution.enrollments.manage` | — | 204 (libera cupo en sección) |
 
+## Asistencia Escolar Diaria (host `{slug}.*`, `/api/tenant/attendance/*`)
+
+| Método y ruta | Permiso | Cuerpo | Respuesta |
+| --- | --- | --- | --- |
+| `GET /api/tenant/attendance?academicYearId=&sectionId=&attendanceDate=` | `institution.attendance.read` | — | `SectionAttendanceOverviewDto` |
+| `POST /api/tenant/attendance/batch` | `institution.attendance.record` | `{ "sectionId", "attendanceDate", "entries": [{ "enrollmentId", "status", "justificationNote" }] }` | 200 `AttendanceBatchRecordResultDto` |
+
+## Políticas de Evaluación y Calificaciones (host `{slug}.*`, `/api/tenant/grading/*`)
+
+| Método y ruta | Permiso | Cuerpo | Respuesta |
+| --- | --- | --- | --- |
+| `GET /api/tenant/grading?academicYearId=&sectionId=&subjectId=&periodCode=` | `institution.grading.read` | — | `GradingWorkspaceOverviewDto` |
+| `POST /api/tenant/grading/policies` | `institution.grading.approve` | `{ "academicYearId", "policyCode", "versionNumber", "name", "minPassingScore", "enabledPeriods", "notes", "isValidatedWithPilotSchool" }` | 201 `EvaluationPolicyVersionDto` |
+| `POST /api/tenant/grading/entries/batch` | `institution.grading.record` | `{ "sectionId", "subjectId", "evaluationPolicyVersionId", "periodCode", "grades": [{ "enrollmentId", "numericScore", "correctionReason" }] }` | 200 `GradesBatchRecordResultDto` |
+| `POST /api/tenant/grading/entries/{gradeEntryId}/approve` | `institution.grading.approve` | — | 200 `GradeEntryDto` (valida separación de funciones) |
+
+## Boletines Académicos Inmutables (host `{slug}.*`, `/api/tenant/report-cards/*`)
+
+| Método y ruta | Permiso | Cuerpo | Respuesta |
+| --- | --- | --- | --- |
+| `GET /api/tenant/report-cards?academicYearId=&sectionId=&periodCode=` | `institution.report-cards.read` | — | `ReportCardsOverviewDto` |
+| `POST /api/tenant/report-cards/publish` | `institution.report-cards.publish` | `{ "enrollmentId", "evaluationPolicyVersionId", "periodCode", "correctionReason" }` | 201 `ReportCardSnapshotDto` (v1 inicial o vN+1 rectificado con motivo >= 10 caracteres) |
 

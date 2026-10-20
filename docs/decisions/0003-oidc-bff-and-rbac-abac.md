@@ -1,6 +1,6 @@
 # ADR-0003: Autenticación OIDC Agnóstica con BFF y Autorización RBAC + ABAC + Soporte Temporal
 
-- **Estado:** Aceptado
+- **Estado:** Reemplazado parcialmente por [ADR-0004](./0004-local-credentials-and-backend-issued-jwt.md) (la parte de autenticación OIDC fue sustituida por credenciales locales + JWT propios; la autorización RBAC + ABAC + soporte temporal sigue vigente)
 - **Fecha:** 2026-10-19
 
 ## Contexto

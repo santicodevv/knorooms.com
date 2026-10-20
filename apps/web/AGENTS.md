@@ -16,7 +16,7 @@ Este documento define las reglas técnicas, de arquitectura escalable, de seguri
   - `src/components/ui/`: primitivas atómicas de `shadcn/ui` (`button`, `card`, `table`, `badge`, `alert`, `input`, `label`).
   - `src/components/shared/`: bloques compuestos reutilizables transversalmente en toda la aplicación (`SectionCard`, `EmptyState`, `FeedbackBanner`, `RefreshButton`, `FormFieldError`, `InstitutionStatusBadge`, `MembershipStatusBadge`, `SupportGrantStatusBadge`, `AccessTypeBadge`).
 - **Sin datos simulados (No Fake Data)**: Ninguna vista puede mostrar datos ficticios hardcodeados. Los componentes deben consumir exclusivamente la API real a través del BFF y manejar explícitamente estados vacíos y errores `application/problem+json` (RFC 9457).
-- **Patrón BFF (Backend-for-Frontend)**: El navegador **jamás** recibe ni almacena `access_token`, `refresh_token` ni `id_token`, y nunca invoca directamente `API_BASE_URL`.
+- **Patrón BFF (Backend-for-Frontend)**: El navegador **jamás** recibe ni almacena `access_token` ni `refresh_token`, y nunca invoca directamente `API_BASE_URL`.
 
 ## 2. Estructura de Carpetas de `apps/web/src`
 
@@ -24,7 +24,7 @@ Este documento define las reglas técnicas, de arquitectura escalable, de seguri
 apps/web/src/
 ├── proxy.ts                            # Enrutamiento multi-tenant por subdominio (Next.js 16)
 ├── app/                                # App Router (páginas delgadas que cargan datos vía serverApiFetch)
-│   ├── api/auth/                       # Endpoints OIDC + PKCE (login, callback, logout, session)
+│   ├── api/auth/                       # Endpoints BFF de sesión (login, logout, session)
 │   ├── api/bff/[...path]/              # Proxy BFF autenticado con verificación CSRF
 │   ├── platform/                       # Rutas de consola global (admin.*)
 │   └── school/                         # Rutas de portal institucional (<slug>.*)
@@ -62,13 +62,14 @@ apps/web/src/
 - **Subdominios reservados**: `www`, `admin`, `api`, `app`, `auth`, `static`, `mail`.
 - **Protección de rutas internas**: Cualquier petición externa cuya ruta comience directamente por `/platform` o `/school` recibe `404 Not Found`.
 
-## 4. Autenticación OIDC + Sesiones Cifradas en Redis (`src/lib/auth/*`)
+## 4. Autenticación, Sesiones Cifradas en Redis y BFF (`src/lib/auth/*`)
 
-- **Flujo OIDC**: Authorization Code Flow + PKCE (`S256`), `state` y `nonce` mediante `openid-client` v6 (`src/lib/auth/oidc.ts`).
+- **Flujo de autenticación**: el navegador envía usuario/contraseña por `POST` a `/api/auth/login` del BFF; el BFF autentica contra el backend propio (`POST /api/auth/login`), que emite sus propios JWT (HS256) y refresh tokens opacos con rotación obligatoria.
 - **Almacenamiento de Sesión**:
   - ID de sesión aleatorio de 256 bits (`generateSecureId(32)`).
-  - Registro de sesión cifrado con **AES-256-GCM** (`SESSION_ENCRYPTION_KEY`, 32 bytes en Base64) en Redis bajo `session:<sessionId>`.
+  - Registro de sesión (usuario + tokens) cifrado con **AES-256-GCM** (`SESSION_ENCRYPTION_KEY`, 32 bytes en Base64) en Redis bajo `session:<sessionId>`.
   - Cookie **host-only** (sin atributo `Domain`), `HttpOnly`, `SameSite=Lax`, `Path=/`, `Secure` controlado por `SESSION_COOKIE_SECURE`.
+- **Renovación**: cuando restan menos de 60 segundos de vigencia, el BFF renueva el `access_token` con el `refresh_token` (rotación obligatoria) antes de usarlo.
 
 ## 5. Protección CSRF y Proxy BFF (`src/app/api/bff/[...path]/route.ts`)
 

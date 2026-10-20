@@ -1,10 +1,10 @@
-import { LoginPromptCard } from "@/components/auth/login-prompt-card";
 import { SchoolAccessErrorView } from "@/features/school/components/school-access-error-view";
 import { SchoolHeader, type SchoolNavigationTab } from "@/features/school/components/school-header";
 import {
   SupportModeCallout,
   SupportModeTopStrip,
 } from "@/features/school/components/support-mode-banner";
+import { LoginFormCard } from "@/features/auth/components/login-form-card";
 import type { ApiResult, TenantContextDto } from "@/lib/api/types";
 import type { StoredSessionRecord } from "@/lib/auth/session-store";
 
@@ -29,7 +29,7 @@ export function SchoolShell({
 }: SchoolShellProps) {
   if (!session) {
     return (
-      <LoginPromptCard
+      <LoginFormCard
         title={`Portal Institucional · ${slug}`}
         description="Inicie sesión con su cuenta institucional o de soporte autorizado para acceder al entorno académico de este colegio."
         returnTo={returnTo}

@@ -19,9 +19,10 @@ Garantizar que cada cambio en KNOROOMS esté respaldado por pruebas automatizada
 ## 4. Archivos y directorios relevantes
 - `backend/tests/Knorooms.UnitTests/` — Pruebas unitarias de dominio, `HostSubdomainParserTests`, `PermissionCatalogTests` y `ModularArchitectureTests` (`NetArchTest`).
 - `backend/tests/Knorooms.IntegrationTests/Infrastructure/PostgresIntegrationFixture.cs` — Fixture que levanta `postgres:17-alpine` con Testcontainers, crea el rol no-superuser `knorooms_app` (`NOBYPASSRLS`) y aplica migraciones reales.
-- `backend/tests/Knorooms.IntegrationTests/Infrastructure/TestApiFactory.cs` — `WebApplicationFactory<Program>` conectada al contenedor PostgreSQL usando `knorooms_app` y `TestOidcAuthHandler`.
+- `backend/tests/Knorooms.IntegrationTests/Infrastructure/TestApiFactory.cs` — `WebApplicationFactory<Program>` conectada al contenedor PostgreSQL usando `knorooms_app`; permite reemplazar el esquema de autenticación por `TestOidcAuthHandler` o usar el validador JWT real (`useRealJwtBearer: true`).
 - `backend/tests/Knorooms.IntegrationTests/MultiTenancy/PostgresRlsIsolationTests.cs` — Pruebas de aislamiento RLS y claves foráneas compuestas entre tenants.
 - `backend/tests/Knorooms.IntegrationTests/Api/FoundationalVerticalSlicesIntegrationTests.cs` — Pruebas HTTP extremo a extremo de onboarding, aislamiento por subdominio, soporte temporal, revocación y MFA.
+- `backend/tests/Knorooms.IntegrationTests/Api/LocalAuthenticationIntegrationTests.cs` — Pruebas del login propio: credenciales válidas, rechazo de credenciales inválidas, rotación/reuso de refresh token y rechazo de tokens forjados.
 - `apps/web/src/**/__tests__/*.test.ts` — Pruebas Vitest de resolución de host, cifrado AES-256-GCM, CSRF, políticas de sesión y `returnTo`.
 
 ## 5. Reglas obligatorias
@@ -33,7 +34,8 @@ Garantizar que cada cambio en KNOROOMS esté respaldado por pruebas automatizada
    - En modo `Platform`, las tablas institucionales devuelven 0 filas.
 
 ## 6. Patrones permitidos
-- Uso de `TestOidcAuthHandler` en pruebas de integración HTTP mediante cabeceras `X-Test-Oidc-Sub`, `X-Test-Oidc-Email`, `X-Test-Oidc-Roles` y `X-Test-Oidc-Amr` para simular tokens OIDC validados con distintos claims sin depender de un servidor OIDC externo durante el test.
+- Uso de `TestOidcAuthHandler` en pruebas de integración HTTP mediante cabeceras `X-Test-Oidc-Sub`, `X-Test-Oidc-Email`, `X-Test-Oidc-Roles` y `X-Test-Oidc-Amr` para simular un principal autenticado con distintos claims sin depender de credenciales reales durante el test.
+- Uso de `TestApiFactory(..., useRealJwtBearer: true)` para ejercitar el validador JWT Bearer real (firma HS256) en pruebas end-to-end de login.
 - Pruebas puras y deterministas en Vitest inyectando `now` en las funciones de expiración de sesión (`evaluateSessionValidity`).
 
 ## 7. Antipatrones prohibidos

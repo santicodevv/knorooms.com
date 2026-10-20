@@ -9,21 +9,20 @@ public sealed class TenancyOptions
     public string PlatformSubdomain { get; set; } = "admin";
 }
 
-public sealed class OidcAuthenticationOptions
+/// <summary>
+/// Reglas de la política de contraseñas para credenciales locales de KNOROOMS.
+/// </summary>
+public sealed class PasswordPolicyOptions
 {
-    public const string SectionName = "Authentication:Oidc";
+    public const string SectionName = "Authentication:PasswordPolicy";
 
-    public string Authority { get; set; } = string.Empty;
+    public int MinimumLength { get; set; } = 12;
 
-    public string Audience { get; set; } = string.Empty;
+    public bool RequireUppercase { get; set; } = true;
 
-    public bool RequireHttpsMetadata { get; set; } = true;
+    public bool RequireLowercase { get; set; } = true;
 
-    public int ClockSkewSeconds { get; set; } = 30;
+    public bool RequireDigit { get; set; } = true;
 
-    public int ExpectedAccessTokenMaxLifetimeMinutes { get; set; } = 15;
-
-    public bool EnforceMfaForPrivilegedRoles { get; set; } = false;
-
-    public string[] AcceptedMfaClaimValues { get; set; } = ["mfa", "otp", "totp", "hwk", "swk", "urn:keycloak:acr:2fa"];
+    public bool RequireNonAlphanumeric { get; set; } = true;
 }

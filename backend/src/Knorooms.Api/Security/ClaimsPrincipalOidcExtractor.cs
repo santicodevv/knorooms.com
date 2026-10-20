@@ -1,8 +1,7 @@
 using System.Security.Claims;
 using System.Text.Json;
-using Knorooms.Api.Configuration;
+using Knorooms.Modules.Modules.Identity.Contracts;
 using Knorooms.SharedKernel.Authorization;
-using Microsoft.Extensions.Options;
 
 namespace Knorooms.Api.Security;
 
@@ -18,9 +17,9 @@ public sealed class AuthenticatedRequestIdentity
 
 public static class ClaimsPrincipalOidcExtractor
 {
-    public static bool HasMultiFactorClaim(ClaimsPrincipal principal, OidcAuthenticationOptions options)
+    public static bool HasMultiFactorClaim(ClaimsPrincipal principal, TokenSigningOptions options)
     {
-        var accepted = new HashSet<string>(options.AcceptedMfaClaimValues, StringComparer.OrdinalIgnoreCase);
+        var accepted = new HashSet<string>(MfaClaimValues, StringComparer.OrdinalIgnoreCase);
 
         foreach (var claim in principal.Claims)
         {
@@ -52,6 +51,8 @@ public static class ClaimsPrincipalOidcExtractor
         return false;
     }
 
+    private static readonly string[] MfaClaimValues = ["mfa", "otp", "totp", "hwk", "swk"];
+
     public static (bool IsPlatformAdmin, bool IsPlatformSupport) ExtractPlatformRoleFlags(ClaimsPrincipal principal)
     {
         var roles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -61,28 +62,6 @@ public static class ClaimsPrincipalOidcExtractor
             if (claim.Type is ClaimTypes.Role or "role" or "roles" or "platform_roles")
             {
                 roles.Add(claim.Value);
-            }
-            else if (claim.Type == "realm_access" && claim.Value.Contains("roles", StringComparison.Ordinal))
-            {
-                try
-                {
-                    using var doc = JsonDocument.Parse(claim.Value);
-                    if (doc.RootElement.TryGetProperty("roles", out var rolesElement) &&
-                        rolesElement.ValueKind == JsonValueKind.Array)
-                    {
-                        foreach (var item in rolesElement.EnumerateArray())
-                        {
-                            if (item.GetString() is { } r)
-                            {
-                                roles.Add(r);
-                            }
-                        }
-                    }
-                }
-                catch
-                {
-                    // Ignorar JSON inválido.
-                }
             }
         }
 

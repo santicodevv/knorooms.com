@@ -12,8 +12,8 @@ KNOROOMS implementa un **Monolito Modular** con defensa en profundidad para el a
 
 | Capa | Tecnología | Responsabilidad |
 | :--- | :--- | :--- |
-| **Frontend + BFF** | Next.js 16 (App Router), React 19, TypeScript 5, Tailwind CSS v4, shadcn/ui | Enrutamiento por subdominio (`src/proxy.ts`), Backend for Frontend (BFF), OIDC Authorization Code Flow + PKCE (`openid-client` v6), sesiones cifradas (AES-256-GCM) en Redis, cookies `HttpOnly` host-only, protección CSRF y arquitectura Feature-Sliced (`schemas/`, `api/`, `hooks/`, `components/`). |
-| **Backend API** | ASP.NET Core Web API (.NET 10 LTS), C#, FluentValidation, OpenAPI | Controladores REST delgados, validación de tokens OIDC Bearer, resolución de tenant e identidad, autorización RBAC + ABAC con denegación por defecto y respuestas `ProblemDetails` (RFC 9457). |
+| **Frontend + BFF** | Next.js 16 (App Router), React 19, TypeScript 5, Tailwind CSS v4, shadcn/ui | Enrutamiento por subdominio (`src/proxy.ts`), Backend for Frontend (BFF), formulario de login propio, sesiones cifradas (AES-256-GCM) en Redis, cookies `HttpOnly` host-only, protección CSRF y arquitectura Feature-Sliced (`schemas/`, `api/`, `hooks/`, `components/`). |
+| **Backend API** | ASP.NET Core Web API (.NET 10 LTS), C#, FluentValidation, OpenAPI | Controladores REST delgados, credenciales locales (PBKDF2-HMAC-SHA256) y emisión/validación de JWT propios (HS256), resolución de tenant e identidad, autorización RBAC + ABAC con denegación por defecto y respuestas `ProblemDetails` (RFC 9457). |
 | **Módulos de Dominio** | `Knorooms.Modules` + `Knorooms.SharedKernel` | 12 módulos lógicos (`Tenants`, `Identity`, `Authorization`, `SupportAccess`, `Audit`, `Platform`, `Students`, `Academic`, `Enrollments`, `Attendance`, `Grading`, `ReportCards`), contratos síncronos y **Transactional Outbox** (`outbox_messages`). |
 | **Persistencia y Aislamiento** | PostgreSQL 17 + Entity Framework Core 10 (`Npgsql`) | Base de datos y esquema (`public`) compartidos, `TenantId` (`UUID`), **Row-Level Security (`ENABLE` + `FORCE ROW LEVEL SECURITY`)**, rol de aplicación `knorooms_app` con `NOBYPASSRLS`, filtros globales de EF Core y claves foráneas compuestas `(tenant_id, <fk>_id)`. |
 
@@ -37,14 +37,14 @@ knorooms.com/
 │   └── workflows/
 │       └── ci.yml                      # Pipeline CI (Backend .NET 10 + PostgreSQL 17 + Frontend Next.js 16)
 ├── apps/
-│   └── web/                            # Aplicación Next.js 16 (App Router) + BFF OIDC
+│   └── web/                            # Aplicación Next.js 16 (App Router) + BFF
 │       ├── AGENTS.md                   # Instrucciones de agentes para Frontend y BFF
 │       ├── .env.example                # Variables de entorno de ejemplo del BFF
 │       └── src/
 │           ├── app/                    # Rutas App Router (público, /platform, /school, /api/auth, /api/bff)
 │           ├── components/             # Primitivas shadcn/ui (ui/) y bloques reutilizables (shared/)
-│           ├── features/               # Módulos desacoplados (platform, school: schemas, api, hooks, components)
-│           ├── lib/                    # BFF OIDC, sesiones Redis AES-256-GCM, CSRF, host parser
+│           ├── features/               # Módulos desacoplados (auth, platform, school: schemas, api, hooks, components)
+│           ├── lib/                    # BFF, sesiones Redis AES-256-GCM, CSRF, host parser
 │           └── proxy.ts                # Enrutamiento multi-tenant por subdominio (Next.js 16)
 ├── backend/
 │   ├── AGENTS.md                       # Instrucciones de agentes para Backend .NET y PostgreSQL RLS
@@ -59,12 +59,11 @@ knorooms.com/
 │       └── Knorooms.IntegrationTests/  # Pruebas reales con PostgreSQL 17 (Testcontainers) de RLS y API
 ├── docs/
 │   ├── architecture/                   # Documentación de arquitectura, multi-tenancy RLS, seguridad y API
-│   └── decisions/                      # Architecture Decision Records (ADRs 0001, 0002, 0003)
+│   └── decisions/                      # Architecture Decision Records (ADRs 0001, 0002, 0003, 0004)
 ├── infrastructure/
 │   └── docker/
-│       ├── docker-compose.yml          # PostgreSQL 17, Redis 7.4 y Keycloak 26.1 (perfil oidc opcional)
+│       ├── docker-compose.yml          # PostgreSQL 17 y Redis 7.4
 │       ├── postgres/init/              # Inicialización de roles knorooms_migrator y knorooms_app (NOBYPASSRLS)
-│       └── keycloak/                   # Realm local de ejemplo (knorooms-realm.json)
 ├── .editorconfig
 ├── .env.example
 ├── .gitattributes
@@ -97,11 +96,6 @@ Copy-Item apps/web/.env.example apps/web/.env.local
 docker compose -f infrastructure/docker/docker-compose.yml up -d postgres redis
 ```
 > El contenedor de PostgreSQL ejecuta automáticamente [`01-init-roles.sql`](./infrastructure/docker/postgres/init/01-init-roles.sql), creando el rol de migraciones (`knorooms_migrator`) y el rol de ejecución de la aplicación (`knorooms_app` con `NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS`).
-
-Si deseas levantar también el servidor OIDC local de desarrollo (**Keycloak 26** con el realm `knorooms` preconfigurado en el puerto `8080`):
-```powershell
-docker compose -f infrastructure/docker/docker-compose.yml --profile oidc up -d
-```
 
 ### 4.3. Aplicar migraciones de base de datos y políticas RLS
 Desde la raíz del repositorio:
@@ -185,17 +179,18 @@ pnpm --dir apps/web build
 - **Documentación Arquitectónica y ADRs**:
   - [Visión General y Módulos](./docs/architecture/overview-and-modules.md)
   - [Multi-Tenancy y PostgreSQL RLS](./docs/architecture/multi-tenancy-and-rls.md)
-  - [Seguridad, Autenticación OIDC, BFF y Operaciones](./docs/architecture/security-auth-and-operations.md)
+  - [Seguridad, Autenticación Propia, BFF y Operaciones](./docs/architecture/security-auth-and-operations.md)
   - [Contrato HTTP de la API](./docs/architecture/api-contract.md)
   - [ADR-0001: Monolito Modular](./docs/decisions/0001-modular-monolith-dotnet.md)
   - [ADR-0002: PostgreSQL Compartido + RLS](./docs/decisions/0002-multi-tenancy-postgres-rls.md)
-  - [ADR-0003: BFF en Next.js con OIDC PKCE](./docs/decisions/0003-oidc-bff-and-rbac-abac.md)
+  - [ADR-0003: BFF en Next.js y Autorización RBAC + ABAC](./docs/decisions/0003-oidc-bff-and-rbac-abac.md)
+  - [ADR-0004: Credenciales Locales y JWT Emitidos por el Backend](./docs/decisions/0004-local-credentials-and-backend-issued-jwt.md)
 
 ---
 
 ## 8. Configuraciones Externas Pendientes para Producción
 
-1. **Proveedor de Identidad OIDC de Producción**: seleccionar y aprovisionar el proveedor definitivo (Keycloak gestionado, Microsoft Entra External ID, Auth0 o AWS Cognito) y configurar `OIDC_ISSUER`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET` y `Authentication__Oidc__Authority`.
+1. **Clave de Firma de JWT de Producción**: generar una clave simétrica real (Base64, ≥ 32 bytes) para `Authentication__Tokens__SigningKey` y rotarla periódicamente desde un gestor de secretos.
 2. **DNS Wildcard y Certificados TLS**: configurar los registros DNS (`A`/`CNAME`) para `knorooms.com`, `admin.knorooms.com` y `*.knorooms.com` junto con certificados TLS comodín (`*.knorooms.com`).
 3. **Gestor de Secretos y Claves**: inyectar en el entorno de despliegue una clave criptográfica real de 32 bytes para `SESSION_ENCRYPTION_KEY` y las contraseñas diferenciadas de `knorooms_migrator` y `knorooms_app` desde un gestor de secretos (AWS Secrets Manager, Azure Key Vault o GitHub Secrets).
 4. **Almacenamiento S3-Compatible**: aprovisionar el bucket privado (AWS S3 / Cloudflare R2) para adjuntos de expedientes y boletines PDF firmados.

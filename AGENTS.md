@@ -24,7 +24,7 @@
 
 ### Frontend y BFF (`apps/web/`)
 - **Next.js 16 (App Router)** con **TypeScript estricto**, **Tailwind CSS v4** y **shadcn/ui**.
-- Actúa como **Backend for Frontend (BFF)**: implementa **Authorization Code Flow con PKCE (`S256`)** mediante `openid-client`, sesiones en servidor sobre **Redis** cifradas con **AES-256-GCM**, cookies `HttpOnly` host-only y protección **CSRF** (`X-CSRF-Token` + validación `Origin`).
+- Actúa como **Backend for Frontend (BFF)**: autentica usuario/contraseña contra el backend propio, mantiene sesiones en servidor sobre **Redis** cifradas con **AES-256-GCM**, entrega cookies `HttpOnly` host-only y protege con **CSRF** (`X-CSRF-Token` + validación `Origin`). Los tokens nunca llegan al navegador.
 
 ---
 
@@ -48,12 +48,12 @@ knorooms/
 │   ├── src/
 │   │   ├── Knorooms.SharedKernel/   # Primitivas de dominio, Result, Tenancy, PermissionCatalog
 │   │   ├── Knorooms.Modules/        # 12 módulos de negocio + ApplicationDbContext + RLS
-│   │   └── Knorooms.Api/            # Host HTTP, OIDC Bearer, middlewares, Controllers
+│   │   └── Knorooms.Api/            # Host HTTP, validación JWT Bearer propia, middlewares, Controllers
 │   └── tests/
 │       ├── Knorooms.UnitTests/      # Pruebas de dominio, subdominios y NetArchTest
 │       └── Knorooms.IntegrationTests/ # Pruebas PostgreSQL 17 real (Testcontainers) y RLS
 ├── infrastructure/
-│   └── docker/                      # Docker Compose (PostgreSQL 17, Redis 7.4, Keycloak opcional)
+│   └── docker/                      # Docker Compose (PostgreSQL 17, Redis 7.4)
 ├── .editorconfig
 ├── .gitignore
 ├── .gitattributes
@@ -95,7 +95,9 @@ Cada módulo separa `Contracts` (público), `Domain`, `Application` (`internal`)
 4. **Integridad referencial compuesta**:
    - Toda relación entre entidades institucionales utiliza claves foráneas compuestas `(tenant_id, <entidad>_id)` apuntando a la clave alternativa `(tenant_id, id)` de la tabla padre.
 5. **Tokens fuera del navegador**:
-   - Jamás guardar `access_token`, `refresh_token` ni `id_token` en `localStorage`, `sessionStorage` ni cookies legibles por JavaScript.
+   - Jamás guardar `access_token` ni `refresh_token` en `localStorage`, `sessionStorage` ni cookies legibles por JavaScript.
+6. **Credenciales locales y JWT propios**:
+   - KNOROOMS autentica con usuario/contraseña (PBKDF2-HMAC-SHA256, 600.000 iteraciones) y el backend emite sus propios JWT (HS256) y refresh tokens opacos con rotación obligatoria (ver `docs/decisions/0004-local-credentials-and-backend-issued-jwt.md`).
 
 ---
 
@@ -105,7 +107,7 @@ Cada módulo separa `Contracts` (público), `Domain`, `Application` (`internal`)
 - **NO** crear nuevos proyectos `.csproj` por cada módulo.
 - **NO** desactivar, omitir ni debilitar políticas RLS o ejecutar la API con un rol PostgreSQL que tenga `BYPASSRLS` o `SUPERUSER`.
 - **NO** aceptar `TenantId` desde query string, body o cabeceras del cliente para seleccionar el colegio activo.
-- **NO** implementar autenticación casera con contraseñas locales ni emisores JWT propios en producción.
+- **NO** reintroducir proveedores de identidad externos (OIDC/Keycloak) ni romper el flujo de credenciales locales + JWT propios sin una decisión de arquitectura explícita (ADR).
 - **NO** hacer públicas las clases de `Application` o `Infrastructure` de un módulo ni referenciarlas desde otro módulo (verificado por `ModularMonolithArchitectureTests`).
 - **NO** introducir MediatR, AutoMapper, repositorios genéricos innecesarios ni dependencias sin justificación.
 - **NO** usar `EnsureCreated()` en lugar de migraciones EF Core.
@@ -151,7 +153,7 @@ Antes de realizar cambios en un área especializada, lee la Skill correspondient
 - `knorooms-backend-dotnet`: desarrollo de Controllers, servicios de aplicación, `Result<T>`, FluentValidation y ProblemDetails.
 - `knorooms-efcore-postgresql`: configuraciones Fluent API, claves compuestas `(tenant_id, id)`, índices y concurrencia.
 - `knorooms-multi-tenancy`: resolución por subdominio, `ITenantContextAccessor`, `PostgresRlsInterceptor` y políticas RLS.
-- `knorooms-security-auth`: OIDC + PKCE, BFF con Redis AES-256-GCM, CSRF, RBAC/ABAC, MFA y soporte temporal.
+- `knorooms-security-auth`: credenciales locales + JWT emitidos por el backend, BFF con Redis AES-256-GCM, CSRF, RBAC/ABAC, MFA y soporte temporal.
 - `knorooms-frontend-nextjs`: App Router, `src/proxy.ts`, layouts por subdominio, Server/Client Components y `shadcn/ui`.
 - `knorooms-module-development`: guía paso a paso para ampliar o crear casos de uso dentro de los 12 módulos.
 - `knorooms-testing`: pruebas unitarias, de arquitectura y de integración con PostgreSQL real (`Testcontainers`).

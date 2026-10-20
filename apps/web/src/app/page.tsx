@@ -49,7 +49,7 @@ export default async function PublicHomePage() {
           <p className="max-w-3xl text-base leading-relaxed text-slate-600">
             KNOROOMS provee entornos institucionales dedicados por subdominio con aislamiento
             estricto de sesiones, control de acceso basado en roles y auditoría de soporte temporal
-            bajo el estándar OpenID Connect (OIDC) con Backend-for-Frontend (BFF).
+            mediante Backend-for-Frontend (BFF) con sesiones cifradas en el servidor.
           </p>
           <div className="flex flex-wrap items-center gap-3 pt-2">
             <Button asChild>
@@ -125,15 +125,14 @@ export default async function PublicHomePage() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <ShieldCheck className="size-5 text-slate-800" />
-                <CardTitle>Seguridad BFF + OIDC (Authorization Code + PKCE S256)</CardTitle>
+                <CardTitle>Seguridad BFF con sesiones cifradas</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="space-y-2 text-sm text-slate-600">
               <p>
                 El navegador nunca almacena ni recibe{" "}
-                <code className="font-mono">access_token</code>,{" "}
-                <code className="font-mono">refresh_token</code> ni{" "}
-                <code className="font-mono">id_token</code>.
+                <code className="font-mono">access_token</code> ni{" "}
+                <code className="font-mono">refresh_token</code>.
               </p>
               <p>
                 Los tokens se almacenan en Redis cifrados con <strong>AES-256-GCM</strong> y se

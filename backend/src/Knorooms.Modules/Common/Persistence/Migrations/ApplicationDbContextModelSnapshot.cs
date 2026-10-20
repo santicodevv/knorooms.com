@@ -821,6 +821,54 @@ namespace Knorooms.Modules.Common.Persistence.Migrations
                     b.ToTable("grade_entries", (string)null);
                 });
 
+            modelBuilder.Entity("Knorooms.Modules.Modules.Identity.Domain.RefreshToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<DateTimeOffset>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at_utc");
+
+                    b.Property<Guid?>("ReplacedByTokenId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("replaced_by_token_id");
+
+                    b.Property<DateTimeOffset?>("RevokedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at_utc");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("token_hash");
+
+                    b.Property<DateTimeOffset?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ux_refresh_tokens_token_hash");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_refresh_tokens_user_id");
+
+                    b.ToTable("refresh_tokens", (string)null);
+                });
+
             modelBuilder.Entity("Knorooms.Modules.Modules.Identity.Domain.UserAccount", b =>
                 {
                     b.Property<Guid>("Id")
@@ -849,6 +897,12 @@ namespace Knorooms.Modules.Common.Persistence.Migrations
                         .HasColumnType("character varying(191)")
                         .HasColumnName("external_subject");
 
+                    b.Property<int>("FailedLoginAttempts")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("failed_login_attempts");
+
                     b.Property<string>("IdentityProviderIssuer")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -870,6 +924,15 @@ namespace Knorooms.Modules.Common.Persistence.Migrations
                     b.Property<DateTimeOffset?>("LastAuthenticatedAtUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("last_authenticated_at_utc");
+
+                    b.Property<DateTimeOffset?>("LockedUntilUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("locked_until_utc");
+
+                    b.Property<string>("PasswordHash")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("password_hash");
 
                     b.Property<DateTimeOffset?>("SessionRevokedBeforeUtc")
                         .HasColumnType("timestamp with time zone")
@@ -1538,6 +1601,15 @@ namespace Knorooms.Modules.Common.Persistence.Migrations
                         .HasForeignKey("TenantId", "SubjectId")
                         .HasPrincipalKey("TenantId", "Id")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Knorooms.Modules.Modules.Identity.Domain.RefreshToken", b =>
+                {
+                    b.HasOne("Knorooms.Modules.Modules.Identity.Domain.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 

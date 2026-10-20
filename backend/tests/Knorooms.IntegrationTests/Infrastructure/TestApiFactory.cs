@@ -23,6 +23,7 @@ public sealed class TestOidcAuthHandler(
     public const string RolesHeader = "X-Test-Oidc-Roles";
     public const string MfaHeader = "X-Test-Oidc-Amr";
     public const string IssuedAtHeader = "X-Test-Oidc-Iat";
+    public const string Issuer = "https://idp.knorooms.test/realms/knorooms";
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
@@ -41,7 +42,7 @@ public sealed class TestOidcAuthHandler(
         var claims = new List<Claim>
         {
             new("sub", sub),
-            new("iss", "https://idp.knorooms.test/realms/knorooms"),
+            new("iss", Issuer),
             new("email", email),
             new("name", name),
             new("iat", iat)
@@ -68,7 +69,7 @@ public sealed class TestOidcAuthHandler(
     }
 }
 
-public sealed class TestApiFactory(string appRoleConnectionString, bool enforceMfa = false)
+public sealed class TestApiFactory(string appRoleConnectionString, bool enforceMfa = false, bool useRealJwtBearer = false)
     : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -85,23 +86,26 @@ public sealed class TestApiFactory(string appRoleConnectionString, bool enforceM
                 ["Database:EnableOutboxWorker"] = "false",
                 ["Tenancy:BaseDomain"] = "localhost",
                 ["Tenancy:PlatformSubdomain"] = "admin",
-                ["Authentication:Oidc:Authority"] = "https://idp.knorooms.test/realms/knorooms",
-                ["Authentication:Oidc:Audience"] = "knorooms-api",
-                ["Authentication:Oidc:RequireHttpsMetadata"] = "false",
-                ["Authentication:Oidc:EnforceMfaForPrivilegedRoles"] = enforceMfa ? "true" : "false"
+                ["Authentication:Tokens:Issuer"] = TestOidcAuthHandler.Issuer,
+                ["Authentication:Tokens:Audience"] = "knorooms-api",
+                ["Authentication:Tokens:SigningKey"] = "S25vcm9vbXNUZXN0VG9rZW5TaWduaW5nS2V5TXVzdEJlMzJCeXRlc0xvbmc=",
+                ["Authentication:Tokens:EnforceMfaForPrivilegedRoles"] = enforceMfa ? "true" : "false"
             });
         });
 
-        builder.ConfigureServices(services =>
+        if (!useRealJwtBearer)
         {
-            services.AddAuthentication(options =>
+            builder.ConfigureServices(services =>
             {
-                options.DefaultAuthenticateScheme = TestOidcAuthHandler.SchemeName;
-                options.DefaultChallengeScheme = TestOidcAuthHandler.SchemeName;
-            })
-            .AddScheme<AuthenticationSchemeOptions, TestOidcAuthHandler>(
-                TestOidcAuthHandler.SchemeName,
-                _ => { });
-        });
+                services.AddAuthentication(options =>
+                {
+                    options.DefaultAuthenticateScheme = TestOidcAuthHandler.SchemeName;
+                    options.DefaultChallengeScheme = TestOidcAuthHandler.SchemeName;
+                })
+                .AddScheme<AuthenticationSchemeOptions, TestOidcAuthHandler>(
+                    TestOidcAuthHandler.SchemeName,
+                    _ => { });
+            });
+        }
     }
 }

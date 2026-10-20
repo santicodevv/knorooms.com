@@ -48,6 +48,18 @@ internal sealed class UserAccountConfiguration : IEntityTypeConfiguration<UserAc
             .HasColumnName("is_active")
             .IsRequired();
 
+        builder.Property(x => x.PasswordHash)
+            .HasColumnName("password_hash")
+            .HasMaxLength(256);
+
+        builder.Property(x => x.FailedLoginAttempts)
+            .HasColumnName("failed_login_attempts")
+            .IsRequired()
+            .HasDefaultValue(0);
+
+        builder.Property(x => x.LockedUntilUtc)
+            .HasColumnName("locked_until_utc");
+
         builder.Property(x => x.LastAuthenticatedAtUtc)
             .HasColumnName("last_authenticated_at_utc");
 

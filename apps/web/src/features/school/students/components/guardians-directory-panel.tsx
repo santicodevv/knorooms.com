@@ -86,7 +86,7 @@ export function GuardiansDirectoryPanel({
               Alta de Responsable o Tutor Familiar
             </span>
             <span className="font-mono text-[11px] text-slate-400">
-              Vinculación automática por correo OIDC si existe cuenta
+              Vinculación automática por correo si existe cuenta
             </span>
           </div>
 
@@ -165,9 +165,7 @@ export function GuardiansDirectoryPanel({
                 Responsable Familiar
               </TableHead>
               <TableHead className="text-xs font-semibold text-slate-600">Contacto</TableHead>
-              <TableHead className="text-xs font-semibold text-slate-600">
-                Cuenta Portal OIDC
-              </TableHead>
+              <TableHead className="text-xs font-semibold text-slate-600">Cuenta Portal</TableHead>
               <TableHead className="text-right text-xs font-semibold text-slate-600">
                 Estudiantes Vinculados
               </TableHead>
@@ -210,7 +208,7 @@ export function GuardiansDirectoryPanel({
                     </span>
                   ) : (
                     <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
-                      Sin sesión OIDC previa
+                      Sin sesión previa
                     </span>
                   )}
                 </TableCell>

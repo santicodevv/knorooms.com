@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   Building2,
+  ClipboardCheck,
   ContactRound,
   GraduationCap,
   ShieldAlert,
@@ -13,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import type { TenantContextDto } from "@/lib/api/types";
 
 export type SchoolNavigationTab =
-  "overview" | "academic" | "students" | "members" | "support-access";
+  "overview" | "academic" | "students" | "evaluations" | "members" | "support-access";
 
 interface SchoolHeaderProps {
   context: TenantContextDto;
@@ -33,6 +34,12 @@ const NAV_ITEMS: Array<{
   { tab: "overview", href: "/", label: "Contexto y Permisos", Icon: ShieldCheck },
   { tab: "academic", href: "/academic", label: "Estructura Académica", Icon: GraduationCap },
   { tab: "students", href: "/students", label: "Estudiantes y Matrículas", Icon: ContactRound },
+  {
+    tab: "evaluations",
+    href: "/evaluations",
+    label: "Asistencia y Evaluaciones",
+    Icon: ClipboardCheck,
+  },
   { tab: "members", href: "/members", label: "Miembros Institucionales", Icon: Users },
   { tab: "support-access", href: "/support-access", label: "Acceso de Soporte", Icon: ShieldAlert },
 ];

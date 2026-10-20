@@ -6,7 +6,7 @@ Consulta primero el archivo raíz [`/AGENTS.md`](../AGENTS.md). Este documento d
 
 - `src/Knorooms.SharedKernel`: primitivas sin dependencias de infraestructura (`Entity`, `TenantScopedEntity`, `IDomainEvent`, `Result<T>`, `Error`, `ITenantContextAccessor`, `HostSubdomainParser`, `PermissionCatalog`).
 - `src/Knorooms.Modules`: contiene el `ApplicationDbContext` compartido (`Common/Persistence/`), el interceptor RLS (`PostgresRlsInterceptor`), las migraciones y los 12 módulos en `Modules/<NombreModulo>/`.
-- `src/Knorooms.Api`: capa HTTP (configuración OIDC, `TenantAndIdentityResolutionMiddleware`, `PermissionAuthorizationHandler`, validadores FluentValidation y Controllers REST).
+- `src/Knorooms.Api`: capa HTTP (validación JWT Bearer propia, `TenantAndIdentityResolutionMiddleware`, `PermissionAuthorizationHandler`, validadores FluentValidation y Controllers REST).
 - `tests/Knorooms.UnitTests`: pruebas de dominio, parser de host y arquitectura (`NetArchTest`).
 - `tests/Knorooms.IntegrationTests`: pruebas contra PostgreSQL 17 real (`Testcontainers.PostgreSql`) bajo el rol `knorooms_app` (`NOBYPASSRLS`).
 

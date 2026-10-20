@@ -17,7 +17,7 @@ Establecer las normas de implementación para la API HTTP (`Knorooms.Api`) y los
 - Para análisis puramente de esquema SQL o políticas RLS sin cambios en servicios o endpoints (usar `knorooms-efcore-postgresql` o `knorooms-multi-tenancy`).
 
 ## 4. Archivos y directorios relevantes
-- `backend/src/Knorooms.Api/Program.cs` — Configuración del host, DI, autenticación OIDC y pipeline HTTP.
+- `backend/src/Knorooms.Api/Program.cs` — Configuración del host, DI, autenticación con JWT propios y pipeline HTTP.
 - `backend/src/Knorooms.Api/Controllers/` — Controladores HTTP REST (`PlatformController`, `TenantController`, `IdentityController`, `HealthController`).
 - `backend/src/Knorooms.Api/Validation/` — Validadores `FluentValidation` para peticiones de entrada.
 - `backend/src/Knorooms.Api/Common/ResultProblemDetailsExtensions.cs` — Traducción uniforme de `Result` y `ValidationResult` a `ProblemDetails` (`application/problem+json`).

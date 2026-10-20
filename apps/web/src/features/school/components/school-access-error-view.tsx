@@ -102,8 +102,7 @@ export function SchoolAccessErrorView({
                 <CardTitle>Autenticación Multifactor (MFA) Requerida (403)</CardTitle>
               </div>
               <CardDescription>
-                Esta institución exige verificación de segundo factor (MFA) activa en su sesión
-                OIDC.
+                Esta institución exige verificación de segundo factor (MFA) activa en su sesión.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2 text-sm text-slate-600">
@@ -114,9 +113,9 @@ export function SchoolAccessErrorView({
             </CardContent>
             <CardFooter>
               <Button asChild>
-                <a href={`/api/auth/login?returnTo=${encodeURIComponent(returnTo)}`}>
+                <a href={returnTo}>
                   <KeyRound className="size-4" />
-                  Reautenticar con MFA
+                  Volver a iniciar sesión
                 </a>
               </Button>
             </CardFooter>

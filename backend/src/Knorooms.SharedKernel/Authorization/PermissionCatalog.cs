@@ -94,7 +94,7 @@ public static class PermissionCatalog
 
 public static class SystemRoleCatalog
 {
-    // Roles globales (en token OIDC / usuario de plataforma)
+    // Roles globales (usuario de plataforma)
     public const string PlatformSuperAdmin = "PlatformAdmin";
     public const string PlatformSupportAgent = "PlatformSupport";
 

@@ -40,7 +40,7 @@ Garantizar que todo desarrollo en `apps/web/` mantenga una arquitectura **altame
    - Si un patrón visual se repite en 2 o más vistas (por ejemplo, encabezados de tabla con botón de refresco, tarjetas de formulario, badges de estado), extraerlo a `src/components/shared/`.
 3. **Idioma**: toda la interfaz de usuario, etiquetas, placeholders, mensajes de validación Zod y estados vacíos o de error deben estar en **español** (`<html lang="es">`). Todos los nombres de variables, tipos, funciones, hooks y archivos deben estar en **inglés**.
 4. **Enrutamiento en Next.js 16 (`src/proxy.ts`)**: usar exclusivamente `src/proxy.ts` (función `proxy`). Prohibir el acceso directo por ruta a `/platform` o `/school` cuando el `Host` no corresponda.
-5. **Módulos con secretos marcados con `import 'server-only'`**: cualquier archivo que acceda a Redis, claves de cifrado o cliente OIDC debe importar `'server-only'` en la primera línea.
+5. **Módulos con secretos marcados con `import 'server-only'`**: cualquier archivo que acceda a Redis, claves de cifrado o al cliente de autenticación del backend debe importar `'server-only'` en la primera línea.
 
 ## 6. Patrones permitidos
 - **Patrón Hook + Orquestador Delgado + Componentes Presentacionales**:
@@ -50,7 +50,7 @@ Garantizar que todo desarrollo en `apps/web/` mantenga una arquitectura **altame
 ## 7. Antipatrones prohibidos
 - Crear "mega-componentes" (>200 líneas) que mezclen esquemas Zod, `useForm`, `bffFetch` y cientos de líneas de JSX en un mismo archivo.
 - Duplicar estructuras de `Card` + `CardHeader` + `RefreshCw` o bloques de `EmptyState` manualmente en cada tabla en lugar de usar `<SectionCard />`, `<RefreshButton />` y `<EmptyState />`.
-- Guardar tokens OIDC o datos sensibles en `localStorage` o `sessionStorage`.
+- Guardar tokens o datos sensibles en `localStorage` o `sessionStorage`.
 - Usar `any` o deshabilitar reglas de TypeScript (`@ts-ignore`).
 
 ## 8. Flujo recomendado paso a paso para agregar una nueva funcionalidad de UI

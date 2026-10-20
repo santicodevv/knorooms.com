@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { revokeBackendRefreshToken } from "@/lib/auth/backend-auth";
 import { verifyCsrfProtection } from "@/lib/auth/csrf";
-import { buildOidcLogoutUrl, deriveRequestOrigin } from "@/lib/auth/oidc";
+import { deriveRequestOrigin } from "@/lib/auth/request-origin";
 import {
   getSessionCookieName,
   getValidSessionById,
@@ -14,7 +15,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const session = await getValidSessionById(sessionId);
 
   if (!session) {
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         title: "Sesión no activa",
         status: 401,
@@ -28,9 +29,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         },
       },
     );
+    response.cookies.set(cookieName, "", {
+      httpOnly: true,
+      secure: isSessionCookieSecure(),
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
+    });
+    return response;
   }
 
-  const { host, origin } = deriveRequestOrigin(request);
+  const { host } = deriveRequestOrigin(request);
   const csrfCheck = verifyCsrfProtection({
     method: request.method,
     headerToken: request.headers.get("x-csrf-token"),
@@ -56,18 +65,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const idTokenHint = session.tokens.idToken;
+  await revokeBackendRefreshToken(session.tokens.refreshToken);
   await revokeSession(session.sessionId);
-
-  const logoutUrl = await buildOidcLogoutUrl({
-    origin,
-    idTokenHint,
-  });
 
   const response = NextResponse.json(
     {
       loggedOut: true,
-      logoutUrl,
+      redirectTo: "/",
     },
     {
       status: 200,

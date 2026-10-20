@@ -49,7 +49,7 @@ public static class DatabaseSeedAndInitializer
         ApplicationDbContext dbContext,
         ITenantContextAccessor tenantContextAccessor,
         IPlatformInstitutionService platformService,
-        string idpIssuer,
+        string tokenIssuer,
         ILogger logger,
         CancellationToken cancellationToken = default)
     {
@@ -67,9 +67,11 @@ public static class DatabaseSeedAndInitializer
             return;
         }
 
+        const string developmentPassword = "Knorooms2026!";
+
         var superAdminResult = UserAccount.Create(
             externalSubject: "dev-superadmin-sub",
-            issuer: idpIssuer,
+            issuer: tokenIssuer,
             email: "superadmin@knorooms.local",
             displayName: "Superadministrador KNOROOMS (Dev)",
             isPlatformAdmin: true,
@@ -77,29 +79,45 @@ public static class DatabaseSeedAndInitializer
 
         var supportResult = UserAccount.Create(
             externalSubject: "dev-support-sub",
-            issuer: idpIssuer,
+            issuer: tokenIssuer,
             email: "soporte@knorooms.local",
             displayName: "Soporte Técnico KNOROOMS (Dev)",
             isPlatformAdmin: false,
             isPlatformSupport: true);
 
         var directorAResult = UserAccount.Create(
-            externalSubject: "dev-director-colegio-a-sub",
-            issuer: idpIssuer,
+            externalSubject: "a0000000-0000-0000-0000-000000000003",
+            issuer: tokenIssuer,
             email: "direccion@colegio-a.edu.do",
-            displayName: "Dirección Colegio A (Dev)");
+            displayName: "Dirección Colegio A");
+
+        var teacherAResult = UserAccount.Create(
+            externalSubject: "a0000000-0000-0000-0000-000000000004",
+            issuer: tokenIssuer,
+            email: "docente@colegio-a.edu.do",
+            displayName: "Docente Colegio A");
 
         var directorBResult = UserAccount.Create(
-            externalSubject: "dev-director-colegio-b-sub",
-            issuer: idpIssuer,
+            externalSubject: "a0000000-0000-0000-0000-000000000005",
+            issuer: tokenIssuer,
             email: "direccion@colegio-b.edu.do",
-            displayName: "Dirección Colegio B (Dev)");
+            displayName: "Dirección Colegio B");
 
-        dbContext.Users.AddRange(
+        var seededUsers = new[]
+        {
             superAdminResult.Value,
             supportResult.Value,
             directorAResult.Value,
-            directorBResult.Value);
+            teacherAResult.Value,
+            directorBResult.Value
+        };
+
+        foreach (var user in seededUsers)
+        {
+            user.SetPasswordHash(LocalPassword.Hash(developmentPassword));
+        }
+
+        dbContext.Users.AddRange(seededUsers);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var colegioA = await platformService.CreateInstitutionAsync(
@@ -117,6 +135,11 @@ public static class DatabaseSeedAndInitializer
             await platformService.AssignInitialAdministratorAsync(
                 superAdminResult.Value.Id,
                 new AssignInitialAdministratorCommand(colegioA.Value.Id, directorAResult.Value.Email),
+                cancellationToken);
+
+            await platformService.AssignInitialAdministratorAsync(
+                superAdminResult.Value.Id,
+                new AssignInitialAdministratorCommand(colegioA.Value.Id, teacherAResult.Value.Email),
                 cancellationToken);
         }
 

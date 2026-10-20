@@ -36,6 +36,7 @@ public sealed class ApplicationDbContext(
 
     // 2. Identity
     public DbSet<UserAccount> Users => Set<UserAccount>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     // 3. Authorization
     public DbSet<PermissionRecord> Permissions => Set<PermissionRecord>();

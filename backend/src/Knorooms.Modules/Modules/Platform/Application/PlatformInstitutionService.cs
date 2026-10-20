@@ -224,7 +224,7 @@ internal sealed class PlatformInstitutionService(
         {
             return Result.Failure<AssignedAdministratorResultDto>(Error.NotFound(
                 "User.NotFoundByEmail",
-                $"No existe un usuario activo con el correo '{normalizedEmail}'. El usuario debe haber iniciado sesión vía OIDC al menos una vez."));
+                $"No existe un usuario activo con el correo '{normalizedEmail}'. El usuario debe estar registrado en KNOROOMS antes de asignarlo como administrador."));
         }
 
         var currentScope = tenantContextAccessor.Current;

@@ -1,9 +1,9 @@
 import { headers } from "next/headers";
 import { Server } from "lucide-react";
-import { LoginPromptCard } from "@/components/auth/login-prompt-card";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { PlatformConsole } from "@/components/platform/platform-console";
 import { Badge } from "@/components/ui/badge";
+import { LoginFormCard } from "@/features/auth/components/login-form-card";
 import { serverApiFetch } from "@/lib/api/server-api";
 import type { InstitutionDto, MeResponseDto } from "@/lib/api/types";
 import { getServerSession } from "@/lib/auth/session-store";
@@ -23,7 +23,7 @@ export default async function PlatformAdministrationPage() {
 
   if (!session) {
     return (
-      <LoginPromptCard
+      <LoginFormCard
         title="Consola de Administración Global"
         description="Inicie sesión con su cuenta de operador de plataforma para gestionar las instituciones educativas registradas en KNOROOMS."
         returnTo="/"

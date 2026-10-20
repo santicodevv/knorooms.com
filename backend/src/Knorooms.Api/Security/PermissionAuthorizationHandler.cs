@@ -1,5 +1,6 @@
 using Knorooms.Api.Configuration;
 using Knorooms.Modules.Modules.Authorization.Contracts;
+using Knorooms.Modules.Modules.Identity.Contracts;
 using Knorooms.SharedKernel.Authorization;
 using Knorooms.SharedKernel.Tenancy;
 using Microsoft.AspNetCore.Authorization;
@@ -47,7 +48,7 @@ public sealed class KnoroomsAuthorizationPolicyProvider(IOptions<AuthorizationOp
 public sealed class PermissionAuthorizationHandler(
     IHttpContextAccessor httpContextAccessor,
     ITenantContextAccessor tenantContextAccessor,
-    IOptions<OidcAuthenticationOptions> oidcOptions) : AuthorizationHandler<PermissionRequirement>
+    IOptions<TokenSigningOptions> tokenOptions) : AuthorizationHandler<PermissionRequirement>
 {
     protected override Task HandleRequirementAsync(
         AuthorizationHandlerContext context,
@@ -66,7 +67,7 @@ public sealed class PermissionAuthorizationHandler(
         }
 
         var scope = tenantContextAccessor.Current;
-        var enforceMfa = oidcOptions.Value.EnforceMfaForPrivilegedRoles;
+        var enforceMfa = tokenOptions.Value.EnforceMfaForPrivilegedRoles;
 
         // 1. Permisos de plataforma global (solo válidos en host admin.*)
         if (PermissionCatalog.IsPlatformScoped(requirement.PermissionCode))

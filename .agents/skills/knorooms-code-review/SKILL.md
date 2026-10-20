@@ -26,7 +26,7 @@ Realizar revisiones rigurosas de cambios en KNOROOMS antes de integrarlos, detec
    - ¿Alguna nueva tabla institucional carece de `ENABLE` + `FORCE ROW LEVEL SECURITY` o de clave foránea compuesta `(tenant_id, <fk>_id)`?
    - ¿Se usa `.IgnoreQueryFilters()` fuera de un flujo de plataforma estrictamente justificado?
 2. **Seguridad y Autenticación (Severidad Crítica)**:
-   - ¿Se expone algún token (`access_token`, `refresh_token`, `id_token`) al navegador o en logs?
+   - ¿Se expone algún token (`access_token`, `refresh_token`) al navegador o en logs?
    - ¿Falta `[Authorize(Policy = PermissionCatalog....)]` en algún endpoint nuevo?
    - ¿Las rutas mutantes del BFF verifican `Origin` y `X-CSRF-Token`?
 3. **Arquitectura Modular (Severidad Alta)**:
@@ -45,7 +45,7 @@ Realizar revisiones rigurosas de cambios en KNOROOMS antes de integrarlos, detec
 
 ## 8. Flujo recomendado paso a paso
 1. Inspeccionar `git status` y `git diff` para identificar todos los archivos modificados.
-2. Evaluar cada archivo contra la matriz de Seguridad Multi-Tenant, BFF/OIDC, Límites Modulares y EF Core.
+2. Evaluar cada archivo contra la matriz de Seguridad Multi-Tenant, BFF/Autenticación, Límites Modulares y EF Core.
 3. Ejecutar la suite completa de verificación local (formato, build, tests unitarios, tests de integración).
 4. Emitir el dictamen de revisión o corregir inmediatamente cualquier hallazgo bloqueante.
 

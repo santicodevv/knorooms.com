@@ -1,7 +1,7 @@
 import "server-only";
 import { cookies } from "next/headers";
+import { refreshBackendTokens, type SessionUser } from "@/lib/auth/backend-auth";
 import { decryptJson, encryptJson, generateSecureId } from "@/lib/auth/crypto";
-import { refreshOidcTokens } from "@/lib/auth/oidc";
 import { getRedisClient } from "@/lib/auth/redis";
 import {
   evaluateSessionLifetime,
@@ -9,18 +9,11 @@ import {
   shouldRefreshAccessToken,
 } from "@/lib/auth/session-policy";
 
-export const OIDC_TRANSACTION_TTL_SECONDS = 600; // 10 minutes
-
-export interface SessionUser {
-  sub: string;
-  name: string;
-  email: string;
-}
+export type { SessionUser };
 
 export interface SessionTokens {
   accessToken: string;
-  refreshToken?: string;
-  idToken?: string;
+  refreshToken: string;
   accessTokenExpiresAt?: number;
 }
 
@@ -42,16 +35,6 @@ export interface PublicSessionView {
   expiresAt: string | null;
 }
 
-export interface OidcTransactionRecord {
-  txId: string;
-  state: string;
-  nonce: string;
-  codeVerifier: string;
-  returnTo: string;
-  host: string;
-  createdAt: number;
-}
-
 export function isSessionCookieSecure(): boolean {
   const raw = (process.env.SESSION_COOKIE_SECURE ?? "true").trim().toLowerCase();
   return raw !== "false" && raw !== "0";
@@ -61,66 +44,12 @@ export function getSessionCookieName(): string {
   return isSessionCookieSecure() ? "__Host-knorooms_session" : "knorooms_session";
 }
 
-export function getOidcTransactionCookieName(): string {
-  return isSessionCookieSecure() ? "__Host-knorooms_oidc_tx" : "knorooms_oidc_tx";
-}
-
 function sessionRedisKey(sessionId: string): string {
   return `session:${sessionId}`;
 }
 
 function userSessionsIndexKey(sub: string): string {
   return `user-sessions:${sub}`;
-}
-
-function oidcTransactionRedisKey(txId: string): string {
-  return `oidc-tx:${txId}`;
-}
-
-export async function createOidcTransaction(params: {
-  state: string;
-  nonce: string;
-  codeVerifier: string;
-  returnTo: string;
-  host: string;
-}): Promise<OidcTransactionRecord> {
-  const redis = getRedisClient();
-  const txId = generateSecureId(32);
-  const record: OidcTransactionRecord = {
-    txId,
-    state: params.state,
-    nonce: params.nonce,
-    codeVerifier: params.codeVerifier,
-    returnTo: params.returnTo,
-    host: params.host,
-    createdAt: Date.now(),
-  };
-
-  const encrypted = encryptJson(record);
-  await redis.set(oidcTransactionRedisKey(txId), encrypted, "EX", OIDC_TRANSACTION_TTL_SECONDS);
-
-  return record;
-}
-
-export async function consumeOidcTransaction(txId: string): Promise<OidcTransactionRecord | null> {
-  if (!txId) {
-    return null;
-  }
-
-  const redis = getRedisClient();
-  const key = oidcTransactionRedisKey(txId);
-  const encrypted = await redis.get(key);
-  if (!encrypted) {
-    return null;
-  }
-
-  await redis.del(key);
-
-  try {
-    return decryptJson<OidcTransactionRecord>(encrypted);
-  } catch {
-    return null;
-  }
 }
 
 export async function createSession(params: {
@@ -261,12 +190,16 @@ export async function getValidSessionById(
     }
 
     try {
-      const refreshed = await refreshOidcTokens(session.tokens.refreshToken);
+      const refreshed = await refreshBackendTokens(session.tokens.refreshToken);
+      if (!refreshed) {
+        await revokeSession(sessionId);
+        return null;
+      }
+
       session.tokens = {
         accessToken: refreshed.accessToken,
-        refreshToken: refreshed.refreshToken ?? session.tokens.refreshToken,
-        idToken: refreshed.idToken ?? session.tokens.idToken,
-        accessTokenExpiresAt: refreshed.accessTokenExpiresAt,
+        refreshToken: refreshed.refreshToken,
+        accessTokenExpiresAt: new Date(refreshed.accessTokenExpiresAtUtc).getTime(),
       };
     } catch {
       await revokeSession(sessionId);
@@ -325,15 +258,5 @@ export function buildSessionCookieOptions(maxAgeSeconds?: number) {
     sameSite: "lax" as const,
     path: "/",
     maxAge: maxAgeSeconds ?? policy.absoluteTimeoutMinutes * 60,
-  };
-}
-
-export function buildOidcTransactionCookieOptions() {
-  return {
-    httpOnly: true,
-    secure: isSessionCookieSecure(),
-    sameSite: "lax" as const,
-    path: "/",
-    maxAge: OIDC_TRANSACTION_TTL_SECONDS,
   };
 }

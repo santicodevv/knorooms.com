@@ -3,10 +3,12 @@ using Knorooms.Api.Configuration;
 using Knorooms.Api.Security;
 using Knorooms.Modules;
 using Knorooms.Modules.Common.Persistence;
+using Knorooms.Modules.Modules.Identity.Contracts;
 using Knorooms.Modules.Modules.Platform.Contracts;
 using Knorooms.SharedKernel.Tenancy;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,8 +23,10 @@ builder.Logging.AddJsonConsole(options =>
 
 builder.Services.Configure<TenancyOptions>(
     builder.Configuration.GetSection(TenancyOptions.SectionName));
-builder.Services.Configure<OidcAuthenticationOptions>(
-    builder.Configuration.GetSection(OidcAuthenticationOptions.SectionName));
+builder.Services.Configure<TokenSigningOptions>(
+    builder.Configuration.GetSection(TokenSigningOptions.SectionName));
+builder.Services.Configure<PasswordPolicyOptions>(
+    builder.Configuration.GetSection(PasswordPolicyOptions.SectionName));
 
 var enableOutboxWorker = builder.Configuration.GetValue("Database:EnableOutboxWorker", true);
 
@@ -34,33 +38,29 @@ builder.Services.AddControllers();
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddOpenApi();
 
-var oidcSettings = builder.Configuration
-    .GetSection(OidcAuthenticationOptions.SectionName)
-    .Get<OidcAuthenticationOptions>() ?? new OidcAuthenticationOptions();
-
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+    .AddJwtBearer();
+
+builder.Services
+    .AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+    .Configure<IOptions<TokenSigningOptions>>((options, tokenOptionsAccessor) =>
     {
+        var tokenSettings = tokenOptionsAccessor.Value;
         options.MapInboundClaims = false;
-        if (!string.IsNullOrWhiteSpace(oidcSettings.Authority))
-        {
-            options.Authority = oidcSettings.Authority;
-        }
-
-        if (!string.IsNullOrWhiteSpace(oidcSettings.Audience))
-        {
-            options.Audience = oidcSettings.Audience;
-        }
-
-        options.RequireHttpsMetadata = oidcSettings.RequireHttpsMetadata;
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = !string.IsNullOrWhiteSpace(oidcSettings.Authority),
-            ValidateAudience = !string.IsNullOrWhiteSpace(oidcSettings.Audience),
+            ValidateIssuer = true,
+            ValidIssuer = tokenSettings.Issuer,
+            ValidateAudience = true,
+            ValidAudience = tokenSettings.Audience,
             ValidateLifetime = true,
             RequireExpirationTime = true,
-            ClockSkew = TimeSpan.FromSeconds(Math.Clamp(oidcSettings.ClockSkewSeconds, 0, 120)),
+            RequireSignedTokens = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(tokenSettings.GetSigningKeyBytes()),
+            ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
+            ClockSkew = TimeSpan.FromSeconds(Math.Clamp(tokenSettings.ClockSkewSeconds, 0, 120)),
             NameClaimType = "name",
             RoleClaimType = "roles"
         };
@@ -104,14 +104,12 @@ if (app.Configuration.GetValue("Database:AutoMigrateOnStartup", false))
     if (app.Environment.IsDevelopment() && app.Configuration.GetValue("Database:SeedDevelopmentData", false))
     {
         var platformService = scope.ServiceProvider.GetRequiredService<IPlatformInstitutionService>();
-        var issuer = string.IsNullOrWhiteSpace(oidcSettings.Authority)
-            ? "http://localhost:8080/realms/knorooms"
-            : oidcSettings.Authority;
+        var tokenOptions = scope.ServiceProvider.GetRequiredService<IOptions<TokenSigningOptions>>().Value;
         await DatabaseSeedAndInitializer.SeedDevelopmentSampleDataAsync(
             db,
             tenantAccessor,
             platformService,
-            issuer,
+            tokenOptions.Issuer,
             logger);
     }
 }
