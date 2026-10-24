@@ -108,6 +108,7 @@ public sealed class FoundationalVerticalSlicesIntegrationTests(PostgresIntegrati
             var res = await client.SendAsync(createAReq);
             Assert.Equal(HttpStatusCode.Created, res.StatusCode);
             institutionA = (await res.Content.ReadFromJsonAsync<InstitutionDto>())!;
+            await SubscriptionTestData.EnableAsync(factory.Services, institutionA.Id);
         }
 
         using (var createBReq = CreateRequest(
@@ -122,6 +123,7 @@ public sealed class FoundationalVerticalSlicesIntegrationTests(PostgresIntegrati
             var res = await client.SendAsync(createBReq);
             Assert.Equal(HttpStatusCode.Created, res.StatusCode);
             institutionB = (await res.Content.ReadFromJsonAsync<InstitutionDto>())!;
+            await SubscriptionTestData.EnableAsync(factory.Services, institutionB.Id);
         }
 
         using (var assignAdminAReq = CreateRequest(
@@ -478,6 +480,7 @@ public sealed class FoundationalVerticalSlicesIntegrationTests(PostgresIntegrati
             var res = await client.SendAsync(createAReq);
             Assert.Equal(HttpStatusCode.Created, res.StatusCode);
             institutionA = (await res.Content.ReadFromJsonAsync<InstitutionDto>())!;
+            await SubscriptionTestData.EnableAsync(factory.Services, institutionA.Id);
         }
 
         using (var createBReq = CreateRequest(
@@ -492,6 +495,7 @@ public sealed class FoundationalVerticalSlicesIntegrationTests(PostgresIntegrati
             var res = await client.SendAsync(createBReq);
             Assert.Equal(HttpStatusCode.Created, res.StatusCode);
             institutionB = (await res.Content.ReadFromJsonAsync<InstitutionDto>())!;
+            await SubscriptionTestData.EnableAsync(factory.Services, institutionB.Id);
         }
 
         foreach (var (instId, email) in new[]
@@ -751,6 +755,7 @@ public sealed class FoundationalVerticalSlicesIntegrationTests(PostgresIntegrati
             var res = await client.SendAsync(createAReq);
             Assert.Equal(HttpStatusCode.Created, res.StatusCode);
             institutionA = (await res.Content.ReadFromJsonAsync<InstitutionDto>())!;
+            await SubscriptionTestData.EnableAsync(factory.Services, institutionA.Id);
         }
 
         using (var createBReq = CreateRequest(
@@ -765,6 +770,7 @@ public sealed class FoundationalVerticalSlicesIntegrationTests(PostgresIntegrati
             var res = await client.SendAsync(createBReq);
             Assert.Equal(HttpStatusCode.Created, res.StatusCode);
             institutionB = (await res.Content.ReadFromJsonAsync<InstitutionDto>())!;
+            await SubscriptionTestData.EnableAsync(factory.Services, institutionB.Id);
         }
 
         foreach (var (instId, email) in new[]
@@ -1047,6 +1053,7 @@ public sealed class FoundationalVerticalSlicesIntegrationTests(PostgresIntegrati
         {
             var res = await client.SendAsync(createAReq);
             institutionA = (await res.Content.ReadFromJsonAsync<InstitutionDto>())!;
+            await SubscriptionTestData.EnableAsync(factory.Services, institutionA.Id);
         }
 
         using (var createBReq = CreateRequest(
@@ -1060,6 +1067,7 @@ public sealed class FoundationalVerticalSlicesIntegrationTests(PostgresIntegrati
         {
             var res = await client.SendAsync(createBReq);
             institutionB = (await res.Content.ReadFromJsonAsync<InstitutionDto>())!;
+            await SubscriptionTestData.EnableAsync(factory.Services, institutionB.Id);
         }
 
         foreach (var (instId, email) in new[]

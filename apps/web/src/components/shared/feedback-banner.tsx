@@ -1,33 +1,25 @@
-import { CheckCircle2 } from "lucide-react";
+"use client";
+import { useEffect, useId } from "react";
+import toast from "react-hot-toast";
 import { ProblemAlert } from "@/components/api/problem-alert";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import type { ProblemDetails } from "@/lib/api/types";
-
-interface FeedbackBannerProps {
+export function FeedbackBanner({
+  successMessage,
+  problem,
+}: {
   successTitle?: string;
   successMessage: string | null;
   problem: ProblemDetails | null;
-}
-
-export function FeedbackBanner({
-  successTitle = "Operación completada",
-  successMessage,
-  problem,
-}: FeedbackBannerProps) {
-  if (!successMessage && !problem) {
-    return null;
-  }
-
-  return (
-    <div className="space-y-4">
-      {successMessage ? (
-        <Alert variant="info">
-          <CheckCircle2 className="size-4" />
-          <AlertTitle>{successTitle}</AlertTitle>
-          <AlertDescription>{successMessage}</AlertDescription>
-        </Alert>
-      ) : null}
-      {problem ? <ProblemAlert problem={problem} /> : null}
-    </div>
-  );
+}) {
+  const id = useId();
+  useEffect(() => {
+    if (successMessage) toast.success(successMessage, { id: `success-${id}` });
+  }, [successMessage, id]);
+  useEffect(() => {
+    if (problem)
+      toast.error(problem.detail ?? problem.title ?? "No se pudo completar la operación.", {
+        id: `error-${id}`,
+      });
+  }, [problem, id]);
+  return problem ? <ProblemAlert problem={problem} /> : null;
 }

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Building2, ExternalLink, PauseCircle, PlayCircle } from "lucide-react";
 import { ProblemAlert } from "@/components/api/problem-alert";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -44,8 +45,8 @@ export function InstitutionsTable({
       title="Instituciones Registradas"
       description={
         <>
-          Colegios registrados en el catálogo global desde{" "}
-          <code className="font-mono">GET /api/platform/institutions</code>.
+          Abra un colegio para configurar su ficha, invitar administradores y consultar sus
+          pendientes.
         </>
       }
       headerAction={<RefreshButton onClick={onRefresh} loading={refreshing} />}
@@ -79,8 +80,13 @@ export function InstitutionsTable({
               return (
                 <TableRow key={institution.id}>
                   <TableCell>
-                    <div className="font-medium text-slate-900">{institution.name}</div>
-                    <div className="font-mono text-xs text-slate-400">{institution.id}</div>
+                    <Link
+                      href={`/institutions/${institution.id}`}
+                      className="font-medium text-slate-900 underline-offset-4 hover:underline"
+                    >
+                      {institution.name} →
+                    </Link>
+                    <div className="text-muted font-mono text-xs">{institution.id}</div>
                   </TableCell>
                   <TableCell>
                     <a

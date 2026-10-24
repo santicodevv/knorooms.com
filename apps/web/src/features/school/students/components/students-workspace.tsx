@@ -1,20 +1,26 @@
 "use client";
-
-import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { useStudentProfile } from "../hooks/use-student-profile";
+import { Plus } from "lucide-react";
 import { ProblemAlert } from "@/components/api/problem-alert";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { EnrollmentsCapacityPanel } from "@/features/school/students/components/enrollments-capacity-panel";
-import { GuardiansDirectoryPanel } from "@/features/school/students/components/guardians-directory-panel";
-import { StudentDirectorySplitView } from "@/features/school/students/components/student-directory-split-view";
-import { StudentsContextStrip } from "@/features/school/students/components/students-context-strip";
-import { useStudentsWorkspace } from "@/features/school/students/hooks/use-students-workspace";
+import { ButtonLink } from "@/components/ui/button";
+import { EmptyState } from "@/components/shared/empty-state";
+import { SchoolPageHeading, SchoolFormFrame } from "../../components/school-ui";
+import { useSchoolFeedback } from "../../hooks/use-school-feedback";
+import { useUnsavedChanges } from "@/features/platform/hooks/use-unsaved-changes";
+import { useStudentsWorkspace } from "../hooks/use-students-workspace";
+import { StudentCreateForm } from "./student-create-form";
+import { StudentDirectory } from "./student-directory";
+import { StudentProfile } from "./student-profile";
+import { StudentActionDialog } from "./student-action-dialog";
+import { GuardianDirectory } from "./guardian-directory";
+import { EnrollmentDirectory } from "./enrollment-directory";
 import type {
   EnrollmentsOverviewDto,
   ProblemDetails,
   StudentDirectoryOverviewDto,
 } from "@/lib/api/types";
-
-interface StudentsWorkspaceProps {
+interface Props {
+  path?: string[];
   initialDirectory: StudentDirectoryOverviewDto;
   initialEnrollments: EnrollmentsOverviewDto;
   initialProblem: ProblemDetails | null;
@@ -22,157 +28,107 @@ interface StudentsWorkspaceProps {
   canManageStudents: boolean;
   canManageEnrollments: boolean;
 }
-
 export function StudentsWorkspace({
-  initialDirectory,
-  initialEnrollments,
-  initialProblem,
-  csrfToken,
+  path = ["students"],
   canManageStudents,
   canManageEnrollments,
-}: StudentsWorkspaceProps) {
-  const {
-    directory,
-    enrollmentsOverview,
-    availableSections,
-    problem,
-    feedback,
-    activeView,
-    setActiveView,
-    openDrawer,
-    setOpenDrawer,
-    toggleDrawer,
-    selectedStudent,
-    setSelectedStudentId,
-    studentSearchQuery,
-    setStudentSearchQuery,
-    studentStatusFilter,
-    setStudentStatusFilter,
-    filteredStudents,
-    selectedSectionFilterId,
-    setSelectedSectionFilterId,
-    filteredEnrollments,
-    transferringEnrollment,
-    setTransferringEnrollment,
-    openQuickEnrollForStudent,
-    openTransferForEnrollment,
-    metrics,
-    isPending,
-    actionLoadingId,
-    handleRefresh,
-    handleToggleStudentActive,
-    handleWithdrawEnrollment,
-    studentForm,
-    submitCreateStudent,
-    guardianForm,
-    submitCreateGuardian,
-    linkGuardianForm,
-    submitLinkGuardian,
-    enrollForm,
-    submitEnrollStudent,
-    transferForm,
-    submitTransferSection,
-  } = useStudentsWorkspace({
-    initialDirectory,
-    initialEnrollments,
-    initialProblem,
-    csrfToken,
+  ...data
+}: Props) {
+  const [area, record] = path;
+  const profileNavigation = useStudentProfile();
+  const s = useStudentsWorkspace({
+    ...data,
+    studentId: area === "students" && record !== "new" ? record : undefined,
   });
-
+  useSchoolFeedback(s.feedback);
+  useUnsavedChanges(s.studentForm.formState.isDirty || s.guardianForm.formState.isDirty);
+  const problem = s.problem ? (
+    <ProblemAlert problem={s.problem} />
+  ) : s.feedback?.tone === "error" ? (
+    <p
+      role="alert"
+      className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-xs text-red-800"
+    >
+      {s.feedback.title} · {s.feedback.detail}
+    </p>
+  ) : null;
+  if (record === "new")
+    return (
+      <>
+        {problem}
+        {canManageStudents ? (
+          <SchoolFormFrame
+            title={area === "guardians" ? "Nuevo responsable" : "Nuevo expediente"}
+            description={
+              area === "guardians"
+                ? "Registra sus datos para vincularlo a los estudiantes."
+                : "Registra al estudiante. La matrícula es un paso independiente."
+            }
+            back={"/" + area}
+          >
+            <StudentCreateForm state={s} guardian={area === "guardians"} />
+          </SchoolFormFrame>
+        ) : (
+          <EmptyState title="No tienes permiso para crear registros" />
+        )}
+      </>
+    );
+  if (area === "students" && record)
+    return (
+      <>
+        {problem}
+        <SchoolPageHeading
+          title={s.selectedStudent?.id === record ? s.selectedStudent.fullName : "Expediente"}
+          description="Información permanente, responsables y matrículas."
+          back={profileNavigation.back}
+        />
+        {s.selectedStudent?.id === record ? (
+          <StudentProfile
+            state={s}
+            canManageStudents={canManageStudents}
+            canManageEnrollments={canManageEnrollments}
+          />
+        ) : (
+          <EmptyState title="Expediente no encontrado" />
+        )}
+        <StudentActionDialog state={s} />
+      </>
+    );
+  const title =
+    area === "enrollments" ? "Matrículas" : area === "guardians" ? "Responsables" : "Estudiantes";
   return (
-    <div className="space-y-5">
-      <StudentsContextStrip
-        activeView={activeView}
-        onSelectView={setActiveView}
-        totalStudents={metrics.totalStudents}
-        activeStudents={metrics.activeStudents}
-        sigerdCount={metrics.sigerdCount}
-        guardiansCount={metrics.guardiansCount}
-        activeEnrollments={metrics.activeEnrollments}
-        totalCapacity={metrics.totalCapacity}
-        totalAvailableSeats={metrics.totalAvailableSeats}
-        isRefreshing={isPending}
-        onRefresh={handleRefresh}
+    <div>
+      {problem}
+      <SchoolPageHeading
+        onRefresh={s.handleRefresh}
+        refreshing={s.isPending}
+        title={title}
+        description={
+          area === "enrollments"
+            ? "Consulta cupos y administra matrículas por sección y año escolar."
+            : area === "guardians"
+              ? "Directorio familiar y vínculos con los expedientes escolares."
+              : "Expedientes permanentes, consultas y vínculos con responsables."
+        }
+        actions={
+          area === "enrollments" ? (
+            <ButtonLink href="/students">Buscar estudiante para matricular</ButtonLink>
+          ) : canManageStudents ? (
+            <ButtonLink href={"/" + area + "/new"}>
+              <Plus />
+              {area === "guardians" ? "Nuevo responsable" : "Nuevo estudiante"}
+            </ButtonLink>
+          ) : undefined
+        }
       />
-
-      {problem ? <ProblemAlert problem={problem} /> : null}
-
-      {feedback ? (
-        <div className="animate-slide-down">
-          <Alert variant={feedback.tone === "error" ? "destructive" : "info"}>
-            {feedback.tone === "error" ? (
-              <AlertCircle className="size-4" />
-            ) : (
-              <CheckCircle2 className="size-4" />
-            )}
-            <AlertTitle>{feedback.title}</AlertTitle>
-            {feedback.detail ? <AlertDescription>{feedback.detail}</AlertDescription> : null}
-          </Alert>
-        </div>
-      ) : null}
-
-      {activeView === "directory" ? (
-        <StudentDirectorySplitView
-          students={filteredStudents}
-          totalStudentsCount={directory.students.length}
-          selectedStudent={selectedStudent}
-          onSelectStudent={setSelectedStudentId}
-          searchQuery={studentSearchQuery}
-          onChangeSearchQuery={setStudentSearchQuery}
-          statusFilter={studentStatusFilter}
-          onChangeStatusFilter={setStudentStatusFilter}
-          guardians={directory.guardians}
-          availableSections={availableSections}
-          canManageStudents={canManageStudents}
-          canManageEnrollments={canManageEnrollments}
-          openDrawer={openDrawer}
-          onToggleDrawer={toggleDrawer}
-          onOpenQuickEnroll={openQuickEnrollForStudent}
-          onToggleStudentActive={handleToggleStudentActive}
-          studentForm={studentForm}
-          onSubmitStudent={submitCreateStudent}
-          linkGuardianForm={linkGuardianForm}
-          onSubmitLinkGuardian={submitLinkGuardian}
-          enrollForm={enrollForm}
-          onSubmitEnroll={submitEnrollStudent}
-          actionLoadingId={actionLoadingId}
-          isSubmitting={isPending}
-        />
-      ) : null}
-
-      {activeView === "enrollments" ? (
-        <EnrollmentsCapacityPanel
-          enrollments={filteredEnrollments}
-          sectionCapacities={enrollmentsOverview.sectionCapacities}
-          selectedSectionFilterId={selectedSectionFilterId}
-          onSelectSectionFilter={setSelectedSectionFilterId}
-          canManageEnrollments={canManageEnrollments}
-          openDrawer={openDrawer}
-          transferringEnrollment={transferringEnrollment}
-          onOpenTransfer={openTransferForEnrollment}
-          onCloseTransfer={() => {
-            setTransferringEnrollment(null);
-            setOpenDrawer(null);
-          }}
-          transferForm={transferForm}
-          onSubmitTransfer={submitTransferSection}
-          onWithdrawEnrollment={handleWithdrawEnrollment}
-          actionLoadingId={actionLoadingId}
-          isSubmitting={isPending}
-        />
-      ) : null}
-
-      {activeView === "guardians" ? (
-        <GuardiansDirectoryPanel
-          guardians={directory.guardians}
-          canManageStudents={canManageStudents}
-          openDrawer={openDrawer}
-          onToggleDrawer={toggleDrawer}
-          guardianForm={guardianForm}
-          onSubmitGuardian={submitCreateGuardian}
-          isSubmitting={isPending}
-        />
-      ) : null}
+      {area === "enrollments" ? (
+        <EnrollmentDirectory state={s} canManage={canManageEnrollments} />
+      ) : area === "guardians" ? (
+        <GuardianDirectory state={s} />
+      ) : (
+        <StudentDirectory state={s} />
+      )}
+      <StudentActionDialog state={s} />
     </div>
   );
 }

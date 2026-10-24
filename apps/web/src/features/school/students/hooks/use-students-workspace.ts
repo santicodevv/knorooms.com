@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import {
@@ -39,7 +40,7 @@ export type StudentsWorkspaceView = "directory" | "enrollments" | "guardians";
 export type StudentsDrawerKind =
   "student" | "guardian" | "link-guardian" | "enroll" | "transfer" | null;
 
-export type StudentStatusFilter = "all" | "active" | "unassigned";
+export type StudentStatusFilter = "all" | "active" | "inactive" | "unassigned";
 
 export interface StudentsFeedbackState {
   tone: "success" | "error";
@@ -52,6 +53,7 @@ interface UseStudentsWorkspaceParams {
   initialEnrollments: EnrollmentsOverviewDto;
   initialProblem: ProblemDetails | null;
   csrfToken: string;
+  studentId?: string;
 }
 
 export function useStudentsWorkspace({
@@ -59,7 +61,10 @@ export function useStudentsWorkspace({
   initialEnrollments,
   initialProblem,
   csrfToken,
+  studentId,
 }: UseStudentsWorkspaceParams) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [directory, setDirectory] = useState<StudentDirectoryOverviewDto>(initialDirectory);
   const [enrollmentsOverview, setEnrollmentsOverview] =
     useState<EnrollmentsOverviewDto>(initialEnrollments);
@@ -68,16 +73,30 @@ export function useStudentsWorkspace({
   const [activeView, setActiveView] = useState<StudentsWorkspaceView>("directory");
   const [openDrawer, setOpenDrawer] = useState<StudentsDrawerKind>(null);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(
-    () => initialDirectory.students[0]?.id ?? null,
+    () => studentId ?? initialDirectory.students[0]?.id ?? null,
   );
-  const [studentSearchQuery, setStudentSearchQuery] = useState("");
-  const [studentStatusFilter, setStudentStatusFilter] = useState<StudentStatusFilter>("all");
+  const [studentSearchQuery, setStudentSearchQuery] = useState(searchParams.get("q") ?? "");
+  const [studentStatusFilter, setStudentStatusFilter] = useState<StudentStatusFilter>(
+    (["active", "inactive", "unassigned"].includes(searchParams.get("status") ?? "")
+      ? searchParams.get("status")
+      : "all") as StudentStatusFilter,
+  );
   const [selectedSectionFilterId, setSelectedSectionFilterId] = useState<string>("all");
   const [transferringEnrollment, setTransferringEnrollment] = useState<StudentEnrollmentDto | null>(
     null,
   );
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (window.location.pathname !== "/students") return;
+    const query = new URLSearchParams(window.location.search);
+    if (studentSearchQuery) query.set("q", studentSearchQuery);
+    else query.delete("q");
+    if (studentStatusFilter !== "all") query.set("status", studentStatusFilter);
+    else query.delete("status");
+    window.history.replaceState(null, "", "/students" + (query.size ? "?" + query.toString() : ""));
+  }, [studentSearchQuery, studentStatusFilter]);
 
   const availableSections = useMemo(() => {
     return enrollmentsOverview.sectionCapacities.filter(
@@ -91,7 +110,7 @@ export function useStudentsWorkspace({
       studentCode: "",
       firstName: "",
       lastName: "",
-      birthDate: "2014-05-15",
+      birthDate: "",
       sigerdExternalId: "",
     },
   });
@@ -159,6 +178,7 @@ export function useStudentsWorkspace({
     const query = studentSearchQuery.trim().toLowerCase();
 
     return directory.students.filter((student) => {
+      if (studentStatusFilter === "inactive" && student.isActive) return false;
       if (studentStatusFilter === "active" && !student.isActive) {
         return false;
       }
@@ -277,6 +297,7 @@ export function useStudentsWorkspace({
           sigerdExternalId: "",
         });
         await refreshAll();
+        router.push("/students/" + result.data.id);
       } else {
         setFeedback({
           tone: "error",
@@ -289,6 +310,12 @@ export function useStudentsWorkspace({
 
   const handleToggleStudentActive = useCallback(
     (studentId: string, studentCode: string, currentlyActive: boolean) => {
+      if (
+        !window.confirm(
+          `¿${currentlyActive ? "Desactivar" : "Activar"} el expediente ${studentCode}?`,
+        )
+      )
+        return;
       setFeedback(null);
       setActionLoadingId(studentId);
       startTransition(async () => {
@@ -342,6 +369,7 @@ export function useStudentsWorkspace({
         setOpenDrawer(null);
         guardianForm.reset({ fullName: "", email: "", phoneNumber: "" });
         await refreshAll();
+        router.push("/guardians");
       } else {
         setFeedback({
           tone: "error",
@@ -427,6 +455,12 @@ export function useStudentsWorkspace({
 
   const handleWithdrawEnrollment = useCallback(
     (enrollmentId: string, studentFullName: string) => {
+      if (
+        !window.confirm(
+          `¿Retirar la matrícula de ${studentFullName}? Se liberará su cupo y se conservará el historial.`,
+        )
+      )
+        return;
       setFeedback(null);
       setActionLoadingId(enrollmentId);
       startTransition(async () => {
@@ -522,3 +556,5 @@ export function useStudentsWorkspace({
     submitTransferSection,
   };
 }
+
+export type ReturnTypeOfStudents = ReturnType<typeof useStudentsWorkspace>;

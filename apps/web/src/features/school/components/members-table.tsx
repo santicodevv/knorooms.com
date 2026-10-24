@@ -35,13 +35,8 @@ export function MembersTable({
   return (
     <SectionCard
       icon={<Users className="size-5 text-slate-800" />}
-      title="Miembros Institucionales"
-      description={
-        <>
-          Usuarios vinculados al colegio desde{" "}
-          <code className="font-mono">GET /api/tenant/members</code>.
-        </>
-      }
+      title="Miembros del equipo"
+      description="Usuarios vinculados al colegio y sus roles institucionales."
       headerAction={<RefreshButton onClick={onRefresh} loading={refreshing} />}
     >
       {members.length === 0 ? (
@@ -65,7 +60,6 @@ export function MembersTable({
                 <TableRow key={member.membershipId}>
                   <TableCell>
                     <div className="font-medium text-slate-900">{member.displayName}</div>
-                    <div className="font-mono text-xs text-slate-400">{member.membershipId}</div>
                   </TableCell>
                   <TableCell className="text-slate-700">{member.email}</TableCell>
                   <TableCell>
@@ -99,7 +93,7 @@ export function MembersTable({
                         {isBusy ? "Revocando..." : "Revocar"}
                       </Button>
                     ) : (
-                      <span className="text-xs text-slate-400">—</span>
+                      <span className="text-muted text-xs">—</span>
                     )}
                   </TableCell>
                 </TableRow>

@@ -82,12 +82,16 @@ export async function createSession(params: {
   const policy = resolveSessionPolicy();
   const absoluteTtlSeconds = policy.absoluteTimeoutMinutes * 60;
 
-  await redis
+  const results = await redis
     .multi()
     .set(sessionRedisKey(sessionId), encrypted, "EX", lifetime.remainingSeconds)
     .sadd(userSessionsIndexKey(params.user.sub), sessionId)
     .expire(userSessionsIndexKey(params.user.sub), absoluteTtlSeconds)
     .exec();
+
+  if (!results || results.some(([error]) => error !== null)) {
+    throw new Error("Session persistence failed");
+  }
 
   return record;
 }

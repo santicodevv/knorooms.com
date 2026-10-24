@@ -7,6 +7,7 @@ import {
   buildSessionCookieOptions,
   createSession,
   getSessionCookieName,
+  type StoredSessionRecord,
 } from "@/lib/auth/session-store";
 
 interface LoginBody {
@@ -102,15 +103,30 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const session = await createSession({
-    user: toSessionUser(result.tokens),
-    tokens: {
-      accessToken: result.tokens.accessToken,
-      refreshToken: result.tokens.refreshToken,
-      accessTokenExpiresAt: new Date(result.tokens.accessTokenExpiresAtUtc).getTime(),
-    },
-    host: host.toLowerCase(),
-  });
+  let session: StoredSessionRecord;
+  try {
+    session = await createSession({
+      user: toSessionUser(result.tokens),
+      tokens: {
+        accessToken: result.tokens.accessToken,
+        refreshToken: result.tokens.refreshToken,
+        accessTokenExpiresAt: new Date(result.tokens.accessTokenExpiresAtUtc).getTime(),
+      },
+      host: host.toLowerCase(),
+    });
+  } catch {
+    return NextResponse.json(
+      {
+        title: "Sesión no disponible",
+        status: 503,
+        detail: "No fue posible guardar la sesión. Inténtelo nuevamente en unos segundos.",
+      },
+      {
+        status: 503,
+        headers: { "Content-Type": "application/problem+json", "Cache-Control": "no-store" },
+      },
+    );
+  }
 
   const response = NextResponse.json(
     {

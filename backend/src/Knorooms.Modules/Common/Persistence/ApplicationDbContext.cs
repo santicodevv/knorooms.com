@@ -1,3 +1,5 @@
+using Knorooms.Modules.Modules.Entitlements.Domain;
+using Knorooms.Modules.Modules.Subscriptions.Domain;
 using Knorooms.Modules.Modules.Academic.Domain;
 using Knorooms.Modules.Modules.Attendance.Domain;
 using Knorooms.Modules.Modules.Audit.Domain;
@@ -21,7 +23,7 @@ namespace Knorooms.Modules.Common.Persistence;
 /// Aplica configuraciones modulares (IEntityTypeConfiguration), filtros globales de defensa adicional
 /// por TenantId, validación de pertenencia en escrituras y persistencia transaccional del Outbox.
 /// </summary>
-public sealed class ApplicationDbContext(
+public sealed partial class ApplicationDbContext(
     DbContextOptions<ApplicationDbContext> options,
     ITenantContextAccessor tenantContextAccessor) : DbContext(options)
 {
@@ -31,10 +33,17 @@ public sealed class ApplicationDbContext(
 
     public DatabaseExecutionMode CurrentExecutionMode => tenantContextAccessor.Current.ExecutionMode;
 
+    public DbSet<InstitutionModuleSettings> InstitutionModuleSettings => Set<InstitutionModuleSettings>();
+
+    public DbSet<PlanVersion> PlanVersions => Set<PlanVersion>();
+    public DbSet<InstitutionSubscription> InstitutionSubscriptions => Set<InstitutionSubscription>();
+    public DbSet<SubscriptionModuleOverride> SubscriptionModuleOverrides => Set<SubscriptionModuleOverride>();
+
     // 1. Tenants
     public DbSet<Institution> Institutions => Set<Institution>();
 
     // 2. Identity
+    public DbSet<AdministratorInvitation> AdministratorInvitations => Set<AdministratorInvitation>();
     public DbSet<UserAccount> Users => Set<UserAccount>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
@@ -85,9 +94,17 @@ public sealed class ApplicationDbContext(
 
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
 
+        modelBuilder.Entity<InstitutionModuleSettings>().HasOne<Institution>().WithMany().HasForeignKey(e => e.TenantId).OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<InstitutionModuleSettings>().HasQueryFilter(e => (CurrentTenantId != null && e.TenantId == CurrentTenantId) || CurrentExecutionMode == DatabaseExecutionMode.PlatformDirectory);
+        modelBuilder.Entity<AdministratorInvitation>().HasQueryFilter(e => (CurrentTenantId != null && e.TenantId == CurrentTenantId) || CurrentExecutionMode == DatabaseExecutionMode.PlatformDirectory);
+
+        modelBuilder.Entity<InstitutionSubscription>().HasOne<Institution>().WithMany().HasForeignKey(e => e.TenantId).OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<InstitutionSubscription>().HasQueryFilter(e => CurrentTenantId != null && e.TenantId == CurrentTenantId);
+        modelBuilder.Entity<SubscriptionModuleOverride>().HasQueryFilter(e => CurrentTenantId != null && e.TenantId == CurrentTenantId);
+
         // Filtros globales de EF Core como defensa adicional complementaria a PostgreSQL RLS.
         modelBuilder.Entity<InstitutionRole>()
-            .HasQueryFilter(e => CurrentTenantId != null && e.TenantId == CurrentTenantId);
+            .HasQueryFilter(e => (CurrentTenantId != null && e.TenantId == CurrentTenantId) || CurrentExecutionMode == DatabaseExecutionMode.PlatformDirectory);
 
         modelBuilder.Entity<InstitutionRolePermission>()
             .HasQueryFilter(e => CurrentTenantId != null && e.TenantId == CurrentTenantId);
@@ -95,10 +112,10 @@ public sealed class ApplicationDbContext(
         modelBuilder.Entity<TenantMembership>()
             .HasQueryFilter(e =>
                 (CurrentTenantId != null && e.TenantId == CurrentTenantId) ||
-                (CurrentUserId != null && e.UserId == CurrentUserId));
+                (CurrentUserId != null && e.UserId == CurrentUserId) || CurrentExecutionMode == DatabaseExecutionMode.PlatformDirectory);
 
         modelBuilder.Entity<TenantMembershipRole>()
-            .HasQueryFilter(e => CurrentTenantId != null && e.TenantId == CurrentTenantId);
+            .HasQueryFilter(e => (CurrentTenantId != null && e.TenantId == CurrentTenantId) || CurrentExecutionMode == DatabaseExecutionMode.PlatformDirectory);
 
         modelBuilder.Entity<SupportAccessGrant>()
             .HasQueryFilter(e =>
@@ -145,18 +162,30 @@ public sealed class ApplicationDbContext(
             .HasQueryFilter(e => CurrentTenantId != null && e.TenantId == CurrentTenantId);
     }
 
-    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) => SaveChangesAsync(true, cancellationToken);
+
+    public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
         ValidateTenantScopedChanges();
+        var modules = ChangedCommercialModules();
+        await using var transaction = modules.Length > 0 && Database.CurrentTransaction is null
+            ? await Database.BeginTransactionAsync(cancellationToken) : null;
+        if (modules.Length > 0) await ValidateCommercialWritesAsync(modules, cancellationToken);
         EnqueueDomainEventsToOutbox();
-        return await base.SaveChangesAsync(cancellationToken);
+        var result = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        if (transaction is not null) await transaction.CommitAsync(cancellationToken);
+        return result;
     }
 
-    public override int SaveChanges()
+    public override int SaveChanges() => SaveChanges(true);
+
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
         ValidateTenantScopedChanges();
+        if (ChangedCommercialModules().Length > 0)
+            throw new InvalidOperationException("Los cambios académicos requieren SaveChangesAsync para validar la contratación.");
         EnqueueDomainEventsToOutbox();
-        return base.SaveChanges();
+        return base.SaveChanges(acceptAllChangesOnSuccess);
     }
 
     private void ValidateTenantScopedChanges()

@@ -21,7 +21,9 @@ public sealed class ModularMonolithArchitectureTests
         "ReportCards",
         "Authorization",
         "SupportAccess",
-        "Audit"
+        "Audit",
+        "Subscriptions",
+        "Entitlements"
     ];
 
     [Fact]

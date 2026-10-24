@@ -37,7 +37,7 @@ export function RequestSupportAccessFormCard({
           <Label htmlFor="support-tenant">Institución Destino</Label>
           <select
             id="support-tenant"
-            className="flex h-9 w-full rounded-md border border-slate-300 bg-white px-3 py-1 text-sm text-slate-900 shadow-xs focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:outline-none"
+            className="border-control flex h-9 w-full rounded-md border bg-white px-3 py-1 text-sm text-slate-900 shadow-xs focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:outline-none"
             {...form.register("tenantId")}
           >
             <option value="">Seleccione un colegio...</option>
@@ -56,7 +56,7 @@ export function RequestSupportAccessFormCard({
             id="support-reason"
             rows={3}
             placeholder="Ej. Ticket #1042: Revisión de permisos solicitada por dirección académica."
-            className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-xs focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:outline-none"
+            className="border-control flex w-full rounded-md border bg-white px-3 py-2 text-sm text-slate-900 shadow-xs focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:outline-none"
             {...form.register("reason")}
           />
           <FormFieldError message={form.formState.errors.reason?.message} />

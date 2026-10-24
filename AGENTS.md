@@ -2,7 +2,7 @@
 
 ## 1. Qué es KNOROOMS
 
-**KNOROOMS** es una plataforma SaaS multi-tenant de gestión académica dirigida inicialmente a colegios de República Dominicana (Primaria y Secundaria bajo lineamientos del MINERD) y diseñada para expandirse a educación superior (MESCyT).
+**KNOROOMS** es una plataforma SaaS multi-tenant de gestión académica dirigida a colegios y escuelas de República Dominicana. El alcance inicial incluye administración SaaS, suscripciones, módulos por colegio e integración opcional con Moodle. Educación superior queda fuera de la primera versión; las reglas escolares se validan con el colegio piloto y fuentes oficiales.
 
 - **Idioma**: toda documentación, mensajes de interfaz, validaciones orientadas al usuario, comentarios explicativos, ADRs y Skills deben estar en **español**. Todo código fuente, nombres de clases, métodos, propiedades, tablas, columnas y rutas técnicas deben estar en **inglés**.
 - **Documentos base preservados en la raíz**:
@@ -23,7 +23,7 @@
 - Inyección de dependencias nativa de ASP.NET Core, `async/await` y propagación obligatoria de `CancellationToken` en operaciones I/O.
 
 ### Frontend y BFF (`apps/web/`)
-- **Next.js 16 (App Router)** con **TypeScript estricto**, **Tailwind CSS v4** y **shadcn/ui**.
+- **Next.js 16 (App Router)** con **TypeScript estricto**, **Tailwind CSS v4** y componentes propios.
 - Actúa como **Backend for Frontend (BFF)**: autentica usuario/contraseña contra el backend propio, mantiene sesiones en servidor sobre **Redis** cifradas con **AES-256-GCM**, entrega cookies `HttpOnly` host-only y protege con **CSRF** (`X-CSRF-Token` + validación `Origin`). Los tokens nunca llegan al navegador.
 
 ---
@@ -61,7 +61,7 @@ knorooms/
 └── README.md
 ```
 
-### Los 12 Módulos de `Knorooms.Modules`
+### Los 12 Módulos actuales de `Knorooms.Modules`
 Ubicados en `backend/src/Knorooms.Modules/Modules/<NombreModulo>/`:
 1. `Identity`
 2. `Tenants`
@@ -154,8 +154,31 @@ Antes de realizar cambios en un área especializada, lee la Skill correspondient
 - `knorooms-efcore-postgresql`: configuraciones Fluent API, claves compuestas `(tenant_id, id)`, índices y concurrencia.
 - `knorooms-multi-tenancy`: resolución por subdominio, `ITenantContextAccessor`, `PostgresRlsInterceptor` y políticas RLS.
 - `knorooms-security-auth`: credenciales locales + JWT emitidos por el backend, BFF con Redis AES-256-GCM, CSRF, RBAC/ABAC, MFA y soporte temporal.
-- `knorooms-frontend-nextjs`: App Router, `src/proxy.ts`, layouts por subdominio, Server/Client Components y `shadcn/ui`.
-- `knorooms-module-development`: guía paso a paso para ampliar o crear casos de uso dentro de los 12 módulos.
+- `knorooms-frontend-nextjs`: App Router, `src/proxy.ts`, layouts por subdominio, Server/Client Components y `componentes propios con Tailwind CSS`.
+- `knorooms-module-development`: guía paso a paso para ampliar o crear casos de uso; los nuevos módulos previstos se rigen por ADR-0005.
 - `knorooms-testing`: pruebas unitarias, de arquitectura y de integración con PostgreSQL real (`Testcontainers`).
 - `knorooms-database-migrations`: creación, revisión de RLS e inspección de migraciones EF Core.
 - `knorooms-code-review`: lista de verificación de seguridad, multi-tenancy, rendimiento y estilo antes de entregar cambios.
+
+## 8. Alcance vigente y prioridad de implementación
+Antes de planificar nuevas funcionalidades, leer:
+- [Alcance del producto](docs/product/scope.md).
+- [Secuencia y criterios de aceptación](docs/product/implementation-roadmap.md).
+- [Arquitectura SaaS y Moodle](docs/architecture/saas-administration-and-moodle.md).
+- [ADR-0005](docs/decisions/0005-school-saas-and-moodle-scope.md).
+
+Estos documentos gobiernan el alcance futuro frente a las propuestas Word preliminares. El código refleja el estado implementado, no elimina requisitos pendientes. Conservar los ADR técnicos previos salvo sustitución explícita.
+
+- Moodle es opcional por colegio, pero su integración pertenece al producto y al plan de implementación.
+- No confundir módulos de código con módulos comerciales habilitados por colegio.
+- Subscriptions y Entitlements están implementados (orden 3); Integrations/Moodle sigue pendiente del orden 4.
+- No avanzar a universidades ni sustituir la administración SaaS por más pantallas académicas.
+- No afirmar que conexión, suscripción, importación o publicación funcionan sin implementación y pruebas.
+- No publicar boletas desde la sincronización ni deducir aprobación escolar contando cursos externos.
+- El orden 1 es documental. El orden 2 está implementado con pruebas automatizadas; consultar docs/architecture/institution-setup-and-invitations.md. El orden 3 implementa suscripciones y derechos; consultar docs/architecture/subscriptions-and-entitlements.md. La siguiente etapa prevista es el orden 4, sin iniciarla por implicación.
+
+## Actualización prioritaria: ADR-0006 (22/10/2026)
+El flujo vigente configura módulos directamente por institución, sin planes en la UI. Leer docs/architecture/institution-management.md y docs/decisions/0006-direct-institution-modules-and-resend.md antes de continuar. Resend es proveedor de correo predeterminado; SMTP/Mailpit es un modo explícito local. Las políticas de PlatformDirectory solo permiten metadatos de lectura, nunca datos académicos ni escrituras. La superficie de soporte temporal se mantiene oculta. Conservar datos/contratos históricos; no reintroducir planes ni soporte en la interfaz por seguir textos antiguos.
+
+## Interfaz aprobada el 23/10/2026
+Leer docs/design/administration-global.md. El HTML del propietario gobierna la presentación de la administración global; Dashboard e Instituciones son sus entradas. Mantener fuente del sistema, Tailwind propio y separación de presentación, hooks y API. Esta navegación sustituye la indicación anterior de mostrar únicamente Instituciones.

@@ -68,7 +68,7 @@ export function AttendanceRollCallPanel({
           </div>
           <p className="mt-0.5 text-xs text-slate-500">
             Marca presencia (P), tardanza (T), excusa justificada (E) o ausencia (A) y guarda el
-            lote atómico en PostgreSQL.
+            pase de lista para esta sección.
           </p>
         </div>
 
@@ -89,7 +89,7 @@ export function AttendanceRollCallPanel({
               size="sm"
               disabled={isSubmitting}
               onClick={() => void onSaveBatch()}
-              className="bg-indigo-600 text-xs font-semibold text-white hover:bg-indigo-700"
+              className="bg-blue-600 text-xs font-semibold text-white hover:bg-blue-700"
             >
               {isSubmitting ? "Guardando asistencia..." : "Guardar pase de lista"}
             </Button>
@@ -111,7 +111,7 @@ export function AttendanceRollCallPanel({
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-slate-100 bg-slate-50/40 text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
+              <tr className="text-muted border-b border-slate-100 bg-slate-50/40 text-[11px] font-semibold tracking-wider uppercase">
                 <th className="px-5 py-3">Estudiante</th>
                 <th className="px-4 py-3">Estado en Fecha ({selectedDate})</th>
                 <th className="px-4 py-3">Observación / Justificación</th>

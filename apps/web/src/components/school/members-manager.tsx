@@ -1,4 +1,5 @@
 "use client";
+import { SchoolPageHeading } from "@/features/school/components/school-ui";
 
 import { FeedbackBanner } from "@/components/shared/feedback-banner";
 import { MembersTable } from "@/features/school/components/members-table";
@@ -34,6 +35,10 @@ export function MembersManager({
 
   return (
     <div className="space-y-6">
+      <SchoolPageHeading
+        title="Equipo"
+        description="Consulta los usuarios, roles y accesos de tu colegio."
+      />
       <FeedbackBanner
         successTitle="Membresía actualizada"
         successMessage={successMessage}

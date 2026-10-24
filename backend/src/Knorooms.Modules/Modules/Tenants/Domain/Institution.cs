@@ -53,6 +53,16 @@ public sealed class Institution : Entity
 
     public uint Version { get; private set; }
 
+    public string ContactName { get; private set; } = string.Empty;
+    public string ContactEmail { get; private set; } = string.Empty;
+    public string Phone { get; private set; } = string.Empty;
+    public string Address { get; private set; } = string.Empty;
+    public string CenterCode { get; private set; } = string.Empty;
+    public string LogoUrl { get; private set; } = string.Empty;
+    public string OnboardingOwner { get; private set; } = string.Empty;
+    public string OnboardingNotes { get; private set; } = string.Empty;
+    public bool WelcomeMeetingCompleted { get; private set; }
+
     private Institution()
     {
     }
@@ -97,6 +107,32 @@ public sealed class Institution : Entity
             institution.Name));
 
         return Result.Success(institution);
+    }
+
+    public Result UpdateProfile(string name, string contactName, string contactEmail, string phone,
+        string address, string centerCode, string logoUrl, string timeZoneId, string onboardingOwner,
+        bool welcomeMeetingCompleted, string onboardingNotes)
+    {
+        if (string.IsNullOrWhiteSpace(name) || name.Trim().Length is < 3 or > 160)
+            return Result.Failure(Error.Validation("Institution.InvalidName", "El nombre debe tener entre 3 y 160 caracteres."));
+        if (!string.IsNullOrWhiteSpace(logoUrl) && (!Uri.TryCreate(logoUrl, UriKind.Absolute, out var uri)
+            || uri.Scheme != "https" || !string.IsNullOrEmpty(uri.UserInfo)))
+            return Result.Failure(Error.Validation("Institution.InvalidLogo", "El logo debe tener una dirección HTTPS válida."));
+        if (!TimeZoneInfo.TryFindSystemTimeZoneById(timeZoneId, out _))
+            return Result.Failure(Error.Validation("Institution.InvalidTimeZone", "La zona horaria no es válida."));
+        Name = name.Trim();
+        ContactName = contactName.Trim();
+        ContactEmail = contactEmail.Trim().ToLowerInvariant();
+        Phone = phone.Trim();
+        Address = address.Trim();
+        CenterCode = centerCode.Trim();
+        LogoUrl = logoUrl.Trim();
+        TimeZoneId = timeZoneId.Trim();
+        OnboardingOwner = onboardingOwner.Trim();
+        OnboardingNotes = onboardingNotes.Trim();
+        WelcomeMeetingCompleted = welcomeMeetingCompleted;
+        MarkUpdated();
+        return Result.Success();
     }
 
     public Result Suspend()

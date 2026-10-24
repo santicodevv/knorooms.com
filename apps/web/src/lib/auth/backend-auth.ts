@@ -1,4 +1,5 @@
 import "server-only";
+import { AUTH_API_TIMEOUT_MS } from "@/lib/auth/auth-timeouts";
 
 export interface IssuedTokens {
   accessToken: string;
@@ -73,6 +74,7 @@ export async function loginWithPassword(params: {
       },
       body: JSON.stringify({ email: params.email, password: params.password }),
       cache: "no-store",
+      signal: AbortSignal.timeout(AUTH_API_TIMEOUT_MS),
     });
   } catch {
     return {
@@ -106,6 +108,7 @@ export async function refreshBackendTokens(refreshToken: string): Promise<Issued
       },
       body: JSON.stringify({ refreshToken }),
       cache: "no-store",
+      signal: AbortSignal.timeout(AUTH_API_TIMEOUT_MS),
     });
 
     if (!response.ok) {
@@ -131,6 +134,7 @@ export async function revokeBackendRefreshToken(refreshToken: string): Promise<v
       },
       body: JSON.stringify({ refreshToken }),
       cache: "no-store",
+      signal: AbortSignal.timeout(AUTH_API_TIMEOUT_MS),
     });
   } catch {
     // Best-effort: la sesión local se revoca siempre.

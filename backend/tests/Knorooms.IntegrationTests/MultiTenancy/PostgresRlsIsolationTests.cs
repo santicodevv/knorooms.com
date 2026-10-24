@@ -89,6 +89,8 @@ public sealed class PostgresRlsIsolationTests(PostgresIntegrationDatabaseFixture
         }
 
         // 2. Poblar datos académicos y un estudiante en Colegio A.
+        await SubscriptionTestData.EnableAsync(provider, tenantAId);
+        await SubscriptionTestData.EnableAsync(provider, tenantBId);
         await using (var scopeA = provider.CreateAsyncScope())
         {
             var db = scopeA.ServiceProvider.GetRequiredService<ApplicationDbContext>();

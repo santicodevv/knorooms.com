@@ -1,167 +1,152 @@
 "use client";
-
-import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ButtonLink } from "@/components/ui/button";
 import { ProblemAlert } from "@/components/api/problem-alert";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AcademicContextStrip } from "@/features/school/academic/components/academic-context-strip";
-import { AcademicYearsPanel } from "@/features/school/academic/components/academic-years-panel";
-import { CurriculumSubjectsPanel } from "@/features/school/academic/components/curriculum-subjects-panel";
-import { GradesSectionsSplitView } from "@/features/school/academic/components/grades-sections-split-view";
-import { TeacherAssignmentsPanel } from "@/features/school/academic/components/teacher-assignments-panel";
-import { useAcademicWorkspace } from "@/features/school/academic/hooks/use-academic-workspace";
+import { EmptyState } from "@/components/shared/empty-state";
+import {
+  SchoolPageHeading,
+  SchoolTabs,
+  SchoolFormFrame,
+  schoolSelectClass,
+} from "../../components/school-ui";
+import { useSchoolFeedback } from "../../hooks/use-school-feedback";
+import { useUnsavedChanges } from "@/features/platform/hooks/use-unsaved-changes";
+import { useAcademicWorkspace } from "../hooks/use-academic-workspace";
+import { AcademicDirectory } from "./academic-directory";
+import { AcademicRecordForm } from "./academic-record-form";
 import type { AcademicStructureOverviewDto, MemberDto, ProblemDetails } from "@/lib/api/types";
-
-interface AcademicWorkspaceProps {
+interface Props {
+  path?: string[];
   initialOverview: AcademicStructureOverviewDto;
   initialProblem: ProblemDetails | null;
   members: MemberDto[];
   csrfToken: string;
   canManageAcademic: boolean;
 }
-
+const tabs = [
+  { key: "years", label: "Años escolares" },
+  { key: "grades", label: "Grados y secciones" },
+  { key: "subjects", label: "Materias" },
+  { key: "assignments", label: "Carga docente" },
+].map((i) => ({ ...i, href: "/academic/" + i.key }));
+const titles: Record<string, string> = {
+  years: "Crear año escolar",
+  grades: "Registrar grado",
+  sections: "Crear sección",
+  subjects: "Registrar materia",
+  assignments: "Asignar docente",
+};
 export function AcademicWorkspace({
-  initialOverview,
-  initialProblem,
-  members,
-  csrfToken,
+  path = ["academic", "years"],
   canManageAcademic,
-}: AcademicWorkspaceProps) {
-  const {
-    overview,
-    problem,
-    feedback,
-    activeView,
-    setActiveView,
-    openDrawer,
-    toggleDrawer,
-    selectedAcademicYearId,
-    setSelectedAcademicYearId,
-    selectedGradeLevelId,
-    setSelectedGradeLevelId,
-    subjectSearchQuery,
-    setSubjectSearchQuery,
-    activeAcademicYear,
-    filteredSections,
-    filteredAssignments,
-    filteredSubjects,
-    totalSeatCapacity,
-    totalWeeklyHoursAssigned,
-    isPending,
-    actionLoadingId,
-    handleRefresh,
-    handleToggleYearStatus,
-    yearForm,
-    submitCreateYear,
-    gradeForm,
-    submitCreateGradeLevel,
-    sectionForm,
-    submitCreateSection,
-    subjectForm,
-    submitCreateSubject,
-    assignmentForm,
-    submitAssignTeacher,
-  } = useAcademicWorkspace({
-    initialOverview,
-    initialProblem,
-    csrfToken,
-  });
-
+  members,
+  ...data
+}: Props) {
+  const s = useAcademicWorkspace(data),
+    view = path[1] ?? "years",
+    creating = path[2] === "new";
+  useSchoolFeedback(s.feedback);
+  useUnsavedChanges(
+    creating &&
+      (s.yearForm.formState.isDirty ||
+        s.gradeForm.formState.isDirty ||
+        s.sectionForm.formState.isDirty ||
+        s.subjectForm.formState.isDirty ||
+        s.assignmentForm.formState.isDirty),
+  );
+  const error = s.problem ? (
+    <ProblemAlert problem={s.problem} />
+  ) : s.feedback?.tone === "error" ? (
+    <p role="alert" className="mb-4 rounded-lg bg-red-50 p-4 text-xs text-red-800">
+      {s.feedback.title} · {s.feedback.detail}
+    </p>
+  ) : null;
+  if (creating)
+    return (
+      <>
+        {error}
+        {canManageAcademic ? (
+          <SchoolFormFrame
+            title={titles[view]}
+            description="Organiza la estructura del colegio con datos propios de esta institución."
+            back={"/academic/" + (view === "sections" ? "grades" : view)}
+          >
+            <AcademicRecordForm kind={view} state={s} members={members} />
+          </SchoolFormFrame>
+        ) : (
+          <EmptyState title="No tienes permiso para modificar la estructura académica" />
+        )}
+      </>
+    );
   return (
-    <div className="space-y-5">
-      <AcademicContextStrip
-        academicYears={overview.academicYears}
-        activeAcademicYear={activeAcademicYear}
-        selectedAcademicYearId={selectedAcademicYearId}
-        onSelectAcademicYear={setSelectedAcademicYearId}
-        activeView={activeView}
-        onSelectView={setActiveView}
-        gradesCount={overview.gradeLevels.length}
-        sectionsCount={filteredSections.length}
-        totalSeatCapacity={totalSeatCapacity}
-        subjectsCount={overview.subjects.length}
-        assignmentsCount={filteredAssignments.length}
-        totalWeeklyHours={totalWeeklyHoursAssigned}
-        isRefreshing={isPending}
-        onRefresh={handleRefresh}
+    <>
+      {error}
+      <SchoolPageHeading
+        onRefresh={s.handleRefresh}
+        refreshing={s.isPending}
+        title="Organización académica"
+        description="Configura la estructura del colegio antes de matricular y asignar docentes."
+        actions={
+          canManageAcademic ? (
+            <ButtonLink href={"/academic/" + view + "/new"}>{titles[view]}</ButtonLink>
+          ) : undefined
+        }
       />
-
-      {problem ? <ProblemAlert problem={problem} /> : null}
-
-      {feedback ? (
-        <div className="animate-slide-down">
-          <Alert variant={feedback.tone === "error" ? "destructive" : "info"}>
-            {feedback.tone === "error" ? (
-              <AlertCircle className="size-4" />
-            ) : (
-              <CheckCircle2 className="size-4" />
-            )}
-            <AlertTitle>{feedback.title}</AlertTitle>
-            {feedback.detail ? <AlertDescription>{feedback.detail}</AlertDescription> : null}
-          </Alert>
+      <SchoolTabs items={tabs} active={view} />
+      {["grades", "assignments"].includes(view) && (
+        <div className="mb-5 max-w-60">
+          <label
+            className="text-muted mb-2 block text-xs font-semibold"
+            htmlFor="academic-year-view"
+          >
+            Año escolar
+          </label>
+          <select
+            id="academic-year-view"
+            className={schoolSelectClass}
+            value={s.selectedAcademicYearId}
+            onChange={(e) => s.setSelectedAcademicYearId(e.target.value)}
+          >
+            <option value="all">Todos los años</option>
+            {s.overview.academicYears.map((y) => (
+              <option key={y.id} value={y.id}>
+                {y.code}
+              </option>
+            ))}
+          </select>
         </div>
-      ) : null}
-
-      {activeView === "grades-sections" ? (
-        <GradesSectionsSplitView
-          gradeLevels={overview.gradeLevels}
-          academicYears={overview.academicYears}
-          filteredSections={filteredSections}
-          selectedGradeLevelId={selectedGradeLevelId}
-          onSelectGradeLevel={setSelectedGradeLevelId}
-          canManageAcademic={canManageAcademic}
-          openDrawer={openDrawer}
-          onToggleDrawer={toggleDrawer}
-          gradeForm={gradeForm}
-          onSubmitGradeLevel={submitCreateGradeLevel}
-          sectionForm={sectionForm}
-          onSubmitSection={submitCreateSection}
-          isSubmitting={isPending}
-        />
-      ) : null}
-
-      {activeView === "years" ? (
-        <AcademicYearsPanel
-          academicYears={overview.academicYears}
-          canManageAcademic={canManageAcademic}
-          openDrawer={openDrawer}
-          onToggleDrawer={toggleDrawer}
-          yearForm={yearForm}
-          onSubmitYear={submitCreateYear}
-          onToggleYearStatus={handleToggleYearStatus}
-          actionLoadingId={actionLoadingId}
-          isSubmitting={isPending}
-        />
-      ) : null}
-
-      {activeView === "subjects" ? (
-        <CurriculumSubjectsPanel
-          subjects={filteredSubjects}
-          totalSubjectsCount={overview.subjects.length}
-          searchQuery={subjectSearchQuery}
-          onChangeSearchQuery={setSubjectSearchQuery}
-          canManageAcademic={canManageAcademic}
-          openDrawer={openDrawer}
-          onToggleDrawer={toggleDrawer}
-          subjectForm={subjectForm}
-          onSubmitSubject={submitCreateSubject}
-          isSubmitting={isPending}
-        />
-      ) : null}
-
-      {activeView === "assignments" ? (
-        <TeacherAssignmentsPanel
-          assignments={filteredAssignments}
-          sections={filteredSections}
-          subjects={overview.subjects}
-          members={members}
-          canManageAcademic={canManageAcademic}
-          openDrawer={openDrawer}
-          onToggleDrawer={toggleDrawer}
-          assignmentForm={assignmentForm}
-          onSubmitAssignment={submitAssignTeacher}
-          isSubmitting={isPending}
-        />
-      ) : null}
-    </div>
+      )}
+      {view === "subjects" && (
+        <div className="mb-5 max-w-sm">
+          <Input
+            aria-label="Buscar materias"
+            placeholder="Buscar código o nombre de materia"
+            value={s.subjectSearchQuery}
+            onChange={(e) => s.setSubjectSearchQuery(e.target.value)}
+          />
+        </div>
+      )}
+      {view === "grades" && (
+        <div className="mb-5 max-w-60">
+          <label className="text-muted mb-2 block text-xs font-semibold" htmlFor="grade-view">
+            Grado
+          </label>
+          <select
+            id="grade-view"
+            className={schoolSelectClass}
+            value={s.selectedGradeLevelId}
+            onChange={(e) => s.setSelectedGradeLevelId(e.target.value)}
+          >
+            <option value="all">Todos los grados</option>
+            {s.overview.gradeLevels.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.displayName}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+      <AcademicDirectory view={view} state={s} canManage={canManageAcademic} />
+    </>
   );
 }

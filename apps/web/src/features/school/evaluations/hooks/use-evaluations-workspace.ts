@@ -33,6 +33,7 @@ export interface UseEvaluationsWorkspaceProps {
   initialGrading: GradingWorkspaceOverviewDto;
   initialReportCards: ReportCardsOverviewDto;
   csrfToken: string;
+  view?: EvaluationsTab | "policies";
 }
 
 export interface FeedbackBanner {
@@ -57,6 +58,7 @@ export function useEvaluationsWorkspace({
   initialGrading,
   initialReportCards,
   csrfToken,
+  view = "attendance",
 }: UseEvaluationsWorkspaceProps) {
   const [activeTab, setActiveTab] = useState<EvaluationsTab>("attendance");
 
@@ -68,10 +70,22 @@ export function useEvaluationsWorkspace({
     useState<ReportCardsOverviewDto>(initialReportCards);
 
   const [selectedAcademicYearId, setSelectedAcademicYearId] = useState<string>(
-    initialAttendance.selectedAcademicYearId ?? initialAcademicOverview.academicYears[0]?.id ?? "",
+    (view === "report-cards"
+      ? initialReportCards.selectedAcademicYearId
+      : view !== "attendance"
+        ? initialGrading.selectedAcademicYearId
+        : initialAttendance.selectedAcademicYearId) ??
+      initialAcademicOverview.academicYears[0]?.id ??
+      "",
   );
   const [selectedSectionId, setSelectedSectionId] = useState<string>(
-    initialAttendance.selectedSectionId ?? initialAcademicOverview.sections[0]?.id ?? "",
+    (view === "report-cards"
+      ? initialReportCards.selectedSectionId
+      : view !== "attendance"
+        ? initialGrading.selectedSectionId
+        : initialAttendance.selectedSectionId) ??
+      initialAcademicOverview.sections[0]?.id ??
+      "",
   );
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>(
     initialGrading.selectedSubjectId ?? initialAcademicOverview.subjects[0]?.id ?? "",
@@ -85,6 +99,13 @@ export function useEvaluationsWorkspace({
     {},
   );
   const [gradeDrafts, setGradeDrafts] = useState<Record<string, GradeDraftEntry>>({});
+  const hasDrafts = Object.keys(attendanceDrafts).length > 0 || Object.keys(gradeDrafts).length > 0;
+  const confirmContextChange = useCallback(
+    () =>
+      !hasDrafts ||
+      window.confirm("Hay cambios sin guardar. ¿Deseas descartarlos y cambiar la selección?"),
+    [hasDrafts],
+  );
   const [selectedSnapshotId, setSelectedSnapshotId] = useState<string | null>(
     initialReportCards.snapshots[0]?.id ?? null,
   );
@@ -120,33 +141,46 @@ export function useEvaluationsWorkspace({
       setIsLoadingFilters(true);
       try {
         const [attRes, gradRes, rcRes] = await Promise.all([
-          getSectionAttendanceOverview({
-            academicYearId: nextYearId || undefined,
-            sectionId: nextSectionId || undefined,
-            attendanceDate: nextDate || undefined,
-          }),
-          getGradingWorkspaceOverview({
-            academicYearId: nextYearId || undefined,
-            sectionId: nextSectionId || undefined,
-            subjectId: nextSubjectId || undefined,
-            periodCode: nextPeriod || undefined,
-          }),
-          getReportCardsOverview({
-            academicYearId: nextYearId || undefined,
-            sectionId: nextSectionId || undefined,
-            periodCode: nextPeriod || undefined,
-          }),
+          view === "attendance"
+            ? getSectionAttendanceOverview({
+                academicYearId: nextYearId || undefined,
+                sectionId: nextSectionId || undefined,
+                attendanceDate: nextDate || undefined,
+              })
+            : Promise.resolve(null),
+          view === "gradebook" || view === "policies"
+            ? getGradingWorkspaceOverview({
+                academicYearId: nextYearId || undefined,
+                sectionId: nextSectionId || undefined,
+                subjectId: nextSubjectId || undefined,
+                periodCode: nextPeriod || undefined,
+              })
+            : Promise.resolve(null),
+          view === "report-cards"
+            ? getReportCardsOverview({
+                academicYearId: nextYearId || undefined,
+                sectionId: nextSectionId || undefined,
+                periodCode: nextPeriod || undefined,
+              })
+            : Promise.resolve(null),
         ]);
 
-        if (attRes.ok) {
+        const failed = [attRes, gradRes, rcRes].find((result) => result && !result.ok);
+        if (failed && !failed.ok)
+          setFeedback({
+            tone: "error",
+            title: failed.problem.title,
+            detail: failed.problem.detail ?? "No se pudieron actualizar los registros.",
+          });
+        if (attRes?.ok) {
           setAttendanceOverview(attRes.data);
           setAttendanceDrafts({});
         }
-        if (gradRes.ok) {
+        if (gradRes?.ok) {
           setGradingOverview(gradRes.data);
           setGradeDrafts({});
         }
-        if (rcRes.ok) {
+        if (rcRes?.ok) {
           setReportCardsOverview(rcRes.data);
         }
       } finally {
@@ -154,6 +188,7 @@ export function useEvaluationsWorkspace({
       }
     },
     [
+      view,
       selectedAcademicYearId,
       selectedSectionId,
       selectedSubjectId,
@@ -164,6 +199,7 @@ export function useEvaluationsWorkspace({
 
   const handleAcademicYearChange = useCallback(
     async (academicYearId: string) => {
+      if (!confirmContextChange()) return;
       setSelectedAcademicYearId(academicYearId);
       const firstSectionInYear =
         initialAcademicOverview.sections.find((s) => s.academicYearId === academicYearId)?.id ?? "";
@@ -173,39 +209,43 @@ export function useEvaluationsWorkspace({
         sectionId: firstSectionInYear,
       });
     },
-    [initialAcademicOverview.sections, refreshWorkspace],
+    [initialAcademicOverview.sections, refreshWorkspace, confirmContextChange],
   );
 
   const handleSectionChange = useCallback(
     async (sectionId: string) => {
+      if (!confirmContextChange()) return;
       setSelectedSectionId(sectionId);
       await refreshWorkspace({ sectionId });
     },
-    [refreshWorkspace],
+    [refreshWorkspace, confirmContextChange],
   );
 
   const handleSubjectChange = useCallback(
     async (subjectId: string) => {
+      if (!confirmContextChange()) return;
       setSelectedSubjectId(subjectId);
       await refreshWorkspace({ subjectId });
     },
-    [refreshWorkspace],
+    [refreshWorkspace, confirmContextChange],
   );
 
   const handlePeriodChange = useCallback(
     async (periodCode: string) => {
+      if (!confirmContextChange()) return;
       setSelectedPeriodCode(periodCode);
       await refreshWorkspace({ periodCode });
     },
-    [refreshWorkspace],
+    [refreshWorkspace, confirmContextChange],
   );
 
   const handleDateChange = useCallback(
     async (attendanceDate: string) => {
+      if (!confirmContextChange()) return;
       setSelectedDate(attendanceDate);
       await refreshWorkspace({ attendanceDate });
     },
-    [refreshWorkspace],
+    [refreshWorkspace, confirmContextChange],
   );
 
   // --- Attendance Logic ---
@@ -661,6 +701,9 @@ export function useEvaluationsWorkspace({
   );
 
   return {
+    handleRefresh: async () => {
+      if (confirmContextChange()) await refreshWorkspace();
+    },
     activeTab,
     setActiveTab,
     academicYears: initialAcademicOverview.academicYears,
@@ -700,3 +743,5 @@ export function useEvaluationsWorkspace({
     dismissFeedback,
   };
 }
+
+export type EvaluationsState = ReturnType<typeof useEvaluationsWorkspace>;

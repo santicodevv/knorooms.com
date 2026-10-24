@@ -1,5 +1,6 @@
 "use client";
 
+import toast from "react-hot-toast";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchSchoolMembers, revokeSchoolMember } from "@/features/school/api/school-api";
@@ -38,6 +39,7 @@ export function useSchoolMembers({
   }
 
   async function handleRevokeMember(member: MemberDto) {
+    if (!window.confirm(`¿Revocar el acceso de ${member.displayName} a este colegio?`)) return;
     setProblem(null);
     setSuccessMessage(null);
     setBusyMembershipId(member.membershipId);
@@ -55,6 +57,7 @@ export function useSchoolMembers({
         item.membershipId === member.membershipId ? { ...item, status: "Revoked" } : item,
       ),
     );
+    toast.success("Acceso revocado");
     setSuccessMessage(
       `La membresía de "${member.displayName}" (${member.email}) fue revocada exitosamente.`,
     );

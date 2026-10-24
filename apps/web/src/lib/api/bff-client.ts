@@ -37,6 +37,7 @@ export async function bffFetch<T = void>(
       body: serializedBody,
       credentials: "same-origin",
       cache: "no-store",
+      signal: AbortSignal.timeout(30_000),
     });
 
     if (response.ok) {

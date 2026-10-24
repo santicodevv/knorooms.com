@@ -1,3 +1,4 @@
+import { SchoolRouteBoundary } from "@/features/school/components/school-route-boundary";
 import { headers } from "next/headers";
 import { MembersManager } from "@/components/school/members-manager";
 import { SchoolShell } from "@/components/school/school-shell";
@@ -6,7 +7,7 @@ import type { MemberDto, TenantContextDto } from "@/lib/api/types";
 import { getServerSession } from "@/lib/auth/session-store";
 import { resolveHost } from "@/lib/tenancy/host";
 
-export default async function SchoolMembersPage() {
+async function SchoolMembersPage() {
   const incomingHeaders = await headers();
   const rawHost =
     incomingHeaders.get("x-forwarded-host") ??
@@ -45,5 +46,13 @@ export default async function SchoolMembersPage() {
         />
       ) : null}
     </SchoolShell>
+  );
+}
+
+export default function Page() {
+  return (
+    <SchoolRouteBoundary>
+      <SchoolMembersPage />
+    </SchoolRouteBoundary>
   );
 }

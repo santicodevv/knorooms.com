@@ -68,7 +68,7 @@ export function PlatformConsole({
         onToggleStatus={handleToggleInstitutionStatus}
       />
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div id="support-access" className="grid gap-6 lg:grid-cols-3">
         <CreateInstitutionFormCard
           form={createForm}
           baseDomain={baseDomain}

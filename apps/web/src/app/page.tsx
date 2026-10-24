@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { Building2, Globe, Lock, Server, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { ButtonLink } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { normalizeBaseDomain, normalizePlatformSubdomain } from "@/lib/tenancy/host";
 
@@ -33,9 +33,9 @@ export default async function PublicHomePage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Button asChild variant="outline" size="sm">
-              <a href={adminUrl}>Consola de Plataforma ({platformSubdomain})</a>
-            </Button>
+            <ButtonLink variant="outline" size="sm" href={adminUrl}>
+              Consola de Plataforma ({platformSubdomain})
+            </ButtonLink>
           </div>
         </div>
       </header>
@@ -52,9 +52,7 @@ export default async function PublicHomePage() {
             mediante Backend-for-Frontend (BFF) con sesiones cifradas en el servidor.
           </p>
           <div className="flex flex-wrap items-center gap-3 pt-2">
-            <Button asChild>
-              <a href={adminUrl}>Acceder a Administración Global</a>
-            </Button>
+            <ButtonLink href={adminUrl}>Acceder a Administración Global</ButtonLink>
           </div>
         </section>
 
@@ -93,11 +91,9 @@ export default async function PublicHomePage() {
                 Alta de nuevas instituciones educativas, suspensión/activación operativa, asignación
                 de administradores iniciales y solicitudes auditadas de soporte.
               </p>
-              <Button asChild variant="outline" size="sm" className="w-full">
-                <a href={adminUrl}>
-                  Abrir {platformSubdomain}.{baseDomain}
-                </a>
-              </Button>
+              <ButtonLink variant="outline" size="sm" className="w-full" href={adminUrl}>
+                Abrir {platformSubdomain}.{baseDomain}
+              </ButtonLink>
             </CardContent>
           </Card>
 

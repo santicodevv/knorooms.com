@@ -69,7 +69,7 @@ export function SupportGrantsTable({
                     <div className="font-mono text-xs text-slate-500">
                       Solicitante: {grant.requestedByUserId}
                     </div>
-                    <div className="font-mono text-[11px] text-slate-400">ID: {grant.id}</div>
+                    <div className="text-muted font-mono text-[11px]">ID: {grant.id}</div>
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
@@ -149,7 +149,7 @@ export function SupportGrantsTable({
                         Revocar acceso
                       </Button>
                     ) : (
-                      <span className="text-xs text-slate-400">—</span>
+                      <span className="text-muted text-xs">—</span>
                     )}
                   </TableCell>
                 </TableRow>

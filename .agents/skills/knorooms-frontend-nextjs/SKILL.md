@@ -1,6 +1,6 @@
 ---
 name: knorooms-frontend-nextjs
-description: Desarrollo Frontend escalable en Next.js 16 (App Router) para KNOROOMS: separación estricta entre lógica (hooks/api/schemas) y componentes presentacionales reutilizables, TypeScript estricto, Tailwind CSS v4, shadcn/ui y enrutamiento multi-tenant por subdominio (proxy.ts).
+description: Desarrollo Frontend escalable en Next.js 16 (App Router) para KNOROOMS: separación estricta entre lógica (hooks/api/schemas) y componentes presentacionales reutilizables, TypeScript estricto, Tailwind CSS v4, componentes propios con Tailwind CSS y enrutamiento multi-tenant por subdominio (proxy.ts).
 ---
 
 # Skill: Arquitectura Frontend Escalable en Next.js 16 y BFF (`knorooms-frontend-nextjs`)
@@ -19,7 +19,7 @@ Garantizar que todo desarrollo en `apps/web/` mantenga una arquitectura **altame
 
 ## 4. Archivos y directorios relevantes
 - `apps/web/src/proxy.ts` — Reescritura de rutas por subdominio (`localhost` -> público, `admin.localhost` -> `/platform`, `<slug>.localhost` -> `/school`).
-- `apps/web/src/components/ui/` — Primitivas base de `shadcn/ui` (`Button`, `Card`, `Table`, `Badge`, `Alert`, `Input`, `Label`).
+- `apps/web/src/components/ui/` — Primitivas base de `componentes propios con Tailwind CSS` (`Button`, `Card`, `Table`, `Badge`, `Alert`, `Input`, `Label`).
 - `apps/web/src/components/shared/` — Componentes compuestos reutilizables en todo el SaaS (`SectionCard`, `EmptyState`, `FeedbackBanner`, `RefreshButton`, `FormFieldError`, `InstitutionStatusBadge`, `MembershipStatusBadge`, `SupportGrantStatusBadge`, `AccessTypeBadge`).
 - `apps/web/src/features/<feature>/` — Módulos funcionales divididos obligatoriamente en:
   - `schemas/` — Esquemas `zod`, tipos inferidos y constantes de validación.

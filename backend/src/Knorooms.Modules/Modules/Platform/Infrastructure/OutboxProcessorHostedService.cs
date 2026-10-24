@@ -1,3 +1,5 @@
+using System.Text.Json;
+using Knorooms.Modules.Modules.Identity.Contracts;
 using Knorooms.Modules.Common.Persistence;
 using Knorooms.SharedKernel.Tenancy;
 using Microsoft.EntityFrameworkCore;
@@ -66,6 +68,12 @@ internal sealed class OutboxProcessorHostedService(
         {
             try
             {
+                if (message.EventType == typeof(AdministratorInvitationQueued).FullName)
+                {
+                    var payload = JsonSerializer.Deserialize<AdministratorInvitationQueued>(message.PayloadJson)
+                        ?? throw new InvalidOperationException("Evento de invitación inválido.");
+                    await scope.ServiceProvider.GetRequiredService<IAdministratorInvitationService>().DeliverAsync(payload, cancellationToken);
+                }
                 logger.LogInformation(
                     "Dispatched Outbox domain event {EventId} ({EventType}) for TenantId={TenantId}.",
                     message.Id,
@@ -75,7 +83,7 @@ internal sealed class OutboxProcessorHostedService(
             }
             catch (Exception ex)
             {
-                message.MarkFailed(ex.Message);
+                message.MarkFailed(message.EventType == typeof(AdministratorInvitationQueued).FullName ? "No se pudo enviar la invitación." : ex.Message);
             }
         }
 

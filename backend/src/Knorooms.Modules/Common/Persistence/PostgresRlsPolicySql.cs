@@ -180,6 +180,70 @@ public static class PostgresRlsPolicySql
         return sb.ToString();
     }
 
+    public static string BuildInvitationUpSql() => """
+        ALTER TABLE public.administrator_invitations ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE public.administrator_invitations FORCE ROW LEVEL SECURITY;
+        CREATE POLICY rls_administrator_invitations ON public.administrator_invitations
+        FOR ALL USING (
+            public.app_execution_mode() IN ('tenant', 'platform_onboarding')
+            AND tenant_id = public.app_current_tenant_id()
+        ) WITH CHECK (
+            public.app_execution_mode() IN ('tenant', 'platform_onboarding')
+            AND tenant_id = public.app_current_tenant_id()
+        );
+        """;
+
+    public static string BuildCommercialUpSql() => """
+        ALTER TABLE public.plan_versions ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE public.plan_versions FORCE ROW LEVEL SECURITY;
+        CREATE POLICY rls_plans_read ON public.plan_versions FOR SELECT USING (public.app_execution_mode() IN ('platform', 'platform_commercial', 'tenant'));
+        CREATE POLICY rls_plans_insert ON public.plan_versions FOR INSERT WITH CHECK (public.app_execution_mode() = 'platform');
+        ALTER TABLE public.institution_subscriptions ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE public.institution_subscriptions FORCE ROW LEVEL SECURITY;
+        CREATE POLICY rls_subscriptions_read ON public.institution_subscriptions FOR SELECT USING
+            (public.app_execution_mode() IN ('tenant', 'platform_commercial') AND tenant_id = public.app_current_tenant_id());
+        CREATE POLICY rls_subscriptions_write ON public.institution_subscriptions FOR ALL USING
+            (public.app_execution_mode() = 'platform_commercial' AND tenant_id = public.app_current_tenant_id()) WITH CHECK
+            (public.app_execution_mode() = 'platform_commercial' AND tenant_id = public.app_current_tenant_id());
+        ALTER TABLE public.subscription_module_overrides ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE public.subscription_module_overrides FORCE ROW LEVEL SECURITY;
+        CREATE POLICY rls_overrides_read ON public.subscription_module_overrides FOR SELECT USING
+            (public.app_execution_mode() IN ('tenant', 'platform_commercial') AND tenant_id = public.app_current_tenant_id());
+        CREATE POLICY rls_overrides_write ON public.subscription_module_overrides FOR ALL USING
+            (public.app_execution_mode() = 'platform_commercial' AND tenant_id = public.app_current_tenant_id()) WITH CHECK
+            (public.app_execution_mode() = 'platform_commercial' AND tenant_id = public.app_current_tenant_id());
+        CREATE POLICY rls_audit_commercial_insert ON public.audit_logs FOR INSERT WITH CHECK
+            (public.app_execution_mode() = 'platform_commercial' AND tenant_id = public.app_current_tenant_id());
+        """;
+
+    public static string BuildInstitutionModulesUpSql() => """
+        ALTER TABLE public.institution_module_settings ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE public.institution_module_settings FORCE ROW LEVEL SECURITY;
+        CREATE POLICY rls_module_settings_read ON public.institution_module_settings FOR SELECT USING
+            ((public.app_execution_mode() IN ('tenant','platform_commercial') AND tenant_id = public.app_current_tenant_id()) OR public.app_execution_mode() = 'platform_directory');
+        CREATE POLICY rls_module_settings_write ON public.institution_module_settings FOR ALL USING
+            (public.app_execution_mode() = 'platform_commercial' AND tenant_id = public.app_current_tenant_id()) WITH CHECK
+            (public.app_execution_mode() = 'platform_commercial' AND tenant_id = public.app_current_tenant_id());
+        CREATE POLICY rls_directory_memberships ON public.tenant_memberships FOR SELECT USING (public.app_execution_mode() = 'platform_directory');
+        CREATE POLICY rls_directory_membership_roles ON public.tenant_membership_roles FOR SELECT USING (public.app_execution_mode() = 'platform_directory');
+        CREATE POLICY rls_directory_roles ON public.institution_roles FOR SELECT USING (public.app_execution_mode() = 'platform_directory');
+        CREATE POLICY rls_directory_invitations ON public.administrator_invitations FOR SELECT USING (public.app_execution_mode() = 'platform_directory');
+        -- La copia se ejecuta por colegio con el contexto restringido del rol migrador.
+        DO $$ DECLARE inst record; BEGIN
+          FOR inst IN SELECT id FROM public.institutions LOOP
+            PERFORM set_config('app.execution_mode','platform_commercial',true);
+            PERFORM set_config('app.current_tenant_id',inst.id::text,true);
+            INSERT INTO public.institution_module_settings (id, tenant_id, enabled_modules, max_active_students, max_sections, created_at_utc)
+            SELECT i.id, i.id, CASE WHEN s.status = 'Active' AND s.starts_at_utc <= now() AND s.ends_at_utc > now() THEN
+              ARRAY(SELECT DISTINCT codes.code FROM unnest(COALESCE(p.modules, ARRAY[]::text[]) || ARRAY(SELECT o.code FROM public.subscription_module_overrides o WHERE o.tenant_id=i.id AND o.enabled)) AS codes(code)
+                WHERE codes.code <> 'moodle' AND NOT EXISTS (SELECT 1 FROM public.subscription_module_overrides o WHERE o.tenant_id=i.id AND o.code=codes.code AND NOT o.enabled))
+              ELSE ARRAY[]::text[] END, p.max_active_students, p.max_sections, now()
+            FROM public.institutions i LEFT JOIN public.institution_subscriptions s ON s.tenant_id=i.id LEFT JOIN public.plan_versions p ON p.id=s.plan_version_id WHERE i.id=inst.id;
+          END LOOP;
+          PERFORM set_config('app.execution_mode','none',true); PERFORM set_config('app.current_tenant_id','',true);
+        END $$;
+        """;
+
     public static string BuildDownSql()
     {
         var sb = new System.Text.StringBuilder();

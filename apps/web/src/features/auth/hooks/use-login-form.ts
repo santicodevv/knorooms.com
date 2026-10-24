@@ -1,4 +1,5 @@
 "use client";
+import toast from "react-hot-toast";
 
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -36,6 +37,7 @@ export function useLoginForm({ returnTo }: UseLoginFormParams) {
     }
 
     setProblem(result.problem);
+    toast.error(result.problem.detail ?? result.problem.title ?? "No se pudo iniciar sesión.");
   }
 
   return {

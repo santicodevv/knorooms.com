@@ -13,7 +13,7 @@ Este documento define las reglas técnicas, de arquitectura escalable, de seguri
     3. `hooks/`: custom React hooks (`use-*.ts`) que encapsulan `useState`, `useForm`, manejo de errores `ProblemDetails` y mutaciones, sin una sola línea de JSX (`use-platform-console.ts`, `use-school-members.ts`, `use-support-access-grants.ts`).
     4. `components/`: componentes presentacionales pequeños, enfocados y reutilizables que reciben datos y callbacks por `props` (`institutions-table.tsx`, `create-institution-form-card.tsx`, `members-table.tsx`, `support-grants-table.tsx`).
 - **Componentes altamente reutilizables (`src/components/shared/` y `src/components/ui/`)**:
-  - `src/components/ui/`: primitivas atómicas de `shadcn/ui` (`button`, `card`, `table`, `badge`, `alert`, `input`, `label`).
+  - `src/components/ui/`: primitivas atómicas de `componentes propios con Tailwind CSS` (`button`, `card`, `table`, `badge`, `alert`, `input`, `label`).
   - `src/components/shared/`: bloques compuestos reutilizables transversalmente en toda la aplicación (`SectionCard`, `EmptyState`, `FeedbackBanner`, `RefreshButton`, `FormFieldError`, `InstitutionStatusBadge`, `MembershipStatusBadge`, `SupportGrantStatusBadge`, `AccessTypeBadge`).
 - **Sin datos simulados (No Fake Data)**: Ninguna vista puede mostrar datos ficticios hardcodeados. Los componentes deben consumir exclusivamente la API real a través del BFF y manejar explícitamente estados vacíos y errores `application/problem+json` (RFC 9457).
 - **Patrón BFF (Backend-for-Frontend)**: El navegador **jamás** recibe ni almacena `access_token` ni `refresh_token`, y nunca invoca directamente `API_BASE_URL`.
@@ -29,7 +29,7 @@ apps/web/src/
 │   ├── platform/                       # Rutas de consola global (admin.*)
 │   └── school/                         # Rutas de portal institucional (<slug>.*)
 ├── components/
-│   ├── ui/                             # Primitivas base shadcn/ui
+│   ├── ui/                             # Primitivas base componentes propios con Tailwind CSS
 │   ├── shared/                         # Componentes compuestos reutilizables (SectionCard, EmptyState, StatusBadge...)
 │   ├── api/                            # Visualización estándar de ProblemDetails RFC 9457
 │   ├── auth/                           # Tarjetas de login y botón de cierre de sesión
@@ -86,3 +86,13 @@ pnpm typecheck
 pnpm test
 pnpm build
 ```
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

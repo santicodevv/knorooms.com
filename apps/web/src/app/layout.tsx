@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AppToaster } from "@/components/shared/app-toaster";
 
 export const metadata: Metadata = {
   title: "KNOROOMS — Gestión Académica Multi-Tenant para Colegios de RD",
@@ -14,7 +15,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className="h-full antialiased">
-      <body className="flex min-h-full flex-col bg-slate-50 text-slate-900">{children}</body>
+      <body className="flex min-h-full flex-col bg-slate-50 text-slate-900">
+        {children}
+        <AppToaster />
+      </body>
     </html>
   );
 }

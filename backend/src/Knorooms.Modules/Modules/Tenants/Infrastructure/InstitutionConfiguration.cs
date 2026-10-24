@@ -57,6 +57,16 @@ internal sealed class InstitutionConfiguration : IEntityTypeConfiguration<Instit
             .IsUnique()
             .HasDatabaseName("ux_institutions_slug");
 
+        builder.Property(x => x.ContactName).HasColumnName("contact_name").HasMaxLength(160).HasDefaultValue("").IsRequired();
+        builder.Property(x => x.ContactEmail).HasColumnName("contact_email").HasMaxLength(320).HasDefaultValue("").IsRequired();
+        builder.Property(x => x.Phone).HasColumnName("phone").HasMaxLength(40).HasDefaultValue("").IsRequired();
+        builder.Property(x => x.Address).HasColumnName("address").HasMaxLength(500).HasDefaultValue("").IsRequired();
+        builder.Property(x => x.CenterCode).HasColumnName("center_code").HasMaxLength(50).HasDefaultValue("").IsRequired();
+        builder.Property(x => x.LogoUrl).HasColumnName("logo_url").HasMaxLength(1000).HasDefaultValue("").IsRequired();
+        builder.Property(x => x.OnboardingOwner).HasColumnName("onboarding_owner").HasMaxLength(160).HasDefaultValue("").IsRequired();
+        builder.Property(x => x.OnboardingNotes).HasColumnName("onboarding_notes").HasMaxLength(2000).HasDefaultValue("").IsRequired();
+        builder.Property(x => x.WelcomeMeetingCompleted).HasColumnName("welcome_meeting_completed").HasDefaultValue(false);
+
         builder.Ignore(x => x.DomainEvents);
     }
 }

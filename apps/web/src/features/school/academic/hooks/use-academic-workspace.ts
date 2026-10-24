@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -48,6 +49,7 @@ export function useAcademicWorkspace({
   initialProblem,
   csrfToken,
 }: UseAcademicWorkspaceParams) {
+  const router = useRouter();
   const [overview, setOverview] = useState<AcademicStructureOverviewDto>(initialOverview);
   const [problem, setProblem] = useState<ProblemDetails | null>(initialProblem);
   const [feedback, setFeedback] = useState<AcademicFeedbackState | null>(null);
@@ -172,6 +174,7 @@ export function useAcademicWorkspace({
           endDate: values.endDate,
         });
         await refresh();
+        router.push("/academic/years");
       } else {
         setFeedback({
           tone: "error",
@@ -184,6 +187,8 @@ export function useAcademicWorkspace({
 
   const handleToggleYearStatus = useCallback(
     (yearId: string, yearCode: string, currentlyClosed: boolean) => {
+      if (!window.confirm(`¿${currentlyClosed ? "Reabrir" : "Cerrar"} el año escolar ${yearCode}?`))
+        return;
       setFeedback(null);
       setActionLoadingId(yearId);
       startTransition(async () => {
@@ -234,6 +239,7 @@ export function useAcademicWorkspace({
           displayName: "",
         });
         await refresh();
+        router.push("/academic/grades");
       } else {
         setFeedback({
           tone: "error",
@@ -260,6 +266,7 @@ export function useAcademicWorkspace({
           code: "",
         });
         await refresh();
+        router.push("/academic/grades");
       } else {
         setFeedback({
           tone: "error",
@@ -283,6 +290,7 @@ export function useAcademicWorkspace({
         setOpenDrawer(null);
         subjectForm.reset({ code: "", name: "" });
         await refresh();
+        router.push("/academic/subjects");
       } else {
         setFeedback({
           tone: "error",
@@ -305,6 +313,7 @@ export function useAcademicWorkspace({
         });
         setOpenDrawer(null);
         await refresh();
+        router.push("/academic/assignments");
       } else {
         setFeedback({
           tone: "error",
@@ -398,3 +407,5 @@ export function useAcademicWorkspace({
     submitAssignTeacher,
   };
 }
+
+export type AcademicState = ReturnType<typeof useAcademicWorkspace>;

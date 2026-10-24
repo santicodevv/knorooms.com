@@ -1,3 +1,4 @@
+import { LOGIN_REQUEST_TIMEOUT_MS } from "@/lib/auth/auth-timeouts";
 import type { ProblemDetails } from "@/lib/api/types";
 
 export interface LoginSuccessResponse {
@@ -18,30 +19,46 @@ export async function submitLogin(payload: {
   password: string;
   returnTo: string;
 }): Promise<LoginResult> {
-  let response: Response;
   try {
-    response = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json, application/problem+json",
-      },
-      body: JSON.stringify(payload),
-      credentials: "same-origin",
-    });
+    const response = await fetchLogin(payload);
+    return await parseLoginResponse(response);
   } catch {
     return {
       ok: false,
       problem: {
-        title: "Servicio no disponible",
-        status: 502,
-        detail: "No fue posible contactar con el servicio de autenticación.",
+        title: "No fue posible completar el acceso",
+        status: 503,
+        detail:
+          "La solicitud tardó demasiado o el servicio no respondió correctamente. Inténtelo nuevamente.",
       },
     };
   }
+}
 
+async function fetchLogin(payload: {
+  email: string;
+  password: string;
+  returnTo: string;
+}): Promise<Response> {
+  const response = await fetch("/api/auth/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json, application/problem+json",
+    },
+    body: JSON.stringify(payload),
+    credentials: "same-origin",
+    signal: AbortSignal.timeout(LOGIN_REQUEST_TIMEOUT_MS),
+  });
+  return response;
+}
+
+async function parseLoginResponse(response: Response): Promise<LoginResult> {
   if (response.ok) {
     const data = (await response.json()) as LoginSuccessResponse;
+    if (data.authenticated !== true || typeof data.returnTo !== "string") {
+      throw new Error("Invalid login response");
+    }
     return { ok: true, data };
   }
 

@@ -33,7 +33,13 @@ public enum DatabaseExecutionMode
     PlatformOnboarding = 3,
 
     /// <summary>Operación acotada de gestión de solicitudes de soporte temporal.</summary>
-    PlatformSupport = 4
+    PlatformSupport = 4,
+
+    /// <summary>Administración comercial acotada a un colegio; sin acceso académico.</summary>
+    PlatformCommercial = 5,
+
+    /// <summary>Lectura acotada de metadatos para el listado global; no habilita datos académicos.</summary>
+    PlatformDirectory = 6
 }
 
 /// <summary>
@@ -79,6 +85,8 @@ public sealed record ExecutionScopeContext(
         DatabaseExecutionMode.Platform => "platform",
         DatabaseExecutionMode.PlatformOnboarding => "platform_onboarding",
         DatabaseExecutionMode.PlatformSupport => "platform_support",
+        DatabaseExecutionMode.PlatformCommercial => "platform_commercial",
+        DatabaseExecutionMode.PlatformDirectory => "platform_directory",
         _ => "none"
     };
 }

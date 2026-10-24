@@ -159,3 +159,54 @@ El usuario indicado en `administrators` debe haber iniciado sesión al menos una
 | `GET /api/tenant/report-cards?academicYearId=&sectionId=&periodCode=` | `institution.report-cards.read` | — | `ReportCardsOverviewDto` |
 | `POST /api/tenant/report-cards/publish` | `institution.report-cards.publish` | `{ "enrollmentId", "evaluationPolicyVersionId", "periodCode", "correctionReason" }` | 201 `ReportCardSnapshotDto` (v1 inicial o vN+1 rectificado con motivo >= 10 caracteres) |
 
+
+## Ficha e invitaciones de administradores (orden 2)
+| Método y ruta | Autorización | Resultado |
+|---|---|---|
+| GET /api/platform/institutions/{id}/setup | PlatformInstitutionsRead | Perfil, administradores, últimas 50 invitaciones, tareas y porcentaje administrativo. |
+| PUT /api/platform/institutions/{id}/profile | PlatformInstitutionsManage | Perfil actualizado; requiere version vigente, 409 si cambió. |
+| POST /api/platform/institutions/{id}/invitations | PlatformInstitutionsManage | Body { email }; 201 con estado, sin código de aceptación; 409 si SMTP/clave no están configurados o colegio suspendido. |
+| POST /api/platform/institutions/{id}/invitations/{invitationId}/revoke | PlatformInstitutionsManage | 204; 409 si no está disponible en ese colegio. |
+| POST /api/invitations/accept | Público, solo host institucional; código y contraseña | Body { invitationId, token, displayName, password }; 204 sin sesión/tokens. 400/403 según validación; 429 por exceso de intentos. |
+
+Profile: name, contactName, contactEmail, phone, address, centerCode, logoUrl, timeZoneId, onboardingOwner, welcomeMeetingCompleted, onboardingNotes y version. No modifica slug ni id.
+
+El navegador acepta por POST /api/auth/accept-invitation del BFF, con Origin validado y cuerpo validado. No usa el proxy autenticado ni entrega JWT al navegador. Tras aceptar, el usuario inicia sesión por el flujo habitual.
+[Configuración SMTP y operación](institution-setup-and-invitations.md).
+
+## Suscripciones y derechos (orden 3)
+| Método | Ruta | Permiso |
+|---|---|---|
+| GET | /api/platform/plans | platform.institutions.read |
+| POST | /api/platform/plans | platform.institutions.manage |
+| GET | /api/platform/product-modules | platform.institutions.read |
+| GET | /api/platform/institutions/{id}/subscription | platform.institutions.read |
+| PUT | /api/platform/institutions/{id}/subscription | platform.institutions.manage |
+| GET | /api/tenant/capabilities | institution.context.read |
+
+Crear plan: code, name, description, revision, price/currency opcionales, billingPeriod (Monthly/Annual/Custom), maxActiveStudents/maxSections opcionales y modules. Código+versión únicos; dependencias obligatorias. Respuesta 201 con versión inmutable.
+
+Asignar: planVersionId, startsAtUtc, endsAtUtc, status (Active/Suspended/Cancelled), reason, overrides [{code, enabled}], version. La versión de concurrencia es null en el alta y la devuelta por GET en actualizaciones. Overrides reemplaza la selección completa; [] hereda todo del plan. Respuesta 200 con Subscription, Plan y Access efectivos; 409 si cambió la versión.
+
+Capabilities devuelve estado efectivo, fin, límites y módulos (canRead/canWrite/reason), sin precios ni motivos privados del operador. No concede permisos. Las escrituras académicas restringidas devuelven 403 ProblemDetails con Entitlement.ReadOnly, Entitlement.StudentLimit o Entitlement.SectionLimit. Consulta histórica sujeta a permisos originales.
+
+## Gestión directa de instituciones (ADR-0006)
+| Método | Ruta | Permiso |
+|---|---|---|
+| GET | /api/platform/institution-management | platform.institutions.read |
+| GET | /api/platform/institution-management/slug-availability?slug=... | platform.institutions.read |
+| POST | /api/platform/institution-management | platform.institutions.manage |
+| GET | /api/platform/institution-management/{id}/modules | platform.institutions.read |
+| PUT | /api/platform/institution-management/{id}/modules | platform.institutions.manage |
+| POST | /api/platform/institutions/{id}/invitations/{invitationId}/resend | platform.institutions.manage |
+
+Listado: search (máximo 200), status (Active/Suspended), administrator (None/Pending/Expired/Failed/Active), page >= 1 y pageSize 10/25/50. Respuesta {items,total,page,pageSize}; nombre + UUID como orden estable; páginas fuera de rango se ajustan a la última disponible.
+
+Alta: {name,slug,contactEmail,contactName,phone,address,logoUrl,timeZoneId,enabledModules}. Nombre, slug y correo de contacto obligatorios. Guarda perfil, roles y módulos en una transacción; devuelve 201 InstitutionDto. Sin plan. Error de slug duplicado 409.
+
+Módulos: PUT {enabledModules,version}; versión null solo en la primera configuración. Respuesta {enabledModules,version,access}; 409 ante versión obsoleta y 400 ante módulos/dependencias inválidas. Desactivar conserva datos.
+
+Invitar al mismo correo con invitación pendiente devuelve el mismo ID sin otro envío. Reenviar invalida el ID anterior; devuelve 201 con nueva invitación, o 409 si la anterior cambió. Las invitaciones continúan sin exponer códigos ni credenciales.
+
+### Dashboard de administración global (23/10/2026)
+GET `/api/platform/institution-management/dashboard`: contexto Platform y permiso PlatformInstitutionsRead. Devuelve totales de instituciones activas/suspendidas, estados del administrador, doce puntos mensuales acumulados, uso de módulos disponibles, cinco colegios recientes, cinco acciones administrativas permitidas y generatedAt. Solo metadatos administrativos; nunca actividad académica ni JSON de auditoría. El listado admite `administrator=NotActive`, además de los estados individuales existentes.

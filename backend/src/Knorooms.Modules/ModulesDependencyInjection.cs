@@ -1,3 +1,7 @@
+using Knorooms.Modules.Modules.Subscriptions.Contracts;
+using Knorooms.Modules.Modules.Subscriptions.Application;
+using Knorooms.Modules.Modules.Entitlements.Contracts;
+using Knorooms.Modules.Modules.Entitlements.Application;
 using Knorooms.Modules.Common.Persistence;
 using Knorooms.Modules.Modules.Academic.Application;
 using Knorooms.Modules.Modules.Academic.Contracts;
@@ -28,6 +32,7 @@ using Knorooms.Modules.Modules.Tenants.Contracts;
 using Knorooms.SharedKernel.Tenancy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Knorooms.Modules;
@@ -61,12 +66,28 @@ public static class ModulesDependencyInjection
             options.AddInterceptors(rlsInterceptor);
         });
 
+        services.AddScoped<ISubscriptionService, SubscriptionService>();
+        services.AddScoped<IEntitlementService, EntitlementService>();
+        services.AddScoped<IInstitutionModulesService, InstitutionModulesService>();
         services.AddScoped<ITenantLookupService, TenantLookupService>();
         services.AddScoped<IIdentityService, IdentityService>();
+        services.AddOptions<InvitationOptions>().BindConfiguration(InvitationOptions.SectionName);
+        services.AddScoped<IAdministratorInvitationService, AdministratorInvitationService>();
+        services.AddScoped<SmtpInvitationEmailSender>();
+        // El adaptador posee su HttpClient: cada petición o lote debe disponer de su propia instancia.
+        services.AddScoped<ResendInvitationEmailSender>(sp => new ResendInvitationEmailSender(
+            new HttpClient(new SocketsHttpHandler { PooledConnectionLifetime = TimeSpan.FromMinutes(5) }) { Timeout = TimeSpan.FromSeconds(15) },
+            sp.GetRequiredService<IOptions<InvitationOptions>>()));
+        services.AddScoped<IInvitationEmailSender>(sp => sp.GetRequiredService<IOptions<InvitationOptions>>().Value.Provider == "Smtp"
+            ? sp.GetRequiredService<SmtpInvitationEmailSender>() : sp.GetRequiredService<ResendInvitationEmailSender>());
+        services.AddScoped<IInstitutionProfileService, InstitutionProfileService>();
+        services.AddScoped<IInstitutionSetupService, InstitutionSetupService>();
+        services.AddScoped<IInstitutionManagementService, InstitutionManagementService>();
         services.AddSingleton<ITokenIssuer, JwtTokenIssuer>();
         services.AddSingleton<IIdentityAuthPolicyProvider, TokenSigningOptionsAuthPolicyProvider>();
         services.AddScoped<ITenantAuthorizationService, TenantAuthorizationService>();
         services.AddScoped<ISupportAccessService, SupportAccessService>();
+        services.AddScoped<IAuditWriter, AuditWriter>();
         services.AddScoped<IAuditQueryService, AuditQueryService>();
         services.AddScoped<IAcademicStructureService, AcademicStructureService>();
         services.AddScoped<IStudentDirectoryService, StudentDirectoryService>();

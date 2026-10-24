@@ -2,17 +2,33 @@
 
 [![KNOROOMS CI](https://github.com/santicodevv/knorooms.com/actions/workflows/ci.yml/badge.svg)](https://github.com/santicodevv/knorooms.com/actions/workflows/ci.yml)
 
-**KNOROOMS** es una plataforma SaaS multi-tenant de gestión académica e institucional diseñada inicialmente para **colegios de la República Dominicana** (alineada con la estructura del MINERD, RNE, SIGERD y currículos por competencias/numéricos), con capacidad de expansión futura hacia educación superior y universidades (MESCyT).
+**KNOROOMS** es una plataforma SaaS multi-tenant para **colegios y escuelas de República Dominicana**. El alcance incluye administración global de colegios, suscripciones, habilitación de módulos e integración opcional con Moodle por colegio. La implementación es parcial; educación superior queda fuera de la primera versión y no se presume integración oficial con SIGERD ni cumplimiento normativo sin validación.
 
 ---
 
+
+## Continuar el desarrollo
+
+Lee [CONTINUIDAD.md](CONTINUIDAD.md) para conocer el estado implementado, pendientes, decisiones, arranque local, pruebas y precauciones para retomar con otra IA o por tu cuenta.
+
+## Flujo vigente de instituciones
+
+[Gestión directa de instituciones](docs/architecture/institution-management.md): listado paginado, creación en tres pasos, módulos por colegio sin seleccionar planes, ficha por pestañas e invitación contextual mediante Resend. [ADR-0006](docs/decisions/0006-direct-institution-modules-and-resend.md) actualiza las decisiones comerciales previas. Moodle sigue pendiente de implementación.
+
+## Alcance vigente y próxima entrega
+- [Alcance del producto](docs/product/scope.md): usuarios, estructura escolar, Moodle y límites de la primera versión.
+- [Plan de implementación](docs/product/implementation-roadmap.md): etapas y criterios de aceptación.
+- [Arquitectura SaaS y Moodle](docs/architecture/saas-administration-and-moodle.md): responsabilidades, autoridad de datos y sincronización.
+- [ADR-0005](docs/decisions/0005-school-saas-and-moodle-scope.md): decisión de enfoque.
+
+El orden 1 actualiza documentación. El orden 2 incorpora la ficha del colegio, invitaciones al administrador por SMTP y seguimiento de implementación inicial; ver [guía de operación](docs/architecture/institution-setup-and-invitations.md). El orden 3 incorpora [planes, suscripciones y derechos por módulo](docs/architecture/subscriptions-and-entitlements.md). Moodle sigue pendiente de la etapa 4. Los documentos Word de la raíz se conservan como antecedentes.
 ## 1. Resumen de Arquitectura
 
 KNOROOMS implementa un **Monolito Modular** con defensa en profundidad para el aislamiento multi-tenant:
 
 | Capa | Tecnología | Responsabilidad |
 | :--- | :--- | :--- |
-| **Frontend + BFF** | Next.js 16 (App Router), React 19, TypeScript 5, Tailwind CSS v4, shadcn/ui | Enrutamiento por subdominio (`src/proxy.ts`), Backend for Frontend (BFF), formulario de login propio, sesiones cifradas (AES-256-GCM) en Redis, cookies `HttpOnly` host-only, protección CSRF y arquitectura Feature-Sliced (`schemas/`, `api/`, `hooks/`, `components/`). |
+| **Frontend + BFF** | Next.js 16 (App Router), React 19, TypeScript 5, Tailwind CSS v4, componentes propios con Tailwind CSS | Enrutamiento por subdominio (`src/proxy.ts`), Backend for Frontend (BFF), formulario de login propio, sesiones cifradas (AES-256-GCM) en Redis, cookies `HttpOnly` host-only, protección CSRF y arquitectura Feature-Sliced (`schemas/`, `api/`, `hooks/`, `components/`). |
 | **Backend API** | ASP.NET Core Web API (.NET 10 LTS), C#, FluentValidation, OpenAPI | Controladores REST delgados, credenciales locales (PBKDF2-HMAC-SHA256) y emisión/validación de JWT propios (HS256), resolución de tenant e identidad, autorización RBAC + ABAC con denegación por defecto y respuestas `ProblemDetails` (RFC 9457). |
 | **Módulos de Dominio** | `Knorooms.Modules` + `Knorooms.SharedKernel` | 12 módulos lógicos (`Tenants`, `Identity`, `Authorization`, `SupportAccess`, `Audit`, `Platform`, `Students`, `Academic`, `Enrollments`, `Attendance`, `Grading`, `ReportCards`), contratos síncronos y **Transactional Outbox** (`outbox_messages`). |
 | **Persistencia y Aislamiento** | PostgreSQL 17 + Entity Framework Core 10 (`Npgsql`) | Base de datos y esquema (`public`) compartidos, `TenantId` (`UUID`), **Row-Level Security (`ENABLE` + `FORCE ROW LEVEL SECURITY`)**, rol de aplicación `knorooms_app` con `NOBYPASSRLS`, filtros globales de EF Core y claves foráneas compuestas `(tenant_id, <fk>_id)`. |
@@ -42,7 +58,7 @@ knorooms.com/
 │       ├── .env.example                # Variables de entorno de ejemplo del BFF
 │       └── src/
 │           ├── app/                    # Rutas App Router (público, /platform, /school, /api/auth, /api/bff)
-│           ├── components/             # Primitivas shadcn/ui (ui/) y bloques reutilizables (shared/)
+│           ├── components/             # Primitivas componentes propios con Tailwind CSS (ui/) y bloques reutilizables (shared/)
 │           ├── features/               # Módulos desacoplados (auth, platform, school: schemas, api, hooks, components)
 │           ├── lib/                    # BFF, sesiones Redis AES-256-GCM, CSRF, host parser
 │           └── proxy.ts                # Enrutamiento multi-tenant por subdominio (Next.js 16)

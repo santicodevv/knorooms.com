@@ -1,6 +1,5 @@
-import Link from "next/link";
 import { FileQuestion } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ButtonLink } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -28,9 +27,9 @@ export default function NotFound() {
           Verifique que la dirección web y el subdominio institucional sean correctos.
         </CardContent>
         <CardFooter>
-          <Button asChild variant="outline">
-            <Link href="/">Volver al inicio</Link>
-          </Button>
+          <ButtonLink variant="outline" href="/">
+            Volver al inicio
+          </ButtonLink>
         </CardFooter>
       </Card>
     </div>

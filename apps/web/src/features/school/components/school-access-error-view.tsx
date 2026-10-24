@@ -2,7 +2,7 @@ import { AlertOctagon, Ban, Building2, KeyRound, Lock, ShieldAlert } from "lucid
 import { isMfaRequiredProblem, ProblemAlert } from "@/components/api/problem-alert";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { ButtonLink } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -112,12 +112,10 @@ export function SchoolAccessErrorView({
               </p>
             </CardContent>
             <CardFooter>
-              <Button asChild>
-                <a href={returnTo}>
-                  <KeyRound className="size-4" />
-                  Volver a iniciar sesión
-                </a>
-              </Button>
+              <ButtonLink href={returnTo}>
+                <KeyRound className="size-4" />
+                Volver a iniciar sesión
+              </ButtonLink>
             </CardFooter>
           </Card>
         ) : status === 403 ? (
