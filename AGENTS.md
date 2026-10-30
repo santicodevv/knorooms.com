@@ -168,6 +168,7 @@ Antes de realizar cambios en un área especializada, lee la Skill correspondient
 - `knorooms-testing`: pruebas unitarias, de arquitectura y de integración con PostgreSQL real (`Testcontainers`).
 - `knorooms-database-migrations`: creación, revisión de RLS e inspección de migraciones EF Core.
 - `knorooms-code-review`: lista de verificación de seguridad, multi-tenancy, rendimiento y estilo antes de entregar cambios.
+- `apple-design` (externa, [dickwu/apple-design-skill](https://github.com/dickwu/apple-design-skill)): revisión de UI/UX basada en las Human Interface Guidelines de Apple; complementa, sin sustituir, `docs/design/administration-global.md`.
 
 ## 8. Alcance vigente y prioridad de implementación
 Antes de planificar nuevas funcionalidades, leer:
