@@ -143,6 +143,15 @@ pnpm build
 pnpm dev
 ```
 
+### Convención Jira ↔ GitHub (obligatoria)
+
+Todo cambio parte de un ticket del proyecto Jira **KNO** (ver [docs/SCRUM.md](docs/SCRUM.md) y [CONTRIBUTING.md](CONTRIBUTING.md)):
+
+- Rama: `feature/KNO-12-descripcion`, `fix/KNO-12-...`, `chore/KNO-12-...`, `docs/KNO-12-...`.
+- Commit: `feat(modulo): KNO-12 descripción` (Conventional Commits, ámbito = módulo).
+- Título del PR con la clave `KNO-<n>`; el check **Ticket de Jira** falla si falta en rama y título.
+- No commitear directamente en `main`: está protegida y solo acepta PR aprobados con CI en verde.
+
 ---
 
 ## 7. Skills Locales Disponibles (`.agents/skills/`)
