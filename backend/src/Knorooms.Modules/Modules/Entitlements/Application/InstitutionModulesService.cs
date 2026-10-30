@@ -1,13 +1,14 @@
 using System.Text.Json;
 using Knorooms.Modules.Common.Persistence;
+using Knorooms.Modules.Modules.Audit.Contracts;
 using Knorooms.Modules.Modules.Entitlements.Contracts;
 using Knorooms.Modules.Modules.Entitlements.Domain;
-using Knorooms.Modules.Modules.Audit.Contracts;
 using Knorooms.Modules.Modules.Tenants.Contracts;
 using Knorooms.SharedKernel.Results;
 using Knorooms.SharedKernel.Tenancy;
 using Microsoft.EntityFrameworkCore;
 namespace Knorooms.Modules.Modules.Entitlements.Application;
+
 internal sealed class InstitutionModulesService(ApplicationDbContext db, ITenantContextAccessor context, IAuditWriter audit, IInstitutionProfileService profiles) : IInstitutionModulesService
 {
     public async Task<Result<InstitutionModulesDto>> GetAsync(Guid institutionId, CancellationToken cancellationToken = default)
@@ -36,7 +37,7 @@ internal sealed class InstitutionModulesService(ApplicationDbContext db, ITenant
         if (result.IsFailure) return Result.Failure<InstitutionModulesDto>(result.Error);
         if (isNew) db.InstitutionModuleSettings.Add(entity);
         audit.Record(institutionId, "institution.modules.updated", institutionId.ToString(), "Módulos institucionales actualizados. Los datos históricos se conservan.",
-            new Dictionary<string,string?> { ["before"] = JsonSerializer.Serialize(before), ["after"] = JsonSerializer.Serialize(entity.EnabledModules) });
+            new Dictionary<string, string?> { ["before"] = JsonSerializer.Serialize(before), ["after"] = JsonSerializer.Serialize(entity.EnabledModules) });
         await db.SaveChangesAsync(cancellationToken);
         if (transaction is not null) await transaction.CommitAsync(cancellationToken);
         return Result.Success(await ReadAsync(cancellationToken));

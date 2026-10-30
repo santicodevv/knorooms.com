@@ -1,6 +1,6 @@
+using Knorooms.Modules.Modules.Academic.Domain;
 using Knorooms.Modules.Modules.Entitlements.Contracts;
 using Knorooms.Modules.Modules.Students.Domain;
-using Knorooms.Modules.Modules.Academic.Domain;
 using Knorooms.SharedKernel.Tenancy;
 using Microsoft.EntityFrameworkCore;
 namespace Knorooms.Modules.Common.Persistence;

@@ -1,5 +1,5 @@
-using Knorooms.Modules.Modules.Subscriptions.Contracts;
 using Knorooms.Modules.Modules.Entitlements.Contracts;
+using Knorooms.Modules.Modules.Subscriptions.Contracts;
 using Knorooms.SharedKernel.Tenancy;
 using Microsoft.Extensions.DependencyInjection;
 namespace Knorooms.IntegrationTests.Infrastructure;

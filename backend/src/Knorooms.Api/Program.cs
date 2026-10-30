@@ -1,5 +1,4 @@
 using System.Threading.RateLimiting;
-using Microsoft.AspNetCore.RateLimiting;
 using FluentValidation;
 using Knorooms.Api.Configuration;
 using Knorooms.Api.Security;
@@ -10,6 +9,7 @@ using Knorooms.Modules.Modules.Platform.Contracts;
 using Knorooms.SharedKernel.Tenancy;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 

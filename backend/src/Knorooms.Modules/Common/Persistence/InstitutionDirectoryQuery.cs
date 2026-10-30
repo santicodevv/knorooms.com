@@ -1,5 +1,5 @@
-using Knorooms.Modules.Modules.Platform.Contracts;
 using Knorooms.Modules.Modules.Authorization.Domain;
+using Knorooms.Modules.Modules.Platform.Contracts;
 using Knorooms.SharedKernel.Authorization;
 using Microsoft.EntityFrameworkCore;
 namespace Knorooms.Modules.Common.Persistence;
