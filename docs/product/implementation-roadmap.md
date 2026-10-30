@@ -47,3 +47,6 @@ Registrar qué se implementó y qué queda pendiente; ejecutar build y pruebas r
 Backend: 25 pruebas unitarias y 14 de integración aprobadas; interfaz/BFF: 39 pruebas aprobadas. Lint, comprobación TypeScript y compilación Next.js aprobados. Migración aplicada únicamente a PostgreSQL local; SMTP configurable y Mailpit local preparados. La comprobación manual del panel quedó pendiente: el inicio de sesión rechazó las credenciales locales de prueba. No se modificaron contraseñas ni se desplegó a producción.
 
 El orden 3 está implementado: planes versionados, vigencias manuales, excepciones auditadas, dependencias y límites transaccionales. Política confirmada: conservar consulta histórica y bloquear cambios sin suscripción activa. Ver [guía comercial](../architecture/subscriptions-and-entitlements.md). La próxima etapa prevista es el orden 4 (Moodle para un piloto), previa indicación del usuario. Guía: [ficha e invitaciones](../architecture/institution-setup-and-invitations.md).
+
+## Plan de la v1.0
+El backlog priorizado para publicar la primera versión, que añade el bloque de personal, roles y permisos del colegio, está en [v1-release-plan.md](v1-release-plan.md) y en Jira con la etiqueta `v1`.
