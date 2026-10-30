@@ -11,6 +11,8 @@
 
 Lee [CONTINUIDAD.md](CONTINUIDAD.md) para conocer el estado implementado, pendientes, decisiones, arranque local, pruebas y precauciones para retomar con otra IA o por tu cuenta.
 
+**¿Te incorporas al equipo?** Empieza por [docs/SCRUM.md §10](docs/SCRUM.md#10-guía-para-el-equipo): accesos, flujo diario con Jira y GitHub, revisión de código y solución de problemas.
+
 ## Flujo vigente de instituciones
 
 [Gestión directa de instituciones](docs/architecture/institution-management.md): listado paginado, creación en tres pasos, módulos por colegio sin seleccionar planes, ficha por pestañas e invitación contextual mediante Resend. [ADR-0006](docs/decisions/0006-direct-institution-modules-and-resend.md) actualiza las decisiones comerciales previas. Moodle sigue pendiente de implementación.
@@ -168,9 +170,12 @@ pnpm --dir apps/web build
 
 ## 6. Estrategia de Ramas y Convenciones Git
 
-- **Rama principal**: `main` (protegida; todo código integrado debe compilar sin advertencias y pasar el pipeline de CI).
-- **Ramas de trabajo**: `feat/<modulo>-<descripcion>`, `fix/<modulo>-<descripcion>`, `docs/<descripcion>`, `chore/<descripcion>`.
-- **Commits**: mensajes semánticos (`feat(tenants): ...`, `fix(security): ...`, `test(rls): ...`).
+Todo cambio parte de un ticket de Jira del proyecto **KNO**. El proceso completo, la incorporación de integrantes y la solución de problemas están en [docs/SCRUM.md](docs/SCRUM.md) (§10, *Guía para el equipo*) y [CONTRIBUTING.md](CONTRIBUTING.md).
+
+- **Rama principal**: `main`, protegida por un ruleset: solo acepta PR con 1 aprobación y los checks *Backend*, *Frontend* y *Ticket de Jira* en verde.
+- **Ramas de trabajo**: `feature/KNO-<n>-<descripcion>`, `fix/KNO-<n>-...`, `chore/KNO-<n>-...`, `test/KNO-<n>-...`, `docs/KNO-<n>-...`.
+- **Commits**: Conventional Commits con la clave (`feat(tenants): KNO-12 ...`, `fix(identity): KNO-31 ...`).
+- **PR**: título con la clave `KNO-<n>`. Al abrirlo, el ticket pasa solo a *En revisión*; al mergearlo, a *Finalizado*.
 - **Regla de idioma**: código, identificadores, clases, tablas y rutas técnicas en **inglés**; documentación, comentarios explicativos, ADRs, Skills e interfaz de usuario en **español**.
 
 ---

@@ -62,7 +62,7 @@ El ámbito del commit es el módulo en minúsculas (`identity`, `tenants`, `acad
 ## 5. Flujo del tablero
 
 ```text
-Por hacer ──► En curso ──► En revisión ──► Listo
+Por hacer ──► En curso ──► En revisión ──► Finalizado
 ```
 
 | Columna | Entra cuando… | Quién lo mueve |
@@ -70,9 +70,9 @@ Por hacer ──► En curso ──► En revisión ──► Listo
 | **Por hacer** | El ticket está en el sprint y cumple la DoR. | PO / equipo en planning |
 | **En curso** | Alguien se lo asigna y crea la rama con la clave. | La persona asignada (manual) |
 | **En revisión** | Se abre (o reabre, o pasa a *ready*) un PR con la clave. | **Automático** (`jira-transiciones.yml`) |
-| **Listo** | El PR se mergea a `main`. | **Automático**, con comentario y enlace al PR |
+| **Finalizado** | El PR se mergea a `main`. | **Automático**, con comentario y enlace al PR |
 
-> En Jira el estado final puede llamarse *Listo* o *Finalizado*; el workflow acepta ambos. "En revisión" debe tener categoría *En curso*.
+> En este proyecto el estado final se llama *Finalizado* (su categoría es *Listo*); el workflow acepta ambos nombres. "En revisión" tiene categoría *En curso*.
 
 Límite de trabajo en curso: máximo **2 tickets En curso por persona**.
 
@@ -147,12 +147,92 @@ gh secret list --repo santicodevv/knorooms.com
 
 Ruleset de GitHub sobre `main`: PR obligatorio con 1 aprobación, se descartan aprobaciones al subir commits nuevos, conversaciones resueltas, checks requeridos (CI backend, CI frontend y *Ticket de Jira*) con rama al día, sin force-push ni borrado. Mientras haya un único revisor posible, el rol Admin puede saltarse la regla solo al mergear PR (modo `pull_request`); en cuanto haya un segundo revisor se elimina ese bypass.
 
-## 10. Flujo diario
+## 10. Guía para el equipo
 
-1. Toma un ticket de **Por hacer** en el sprint activo, asígnatelo y muévelo a **En curso**.
-2. Crea la rama desde `main` actualizado: `git switch -c feature/KNO-12-descripcion-corta`.
-3. Haz commits con la clave: `feat(modulo): KNO-12 ...`.
-4. Ejecuta compilación y pruebas locales (ver `AGENTS.md` §6).
-5. Abre el PR con la clave en el título y completa la plantilla → el ticket pasa solo a **En revisión**.
-6. Atiende la revisión hasta tener aprobación y checks en verde.
-7. Mergea → el ticket pasa solo a **Listo** con el enlace al PR.
+Esta sección es la que cualquier integrante debe leer antes de su primer ticket.
+
+### 10.1 Incorporación (primer día)
+
+| Paso | Quién | Cómo |
+| --- | --- | --- |
+| Acceso a Jira | PO / SM | Invitar al integrante al sitio de Jira y añadirlo al proyecto **KNO**. |
+| Acceso a GitHub | Admin del repo | *Settings → Collaborators* → rol **Write** (nunca Admin). |
+| Herramientas | Integrante | Git, `gh` (`gh auth login`), Docker, .NET 10 SDK, Node 22 y pnpm 10. |
+| Llave SSH | Integrante | `ssh -T git@github.com` debe responder con su usuario. |
+| Entorno local | Integrante | Seguir el `README.md` §4 y ejecutar las pruebas de `AGENTS.md` §6. |
+| Lectura | Integrante | Este documento, `CONTRIBUTING.md`, `AGENTS.md` y la [Definition of Done](#8-definition-of-done-dod). |
+
+Primer ticket recomendado: uno de **1-2 puntos** con label `documentacion` o `testing`, para recorrer el flujo completo sin riesgo.
+
+### 10.2 Flujo diario paso a paso
+
+| # | Qué haces | Dónde | ¿Automático? |
+| --- | --- | --- | --- |
+| 1 | Eliges un ticket de **Por hacer** del sprint activo y te lo asignas. | Jira | Manual |
+| 2 | Lo arrastras a **En curso**. | Jira | Manual |
+| 3 | Creas la rama con la clave. | Terminal | Manual |
+| 4 | Programas, haces commits con la clave y pruebas en local. | Terminal | Manual |
+| 5 | Subes la rama y abres el PR con la clave en el título. | GitHub | Manual |
+| 6 | El ticket pasa a **En revisión**. | Jira | **Automático** |
+| 7 | El CI ejecuta Backend, Frontend y *Ticket de Jira*. | GitHub | **Automático** |
+| 8 | Un compañero revisa y aprueba; tú resuelves sus comentarios. | GitHub | Manual |
+| 9 | Mergeas el PR. | GitHub | Manual |
+| 10 | El ticket pasa a **Finalizado** con un comentario que enlaza el PR. | Jira | **Automático** |
+
+Comandos de los pasos 3 a 5 (ejemplo con KNO-15):
+
+```bash
+git switch main && git pull
+git switch -c test/KNO-15-pruebas-supportaccess
+
+# ... cambios ...
+git add <archivos>
+git commit -m "test(supportaccess): KNO-15 cubrir concesión vencida"
+
+git push -u origin test/KNO-15-pruebas-supportaccess
+gh pr create --fill --title "test(supportaccess): KNO-15 pruebas de integración de SupportAccess"
+```
+
+Reglas del día a día:
+
+- **Un ticket = una rama = un PR.** Si el trabajo crece, se divide en otro ticket en lugar de agrandar el PR.
+- **PR pequeños**: idealmente menos de 400 líneas cambiadas, para que se revisen el mismo día.
+- **Nunca** hagas push directo a `main`: el ruleset lo rechaza.
+- Si te bloqueas, dilo en la Daily y deja un comentario en el ticket explicando el bloqueo.
+- Si el ticket ya no se va a terminar en el sprint, avisa al SM antes de la Review; no lo marques como terminado.
+
+### 10.3 Revisión de código
+
+- **Quién revisa**: cualquier compañero que no sea el autor. Pide revisión con `gh pr edit <n> --add-reviewer <usuario>` o desde la web.
+- **Plazo**: los PR se revisan en menos de 1 día hábil. Revisar tiene prioridad sobre empezar un ticket nuevo.
+- **Qué mirar**: criterios de aceptación del ticket, pruebas, reglas de `AGENTS.md` (RLS, `TenantId` del cliente, secretos en logs) y la checklist de la plantilla de PR.
+- **Cómo comentar**: comentarios concretos y accionables. Usa *Request changes* solo si algo bloquea el merge.
+- **Después de aprobar**: si el autor sube un commit nuevo, la aprobación se descarta y hay que volver a revisar.
+- **Quién mergea**: el autor, cuando tiene aprobación, checks en verde y conversaciones resueltas. Se usa *Merge commit* por defecto.
+
+> **Bypass temporal de admin.** Mientras el equipo tenga un solo revisor posible, el administrador puede mergear sin aprobación con `gh pr merge <n> --admin` (los checks siguen siendo obligatorios en la práctica). En cuanto haya un segundo revisor, el bypass se elimina y nadie mergea sin aprobación.
+
+### 10.4 Solución de problemas
+
+| Síntoma | Causa | Solución |
+| --- | --- | --- |
+| Check **Ticket de Jira** en rojo | Ni la rama ni el título tienen `KNO-<n>`. | Edita el título del PR (`gh pr edit <n> --title "tipo(modulo): KNO-<n> ..."`); el check se repite solo. |
+| El ticket no pasó a **En revisión** | La clave no coincide con un ticket existente, o el ticket ya estaba en otro estado. | Revisa el log del job *Mover tickets en Jira* en la pestaña **Actions** del PR; ahí aparece `KNO-<n>: "X" -> "Y"` o el motivo. Muévelo a mano si hace falta. |
+| El log dice `Autenticación ... -> HTTP 401` | El token de Jira caducó o fue revocado. | Avisa al administrador para que regenere `JIRA_API_TOKEN` (§9.2). |
+| Cambié el workflow y no se nota | Un *re-run* usa la versión anterior del workflow. | Cierra y reabre el PR. |
+| **Backend** en rojo en el paso *Verify formatting* | Código sin formatear. | `cd backend && dotnet format Knorooms.slnx --exclude src/Knorooms.Modules/Common/Persistence/Migrations` y sube el commit. |
+| **Frontend** en rojo en *Prettier* o *ESLint* | Formato o reglas de lint. | `cd apps/web && pnpm format && pnpm lint` y sube el commit. |
+| GitHub dice *This branch is out-of-date* | `main` avanzó y el ruleset exige la rama al día. | Botón **Update branch**, o `git pull origin main` en tu rama y `git push`. |
+| Me equivoqué de clave en la rama | La rama no se puede renombrar en un PR abierto sin cerrarlo. | Pon la clave correcta en el título del PR; basta con uno de los dos. |
+
+### 10.5 Referencia rápida
+
+```text
+Ticket ........ KNO-<n> en Jira, asignado a ti y en "En curso"
+Rama .......... feature|fix|chore|test|refactor|docs/KNO-<n>-descripcion-corta
+Commit ........ tipo(modulo): KNO-<n> descripción
+Título PR ..... tipo(modulo): KNO-<n> descripción
+Checks ........ Backend + Frontend + Ticket de Jira en verde
+Merge ......... 1 aprobación + conversaciones resueltas + rama al día
+Jira .......... PR abierto -> En revisión · PR mergeado -> Finalizado (solo)
+```
