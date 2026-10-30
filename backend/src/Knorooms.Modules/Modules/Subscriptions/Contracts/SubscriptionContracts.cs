@@ -1,6 +1,7 @@
-using Knorooms.SharedKernel.Results;
 using Knorooms.Modules.Modules.Entitlements.Contracts;
+using Knorooms.SharedKernel.Results;
 namespace Knorooms.Modules.Modules.Subscriptions.Contracts;
+
 public sealed record CreatePlanCommand(string Code, string Name, string Description, int Revision, decimal? Price, string? Currency, string BillingPeriod, int? MaxActiveStudents, int? MaxSections, string[] Modules);
 public sealed record PlanVersionDto(Guid Id, string Code, string Name, string Description, int Revision, decimal? Price, string? Currency, string BillingPeriod, int? MaxActiveStudents, int? MaxSections, string[] Modules);
 public sealed record ModuleOverrideCommand(string Code, bool Enabled);

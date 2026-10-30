@@ -1,6 +1,6 @@
 using System.Text.Json;
-using Knorooms.Modules.Modules.Identity.Contracts;
 using Knorooms.Modules.Common.Persistence;
+using Knorooms.Modules.Modules.Identity.Contracts;
 using Knorooms.SharedKernel.Tenancy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;

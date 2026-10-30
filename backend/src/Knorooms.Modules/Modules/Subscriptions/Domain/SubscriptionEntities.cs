@@ -1,8 +1,9 @@
+using Knorooms.Modules.Modules.Entitlements.Contracts;
+using Knorooms.Modules.Modules.Subscriptions.Contracts;
 using Knorooms.SharedKernel.Domain;
 using Knorooms.SharedKernel.Results;
-using Knorooms.Modules.Modules.Subscriptions.Contracts;
-using Knorooms.Modules.Modules.Entitlements.Contracts;
 namespace Knorooms.Modules.Modules.Subscriptions.Domain;
+
 public sealed class PlanVersion : Entity
 {
     private PlanVersion() { }
@@ -24,9 +25,19 @@ public sealed class PlanVersion : Entity
             || c.BillingPeriod is not ("Monthly" or "Annual" or "Custom") || c.MaxActiveStudents < 1 || c.MaxSections < 1
             || c.Modules is null || !ProductModuleCatalog.IsValidSelection(c.Modules))
             return Result.Failure<PlanVersion>(Error.Validation("Plan.Invalid", "Revise los datos, límites y dependencias del plan."));
-        return Result.Success(new PlanVersion { Code = c.Code.Trim().ToUpperInvariant(), Name = c.Name.Trim(), Description = c.Description.Trim(),
-            Revision = c.Revision, Price = c.Price, Currency = c.Price.HasValue ? c.Currency : null, BillingPeriod = c.BillingPeriod,
-            MaxActiveStudents = c.MaxActiveStudents, MaxSections = c.MaxSections, Modules = c.Modules.Distinct().Order().ToArray() });
+        return Result.Success(new PlanVersion
+        {
+            Code = c.Code.Trim().ToUpperInvariant(),
+            Name = c.Name.Trim(),
+            Description = c.Description.Trim(),
+            Revision = c.Revision,
+            Price = c.Price,
+            Currency = c.Price.HasValue ? c.Currency : null,
+            BillingPeriod = c.BillingPeriod,
+            MaxActiveStudents = c.MaxActiveStudents,
+            MaxSections = c.MaxSections,
+            Modules = c.Modules.Distinct().Order().ToArray()
+        });
     }
 }
 public sealed class InstitutionSubscription : TenantScopedEntity

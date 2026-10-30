@@ -1,6 +1,6 @@
+using Knorooms.Modules.Modules.Entitlements.Contracts;
 using Knorooms.Modules.Modules.Subscriptions.Contracts;
 using Knorooms.Modules.Modules.Subscriptions.Domain;
-using Knorooms.Modules.Modules.Entitlements.Contracts;
 namespace Knorooms.UnitTests.Domain;
 
 public sealed class CommercialRulesTests

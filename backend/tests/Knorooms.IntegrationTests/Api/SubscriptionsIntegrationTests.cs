@@ -1,13 +1,13 @@
 using System.Net;
 using System.Net.Http.Json;
 using Knorooms.Api.Contracts;
-using Knorooms.Modules.Modules.Academic.Domain;
 using Knorooms.IntegrationTests.Infrastructure;
 using Knorooms.Modules.Common.Persistence;
-using Knorooms.Modules.Modules.Subscriptions.Contracts;
+using Knorooms.Modules.Modules.Academic.Domain;
 using Knorooms.Modules.Modules.Entitlements.Contracts;
-using Knorooms.Modules.Modules.Tenants.Contracts;
 using Knorooms.Modules.Modules.Students.Domain;
+using Knorooms.Modules.Modules.Subscriptions.Contracts;
+using Knorooms.Modules.Modules.Tenants.Contracts;
 using Knorooms.SharedKernel.Tenancy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;

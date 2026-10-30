@@ -1,7 +1,8 @@
+using Knorooms.Modules.Modules.Entitlements.Contracts;
 using Knorooms.SharedKernel.Domain;
 using Knorooms.SharedKernel.Results;
-using Knorooms.Modules.Modules.Entitlements.Contracts;
 namespace Knorooms.Modules.Modules.Entitlements.Domain;
+
 public sealed class InstitutionModuleSettings : TenantScopedEntity
 {
     private InstitutionModuleSettings() { }

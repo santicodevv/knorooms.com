@@ -1,7 +1,3 @@
-using Knorooms.Modules.Modules.Subscriptions.Contracts;
-using Knorooms.Modules.Modules.Subscriptions.Application;
-using Knorooms.Modules.Modules.Entitlements.Contracts;
-using Knorooms.Modules.Modules.Entitlements.Application;
 using Knorooms.Modules.Common.Persistence;
 using Knorooms.Modules.Modules.Academic.Application;
 using Knorooms.Modules.Modules.Academic.Contracts;
@@ -13,6 +9,8 @@ using Knorooms.Modules.Modules.Authorization.Application;
 using Knorooms.Modules.Modules.Authorization.Contracts;
 using Knorooms.Modules.Modules.Enrollments.Application;
 using Knorooms.Modules.Modules.Enrollments.Contracts;
+using Knorooms.Modules.Modules.Entitlements.Application;
+using Knorooms.Modules.Modules.Entitlements.Contracts;
 using Knorooms.Modules.Modules.Grading.Application;
 using Knorooms.Modules.Modules.Grading.Contracts;
 using Knorooms.Modules.Modules.Identity.Application;
@@ -25,6 +23,8 @@ using Knorooms.Modules.Modules.ReportCards.Application;
 using Knorooms.Modules.Modules.ReportCards.Contracts;
 using Knorooms.Modules.Modules.Students.Application;
 using Knorooms.Modules.Modules.Students.Contracts;
+using Knorooms.Modules.Modules.Subscriptions.Application;
+using Knorooms.Modules.Modules.Subscriptions.Contracts;
 using Knorooms.Modules.Modules.SupportAccess.Application;
 using Knorooms.Modules.Modules.SupportAccess.Contracts;
 using Knorooms.Modules.Modules.Tenants.Application;
@@ -32,8 +32,8 @@ using Knorooms.Modules.Modules.Tenants.Contracts;
 using Knorooms.SharedKernel.Tenancy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Options;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Knorooms.Modules;
 

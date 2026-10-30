@@ -1,7 +1,7 @@
 using Knorooms.Modules.Common.Persistence;
+using Knorooms.Modules.Modules.Entitlements.Contracts;
 using Knorooms.Modules.Modules.Platform.Contracts;
 using Knorooms.Modules.Modules.Tenants.Contracts;
-using Knorooms.Modules.Modules.Entitlements.Contracts;
 using Knorooms.SharedKernel.Results;
 using Knorooms.SharedKernel.Tenancy;
 using Microsoft.EntityFrameworkCore;
@@ -50,10 +50,10 @@ internal sealed class InstitutionManagementService(ApplicationDbContext db, ITen
         // Solo acciones administrativas conocidas; nunca metadatos ni actividad académica.
         string[] allowedActions = ["platform.institution.created", "platform.institution.suspended", "platform.institution.activated", "platform.institution.admin_assigned", "platform.institution.profile_updated", "institution.modules.updated", "platform.invitation.created", "platform.invitation.resent", "platform.invitation.revoked", "platform.invitation.accepted"];
         var activity = await (from entry in db.AuditLogs.AsNoTracking()
-            join institution in db.Institutions.AsNoTracking() on entry.TenantId equals (Guid?)institution.Id
-            where allowedActions.Contains(entry.Action)
-            orderby entry.CreatedAtUtc descending, entry.Id descending
-            select new PlatformActivityDto(entry.Id, entry.TenantId, institution.Name, entry.Action, entry.CreatedAtUtc)).Take(5).ToListAsync(cancellationToken);
+                              join institution in db.Institutions.AsNoTracking() on entry.TenantId equals (Guid?)institution.Id
+                              where allowedActions.Contains(entry.Action)
+                              orderby entry.CreatedAtUtc descending, entry.Id descending
+                              select new PlatformActivityDto(entry.Id, entry.TenantId, institution.Name, entry.Action, entry.CreatedAtUtc)).Take(5).ToListAsync(cancellationToken);
         return Result.Success(new PlatformDashboardDto(total, active, total - active, without, none, pending, expired, failed, growth, moduleCounts, recent, activity, generatedAt));
     }
     public async Task<Result<bool>> IsSlugAvailableAsync(string slug, CancellationToken cancellationToken = default)

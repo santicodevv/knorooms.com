@@ -2,9 +2,9 @@ using System.Net;
 using System.Text.Json;
 using Knorooms.Modules;
 using Knorooms.Modules.Modules.Identity.Contracts;
-using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 namespace Knorooms.IntegrationTests.Api;
 
 public sealed class ResendInvitationTests
