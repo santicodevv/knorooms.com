@@ -1,0 +1,29 @@
+name: Jira
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  jira-key:
+    name: Ticket de Jira
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verificar clave KNO-<n> en rama o título
+        env:
+          BRANCH: ${{ github.head_ref }}
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          set -euo pipefail
+          key=$(printf '%s\n%s\n' "$BRANCH" "$TITLE" | grep -oE '\bKNO-[0-9]+\b' | head -1 || true)
+          if [ -n "$key" ]; then
+            echo "OK: PR vinculado a $key"
+            exit 0
+          fi
+          echo "::error::El PR no referencia un ticket de Jira (KNO-<n>)."
+          echo "Usa una rama como feature/KNO-12-exportar-boleta o un título como 'feat(reportcards): KNO-12 exportar boleta'."
+          exit 1
