@@ -2,6 +2,8 @@
 
 El proceso completo (roles, ceremonias, tablero, DoR/DoD) está en [docs/SCRUM.md](docs/SCRUM.md). Las reglas técnicas obligatorias están en [AGENTS.md](AGENTS.md).
 
+Si es tu primera vez, lee [docs/SCRUM.md §10 — Guía para el equipo](docs/SCRUM.md#10-guía-para-el-equipo): incorporación, flujo diario paso a paso, cómo revisar PR y qué hacer cuando un check falla.
+
 ## Antes de empezar
 
 1. Todo cambio parte de un ticket de Jira del proyecto **KNO** que esté en el sprint activo.
@@ -33,7 +35,7 @@ test(attendance): KNO-9 cubrir registro duplicado por fecha
 - Completa la plantilla (el campo *Ticket de Jira* es obligatorio).
 - Checks requeridos para mergear a `main`: CI backend, CI frontend y **Ticket de Jira**.
 - Se necesita 1 aprobación; un commit nuevo descarta la aprobación anterior y todas las conversaciones deben quedar resueltas.
-- Al abrir el PR el ticket pasa solo a **En revisión**; al mergearlo pasa a **Listo** con un comentario que enlaza el PR.
+- Al abrir el PR el ticket pasa solo a **En revisión**; al mergearlo pasa a **Finalizado** con un comentario que enlaza el PR.
 
 ## Verificación local
 
