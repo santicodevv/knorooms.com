@@ -1,9 +1,9 @@
-using Microsoft.Extensions.Configuration;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using Knorooms.Modules;
 using Knorooms.Modules.Modules.Identity.Contracts;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Knorooms.IntegrationTests.Api;
@@ -54,7 +54,8 @@ public sealed class InvitationSmtpTests
         var readingData = false;
         while (await reader.ReadLineAsync(cancellationToken) is { } line)
         {
-            content.AppendLine(line);
+            // SMTP usa CRLF; AppendLine depende del sistema operativo y en Linux rompe la separación de cabeceras.
+            content.Append(line).Append("\r\n");
             if (readingData)
             {
                 if (line == ".") { await writer.WriteLineAsync("250 Message accepted"); return content.ToString(); }

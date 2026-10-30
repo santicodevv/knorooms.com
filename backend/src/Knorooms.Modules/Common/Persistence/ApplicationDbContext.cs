@@ -1,15 +1,15 @@
-using Knorooms.Modules.Modules.Entitlements.Domain;
-using Knorooms.Modules.Modules.Subscriptions.Domain;
 using Knorooms.Modules.Modules.Academic.Domain;
 using Knorooms.Modules.Modules.Attendance.Domain;
 using Knorooms.Modules.Modules.Audit.Domain;
 using Knorooms.Modules.Modules.Authorization.Domain;
 using Knorooms.Modules.Modules.Enrollments.Domain;
+using Knorooms.Modules.Modules.Entitlements.Domain;
 using Knorooms.Modules.Modules.Grading.Domain;
 using Knorooms.Modules.Modules.Identity.Domain;
 using Knorooms.Modules.Modules.Platform.Domain;
 using Knorooms.Modules.Modules.ReportCards.Domain;
 using Knorooms.Modules.Modules.Students.Domain;
+using Knorooms.Modules.Modules.Subscriptions.Domain;
 using Knorooms.Modules.Modules.SupportAccess.Domain;
 using Knorooms.Modules.Modules.Tenants.Domain;
 using Knorooms.SharedKernel.Domain;

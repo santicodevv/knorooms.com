@@ -1,7 +1,7 @@
 using FluentValidation;
 using Knorooms.Api.Common;
-using Knorooms.Modules.Modules.Platform.Contracts;
 using Knorooms.Modules.Modules.Entitlements.Contracts;
+using Knorooms.Modules.Modules.Platform.Contracts;
 using Knorooms.SharedKernel.Authorization;
 using Knorooms.SharedKernel.Tenancy;
 using Microsoft.AspNetCore.Authorization;

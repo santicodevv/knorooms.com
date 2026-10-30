@@ -1,14 +1,15 @@
 using System.Text.Json;
 using Knorooms.Modules.Common.Persistence;
+using Knorooms.Modules.Modules.Audit.Contracts;
+using Knorooms.Modules.Modules.Entitlements.Contracts;
 using Knorooms.Modules.Modules.Subscriptions.Contracts;
 using Knorooms.Modules.Modules.Subscriptions.Domain;
-using Knorooms.Modules.Modules.Entitlements.Contracts;
-using Knorooms.Modules.Modules.Audit.Contracts;
 using Knorooms.Modules.Modules.Tenants.Contracts;
 using Knorooms.SharedKernel.Results;
 using Knorooms.SharedKernel.Tenancy;
 using Microsoft.EntityFrameworkCore;
 namespace Knorooms.Modules.Modules.Subscriptions.Application;
+
 internal sealed class SubscriptionService(ApplicationDbContext db, ITenantContextAccessor context, IAuditWriter audit, IInstitutionProfileService profiles) : ISubscriptionService
 {
     public async Task<IReadOnlyList<PlanVersionDto>> ListPlansAsync(CancellationToken cancellationToken = default)

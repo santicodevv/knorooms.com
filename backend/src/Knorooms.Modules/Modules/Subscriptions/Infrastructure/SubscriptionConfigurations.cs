@@ -3,6 +3,7 @@ using Knorooms.SharedKernel.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace Knorooms.Modules.Modules.Subscriptions.Infrastructure;
+
 internal static class CommercialEntityConfiguration
 {
     internal static void Base<T>(EntityTypeBuilder<T> b, string table) where T : Entity
