@@ -236,3 +236,10 @@ Checks ........ Backend + Frontend + Ticket de Jira en verde
 Merge ......... 1 aprobación + conversaciones resueltas + rama al día
 Jira .......... PR abierto -> En revisión · PR mergeado -> Finalizado (solo)
 ```
+
+## Gestión de Actualizaciones (Dependabot)
+
+Los Pull Requests automáticos generados por Dependabot utilizan el prefijo de commit `chore(deps)`. Para mantener la trazabilidad en el tablero SCRUM:
+1. **Asignación de Ticket:** Al abrirse un PR de Dependabot, el responsable de mantenimiento asigna el PR al ticket correspondiente en el sprint (ej. `MNT-01`).
+2. **Vinculación:** En la descripción del PR o comentarios, se incluye la referencia al ticket usando palabras clave (ej. `Relacionado con #123`) o vinculándolo desde el panel de GitHub Projects.
+3. **Revisiones y Merge:** Las actualizaciones menores y de parches se agrupan automáticamente. Tras pasar las verificaciones del CI, se realiza el merge cumpliendo con los estándares de revisión.
