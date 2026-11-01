@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Knorooms.Api.Contracts;
 using Knorooms.IntegrationTests.Infrastructure;
+using Knorooms.Modules.Common.Persistence;
 using Knorooms.Modules.Modules.Audit.Contracts;
 using Knorooms.Modules.Modules.Authorization.Contracts;
 using Knorooms.Modules.Modules.Identity.Contracts;
@@ -9,10 +10,8 @@ using Knorooms.Modules.Modules.Platform.Contracts;
 using Knorooms.Modules.Modules.SupportAccess.Contracts;
 using Knorooms.Modules.Modules.Tenants.Contracts;
 using Knorooms.SharedKernel.Authorization;
-using Microsoft.AspNetCore.Mvc;
-
-using Knorooms.Modules.Common.Persistence;
 using Knorooms.SharedKernel.Tenancy;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
