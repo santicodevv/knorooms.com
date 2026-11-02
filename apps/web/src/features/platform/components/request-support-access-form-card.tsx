@@ -7,12 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   AVAILABLE_SUPPORT_PERMISSIONS,
+  type SupportAccessRequestFormInput,
   type SupportAccessRequestFormValues,
 } from "@/features/platform/schemas/platform-schemas";
 import type { InstitutionDto } from "@/lib/api/types";
 
 interface RequestSupportAccessFormCardProps {
-  form: UseFormReturn<SupportAccessRequestFormValues>;
+  form: UseFormReturn<SupportAccessRequestFormInput, unknown, SupportAccessRequestFormValues>;
   institutions: InstitutionDto[];
   selectedPermissions: string[];
   onTogglePermission: (code: string) => void;
