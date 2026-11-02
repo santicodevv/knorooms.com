@@ -382,7 +382,7 @@ internal sealed class IdentityService(
             user.IsPlatformSupport);
     }
 
-    private Task WriteAuditAsync(
+    private Task<int> WriteAuditAsync(
         Guid? actorUserId,
         string action,
         string resourceId,

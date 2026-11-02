@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Knorooms.Modules.Common.Persistence;
 
 /// <summary>
@@ -70,7 +72,7 @@ public static class PostgresRlsPolicySql
         // 1. Tablas académicas e institucionales estrictas: NI SIQUIERA plataforma global puede leer/escribir sin tenant activo.
         foreach (var table in StrictlyIsolatedTenantTables)
         {
-            sb.AppendLine($"""
+            sb.AppendLine(CultureInfo.InvariantCulture, $"""
                 ALTER TABLE public.{table} ENABLE ROW LEVEL SECURITY;
                 ALTER TABLE public.{table} FORCE ROW LEVEL SECURITY;
                 DROP POLICY IF EXISTS rls_{table}_tenant_isolation ON public.{table};
@@ -92,7 +94,7 @@ public static class PostgresRlsPolicySql
         // 2. Tablas de roles institucionales: accesibles en el tenant activo o durante el alta inicial de institución (platform_onboarding).
         foreach (var table in OnboardingAwareTenantTables)
         {
-            sb.AppendLine($"""
+            sb.AppendLine(CultureInfo.InvariantCulture, $"""
                 ALTER TABLE public.{table} ENABLE ROW LEVEL SECURITY;
                 ALTER TABLE public.{table} FORCE ROW LEVEL SECURITY;
                 DROP POLICY IF EXISTS rls_{table}_tenant_isolation ON public.{table};
@@ -247,11 +249,12 @@ public static class PostgresRlsPolicySql
     public static string BuildDownSql()
     {
         var sb = new System.Text.StringBuilder();
+
         foreach (var table in StrictlyIsolatedTenantTables.Concat(OnboardingAwareTenantTables))
         {
-            sb.AppendLine($"DROP POLICY IF EXISTS rls_{table}_tenant_isolation ON public.{table};");
-            sb.AppendLine($"ALTER TABLE public.{table} NO FORCE ROW LEVEL SECURITY;");
-            sb.AppendLine($"ALTER TABLE public.{table} DISABLE ROW LEVEL SECURITY;");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"DROP POLICY IF EXISTS rls_{table}_tenant_isolation ON public.{table};");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"ALTER TABLE public.{table} NO FORCE ROW LEVEL SECURITY;");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"ALTER TABLE public.{table} DISABLE ROW LEVEL SECURITY;");
         }
 
         sb.AppendLine("""

@@ -41,7 +41,13 @@ public static class DatabaseSeedAndInitializer
         {
             dbContext.Permissions.AddRange(missing);
             await dbContext.SaveChangesAsync(cancellationToken);
-            logger.LogInformation("Synchronized {Count} permissions into the central catalog.", missing.Count);
+
+            if (logger.IsEnabled(LogLevel.Information))
+            {
+                logger.LogInformation(
+                    "Synchronized {Count} permissions into the central catalog.",
+                    missing.Count);
+            }
         }
     }
 
