@@ -74,11 +74,15 @@ internal sealed class OutboxProcessorHostedService(
                         ?? throw new InvalidOperationException("Evento de invitación inválido.");
                     await scope.ServiceProvider.GetRequiredService<IAdministratorInvitationService>().DeliverAsync(payload, cancellationToken);
                 }
-                logger.LogInformation(
-                    "Dispatched Outbox domain event {EventId} ({EventType}) for TenantId={TenantId}.",
-                    message.Id,
-                    message.EventType,
-                    message.TenantId);
+                if (logger.IsEnabled(LogLevel.Information))
+                {
+                    logger.LogInformation(
+                        "Dispatched Outbox domain event {EventId} ({EventType}) for TenantId={TenantId}.",
+                        message.Id,
+                        message.EventType,
+                        message.TenantId);
+                }
+
                 message.MarkProcessed(now);
             }
             catch (Exception ex)
