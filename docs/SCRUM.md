@@ -115,7 +115,7 @@ La integración se hace con GitHub Actions y la API REST de Jira; no depende de 
 | Archivo | Check / Job | Qué hace |
 | --- | --- | --- |
 | [`.github/workflows/jira.yml`](../.github/workflows/jira.yml) | **Ticket de Jira** | Falla si ni la rama ni el título del PR contienen `KNO-<n>`. Es check requerido para mergear a `main`. |
-| [`.github/workflows/jira-transiciones.yml`](../.github/workflows/jira-transiciones.yml) | Mover tickets en Jira | PR abierto/reabierto/listo → **En revisión** (si no existe, **En curso**). PR mergeado → **Listo**/**Finalizado** y comentario con el enlace al PR. |
+| [`.github/workflows/jira-transiciones.yml`](../.github/workflows/jira-transiciones.yml) | Mover tickets en Jira | PR abierto/reabierto/listo → **En revisión** (si no existe, **En curso**). PR mergeado → **Listo**/**Finalizado** y comentario con el enlace al PR. En PR de Dependabot solo comenta (§9.4). |
 
 `jira-transiciones.yml`:
 
@@ -146,6 +146,24 @@ gh secret list --repo santicodevv/knorooms.com
 ### 9.3 Protección de `main`
 
 Ruleset de GitHub sobre `main`: PR obligatorio con 1 aprobación, se descartan aprobaciones al subir commits nuevos, conversaciones resueltas, checks requeridos (CI backend, CI frontend y *Ticket de Jira*) con rama al día, sin force-push ni borrado. Mientras haya un único revisor posible, el rol Admin puede saltarse la regla solo al mergear PR (modo `pull_request`); en cuanto haya un segundo revisor se elimina ese bypass.
+
+### 9.4 PR de Dependabot
+
+[`.github/dependabot.yml`](../.github/dependabot.yml) revisa cada lunes NuGet (`/backend`), pnpm (`/apps/web`) y GitHub Actions. Por ecosistema agrupa las versiones menores y los parches en un solo PR y deja los saltos de versión mayor en PR separados, con un máximo de 5 PR abiertos. Los commits llevan el prefijo `chore(deps)`. Las alertas de Dependabot están activas en el repositorio (*Security → Dependabot*).
+
+Dependabot no puede poner la clave `KNO-<n>`, así que el check **Ticket de Jira** falla al abrir el PR. Para vincularlo:
+
+1. Al empezar el sprint, el SM crea una **Tarea** «Actualizar dependencias (Sprint N)» con el label `devops` y la deja en **En curso**.
+2. Quien revisa el PR añade la clave al título; el check se repite solo:
+
+   ```bash
+   gh pr edit <n> --title "chore(deps): KNO-<n> $(gh pr view <n> --json title -q .title | sed 's/^chore(deps): //')"
+   ```
+
+3. Revisa el changelog y el CI. Las versiones mayores (por ejemplo Next.js, EF Core o .NET) requieren probar en local según `AGENTS.md` §6 antes de aprobar.
+4. Al mergear, *Mover tickets en Jira* comenta el enlace del PR en el ticket, pero **no lo cierra**: en las ramas `dependabot/` solo deja el comentario. El SM pasa el ticket a **Finalizado** al cerrar el sprint.
+
+Una alerta de seguridad crítica que no se pueda resolver con el PR de Dependabot se convierte en un **Bug** propio con su rama `fix/KNO-<n>-...`.
 
 ## 10. Guía para el equipo
 
