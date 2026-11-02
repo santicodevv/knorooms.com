@@ -149,7 +149,7 @@ Ruleset de GitHub sobre `main`: PR obligatorio con 1 aprobación, se descartan a
 
 ### 9.4 PR de Dependabot
 
-[`.github/dependabot.yml`](../.github/dependabot.yml) revisa cada lunes NuGet (`/backend`), pnpm (`/apps/web`) y GitHub Actions. Por ecosistema agrupa las versiones menores y los parches en un solo PR y deja los saltos de versión mayor en PR separados, con un máximo de 5 PR abiertos. Los commits llevan el prefijo `chore(deps)`. Las alertas de Dependabot están activas en el repositorio (*Security → Dependabot*).
+[`.github/dependabot.yml`](../.github/dependabot.yml) revisa cada lunes NuGet (`/backend`), pnpm (`/apps/web`) y GitHub Actions. Por ecosistema agrupa las versiones menores y los parches en un solo PR y deja los saltos de versión mayor en PR separados, con un máximo de 5 PR abiertos. En NuGet, las herramientas de prueba (xunit, Test.Sdk, coverlet, NetArchTest y Testcontainers) van siempre en un único PR, incluso en versiones mayores, para evitar un PR por cada proyecto de prueba. `@types/node` no sube de versión mayor: sigue la del runtime (Node 22) y se actualiza a mano junto con Node. Los commits llevan el prefijo `chore(deps)`. Las alertas de Dependabot están activas en el repositorio (*Security → Dependabot*).
 
 Dependabot no puede poner la clave `KNO-<n>`, así que el check **Ticket de Jira** falla al abrir el PR. Para vincularlo:
 

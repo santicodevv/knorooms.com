@@ -22,3 +22,13 @@ dotnet_diagnostic.CA1707.severity = none
 dotnet_diagnostic.CA1711.severity = none
 dotnet_diagnostic.CA1861.severity = none
 dotnet_diagnostic.CA1805.severity = none
+
+# Las migraciones de Entity Framework son archivos generados.
+# Se conserva su formato de namespace original.
+[**/Migrations/*.cs]
+dotnet_diagnostic.IDE0161.severity = none
+
+# CA1716: Se conserva el nombre Error por compatibilidad
+# con la API compartida utilizada en todos los módulos.
+[**/Result.cs]
+dotnet_diagnostic.CA1716.severity = none
