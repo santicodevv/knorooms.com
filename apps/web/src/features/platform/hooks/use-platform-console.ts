@@ -17,6 +17,7 @@ import {
   supportAccessRequestSchema,
   type AssignAdminFormValues,
   type CreateInstitutionFormValues,
+  type SupportAccessRequestFormInput,
   type SupportAccessRequestFormValues,
 } from "@/features/platform/schemas/platform-schemas";
 import type { InstitutionDto, ProblemDetails } from "@/lib/api/types";
@@ -56,7 +57,11 @@ export function usePlatformConsole({
     },
   });
 
-  const supportForm = useForm<SupportAccessRequestFormValues>({
+  const supportForm = useForm<
+    SupportAccessRequestFormInput,
+    unknown,
+    SupportAccessRequestFormValues
+  >({
     resolver: zodResolver(supportAccessRequestSchema),
     defaultValues: {
       tenantId: initialInstitutions[0]?.id ?? "",
