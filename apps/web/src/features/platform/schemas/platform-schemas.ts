@@ -69,4 +69,6 @@ export const supportAccessRequestSchema = z.object({
     .max(1440, "La duración máxima permitida es de 1440 minutos (24 horas)."),
 });
 
-export type SupportAccessRequestFormValues = z.infer<typeof supportAccessRequestSchema>;
+// z.coerce tipa la entrada como unknown: el formulario distingue entrada y salida validada.
+export type SupportAccessRequestFormInput = z.input<typeof supportAccessRequestSchema>;
+export type SupportAccessRequestFormValues = z.output<typeof supportAccessRequestSchema>;

@@ -83,7 +83,7 @@ public sealed class AuthController(
         return NoContent();
     }
 
-    private ActionResult UnauthorizedProblem(string title, string detail)
+    private ObjectResult UnauthorizedProblem(string title, string detail)
     {
         var problem = new ProblemDetails
         {

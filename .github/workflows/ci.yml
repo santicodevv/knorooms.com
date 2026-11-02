@@ -15,10 +15,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup .NET 10 SDK
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: "10.0.x"
 
@@ -35,8 +35,42 @@ jobs:
         run: dotnet build Knorooms.slnx --no-restore --configuration Release
 
       - name: Run Unit, Architecture & PostgreSQL Integration Tests
+        id: tests
         working-directory: backend
-        run: dotnet test Knorooms.slnx --no-build --configuration Release --logger "trx;LogFileName=test-results.trx"
+        run: >-
+          dotnet test Knorooms.slnx --no-build --configuration Release
+          --logger trx
+          --results-directory TestResults
+          --collect "XPlat Code Coverage"
+          --settings coverage.runsettings
+
+      - name: Generate coverage report (ReportGenerator)
+        if: ${{ !cancelled() && steps.tests.outcome != 'skipped' }}
+        working-directory: backend
+        run: |
+          dotnet tool install --global dotnet-reportgenerator-globaltool --version 5.4.4
+          reportgenerator             -reports:"TestResults/**/coverage.cobertura.xml"             -targetdir:"TestResults/coverage-report"             -reporttypes:"Html;MarkdownSummaryGithub;Cobertura"
+
+      - name: Publish test and coverage summary
+        if: ${{ !cancelled() && steps.tests.outcome != 'skipped' }}
+        run: |
+          node .github/scripts/test-summary.mjs trx backend/TestResults >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f backend/TestResults/coverage-report/SummaryGithub.md ]; then
+            cat backend/TestResults/coverage-report/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload test results and coverage
+        if: ${{ !cancelled() && steps.tests.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: backend-test-results
+          path: |
+            backend/TestResults/**/*.trx
+            backend/TestResults/**/coverage.cobertura.xml
+            backend/TestResults/coverage-report/
+          if-no-files-found: warn
+          retention-days: 14
 
   frontend:
     name: Frontend (Next.js BFF Lint, Typecheck, Vitest & Build)
@@ -46,15 +80,15 @@ jobs:
         working-directory: apps/web
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: 10
 
       - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: "22"
           cache: "pnpm"
@@ -72,8 +106,24 @@ jobs:
       - name: Run TypeScript typecheck
         run: pnpm typecheck
 
-      - name: Run Vitest unit tests
-        run: pnpm test
+      - name: Run Vitest unit tests with coverage
+        id: tests
+        run: pnpm test:coverage
+
+      - name: Publish test and coverage summary
+        if: ${{ !cancelled() && steps.tests.outcome != 'skipped' }}
+        run: node ../../.github/scripts/test-summary.mjs vitest test-results/vitest-results.json coverage/coverage-summary.json >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload test results and coverage
+        if: ${{ !cancelled() && steps.tests.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-test-results
+          path: |
+            apps/web/test-results/
+            apps/web/coverage/
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Build Next.js production bundle
         run: pnpm build
