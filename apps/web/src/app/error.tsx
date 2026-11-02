@@ -11,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { reportError } from "@/lib/report-error";
 
 export default function ErrorBoundary({
   error,
@@ -20,7 +21,7 @@ export default function ErrorBoundary({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error(error);
+    reportError(error);
   }, [error]);
 
   return (
