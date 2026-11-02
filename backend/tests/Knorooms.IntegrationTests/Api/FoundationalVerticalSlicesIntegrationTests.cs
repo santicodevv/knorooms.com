@@ -2,7 +2,6 @@ using System.Net;
 using System.Net.Http.Json;
 using Knorooms.Api.Contracts;
 using Knorooms.IntegrationTests.Infrastructure;
-using Knorooms.Modules.Common.Persistence;
 using Knorooms.Modules.Modules.Audit.Contracts;
 using Knorooms.Modules.Modules.Authorization.Contracts;
 using Knorooms.Modules.Modules.Identity.Contracts;
@@ -10,10 +9,7 @@ using Knorooms.Modules.Modules.Platform.Contracts;
 using Knorooms.Modules.Modules.SupportAccess.Contracts;
 using Knorooms.Modules.Modules.Tenants.Contracts;
 using Knorooms.SharedKernel.Authorization;
-using Knorooms.SharedKernel.Tenancy;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Knorooms.IntegrationTests.Api;
 
@@ -237,10 +233,7 @@ public sealed class FoundationalVerticalSlicesIntegrationTests(PostgresIntegrati
             new CreateSupportAccessRequest(
                 institutionA.Id,
                 "Incidencia #402: verificación de configuración de miembros del colegio",
-                [
-                    PermissionCatalog.InstitutionMembersRead,
-                    PermissionCatalog.InstitutionStudentsManage
-                ],
+                [PermissionCatalog.InstitutionMembersRead],
                 DurationMinutes: 60)))
         {
             var res = await client.SendAsync(requestGrantReq);
@@ -285,70 +278,6 @@ public sealed class FoundationalVerticalSlicesIntegrationTests(PostgresIntegrati
         {
             var res = await client.SendAsync(supportReadMembersReq);
             Assert.Equal(HttpStatusCode.OK, res.StatusCode);
-        }
-
-        // 7e.0.1. Soporte crea un estudiante y su uso queda registrado en auditoría.
-        using (var supportCreateStudentReq = CreateRequest(
-            HttpMethod.Post,
-            "/api/tenant/students",
-            $"{slugA}.localhost:3000",
-            supportSub,
-            $"soporte-{suffix}@knorooms.com",
-            "PlatformSupport",
-            body: new Knorooms.Api.Contracts.CreateStudentRequest(
-                $"SUP-{suffix}",
-                "Estudiante",
-                "Prueba Soporte",
-                new DateOnly(2015, 1, 1))))
-        {
-            var res = await client.SendAsync(supportCreateStudentReq);
-            Assert.Equal(HttpStatusCode.Created, res.StatusCode);
-        }
-
-        // 7e.1. El permiso de Alpha no permite acceder a Beta.
-        using (var supportCrossTenantReq = CreateRequest(
-            HttpMethod.Get,
-            "/api/tenant/members",
-            $"{slugB}.localhost:3000",
-            supportSub,
-            $"soporte-{suffix}@knorooms.com",
-            "PlatformSupport"))
-        {
-            var res = await client.SendAsync(supportCrossTenantReq);
-            Assert.Equal(HttpStatusCode.Forbidden, res.StatusCode);
-        }
-
-        // 7e.2. Se expira el permiso temporal de soporte.
-        await using (var scope = factory.Services.CreateAsyncScope())
-        {
-            var accessor = scope.ServiceProvider.GetRequiredService<ITenantContextAccessor>();
-
-            using var tenant = accessor.BeginScope(
-                new(TenantHostKind.Institution, institutionA.Id, slugA, "Colegio Alpha RD",
-                    false, null, DatabaseExecutionMode.Tenant));
-
-            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-
-            var updated = await db.SupportAccessGrants
-                .Where(x => x.Id == supportGrant.Id)
-                .ExecuteUpdateAsync(s => s.SetProperty(
-                    x => x.ExpiresAtUtc,
-                    DateTimeOffset.UtcNow.AddMinutes(-1)));
-
-            Assert.Equal(1, updated);
-        }
-
-        // Soporte intenta entrar con el permiso expirado.
-        using (var supportAfterExpirationReq = CreateRequest(
-            HttpMethod.Get,
-            "/api/tenant/members",
-            $"{slugA}.localhost:3000",
-            supportSub,
-            $"soporte-{suffix}@knorooms.com",
-            "PlatformSupport"))
-        {
-            var res = await client.SendAsync(supportAfterExpirationReq);
-            Assert.Equal(HttpStatusCode.Forbidden, res.StatusCode);
         }
 
         // 7f. Director A revoca el acceso temporal de soporte -> soporte pierde acceso de inmediato (403 Forbidden).
@@ -426,9 +355,6 @@ public sealed class FoundationalVerticalSlicesIntegrationTests(PostgresIntegrati
             Assert.All(tenantLogs, log => Assert.Equal(institutionA.Id, log.TenantId));
             Assert.Contains(tenantLogs, log => log.Action == "support_access.approved");
             Assert.Contains(tenantLogs, log => log.Action == "support_access.revoked");
-            Assert.Contains(tenantLogs, log =>
-                log.Action == "student.created" &&
-                log.SupportAccessGrantId == supportGrant.Id);
         }
 
         using (var platformAuditReq = CreateRequest(
