@@ -98,7 +98,10 @@ jobs:
               if [ -n "$tid" ]; then target="$name"; break; fi
             done
 
-            if [ "$category" = "done" ] || [ "$current" = "$target" ]; then
+            # Los PR de Dependabot comparten el ticket del sprint (docs/SCRUM.md §9.4): solo se comenta.
+            if [[ "$BRANCH" == dependabot/* ]]; then
+              echo "$key: PR de Dependabot, sin transición."
+            elif [ "$category" = "done" ] || [ "$current" = "$target" ]; then
               echo "$key ya está en \"$current\"."
             elif [ "$MERGED" != "true" ] && [ "$current" = "En revisión" ]; then
               echo "$key ya está en \"$current\"."
