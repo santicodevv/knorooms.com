@@ -1,4 +1,4 @@
-using Knorooms.Modules.Modules.Authorization.Domain;
+﻿using Knorooms.Modules.Modules.Authorization.Domain;
 using Knorooms.Modules.Modules.Identity.Domain;
 using Knorooms.Modules.Modules.Platform.Contracts;
 using Knorooms.SharedKernel.Authorization;
@@ -41,7 +41,13 @@ public static class DatabaseSeedAndInitializer
         {
             dbContext.Permissions.AddRange(missing);
             await dbContext.SaveChangesAsync(cancellationToken);
-            logger.LogInformation("Synchronized {Count} permissions into the central catalog.", missing.Count);
+
+            if (logger.IsEnabled(LogLevel.Information))
+            {
+                logger.LogInformation(
+                    "Synchronized {Count} permissions into the central catalog.",
+                    missing.Count);
+            }
         }
     }
 
