@@ -17,7 +17,7 @@ namespace Knorooms.Modules.Common.Persistence.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.13")
+                .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -584,12 +584,11 @@ namespace Knorooms.Modules.Common.Persistence.Migrations
                     b.HasAlternateKey("TenantId", "Id")
                         .HasName("ak_tenant_memberships_tenant_id");
 
+                    b.HasAlternateKey("TenantId", "UserId")
+                        .HasName("ak_tenant_memberships_tenant_user");
+
                     b.HasIndex("UserId")
                         .HasDatabaseName("ix_tenant_memberships_user_id");
-
-                    b.HasIndex("TenantId", "UserId")
-                        .IsUnique()
-                        .HasDatabaseName("ux_tenant_memberships_tenant_user");
 
                     b.ToTable("tenant_memberships", (string)null);
                 });
@@ -732,6 +731,74 @@ namespace Knorooms.Modules.Common.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("institution_module_settings", (string)null);
+                });
+
+            modelBuilder.Entity("Knorooms.Modules.Modules.Files.Domain.StoredFile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("content_type");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<DateTimeOffset?>("DeletedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at_utc");
+
+                    b.Property<string>("OriginalFileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("original_file_name");
+
+                    b.Property<string>("Sha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("sha256");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("size_bytes");
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("storage_key");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<Guid>("UploadedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("uploaded_by_user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasAlternateKey("TenantId", "Id")
+                        .HasName("ak_stored_files_tenant_id");
+
+                    b.HasIndex("TenantId", "StorageKey")
+                        .IsUnique()
+                        .HasDatabaseName("ux_stored_files_tenant_storage_key");
+
+                    b.HasIndex("TenantId", "UploadedByUserId");
+
+                    b.ToTable("stored_files", (string)null);
                 });
 
             modelBuilder.Entity("Knorooms.Modules.Modules.Grading.Domain.EvaluationPolicyVersion", b =>
@@ -1915,6 +1982,22 @@ namespace Knorooms.Modules.Common.Persistence.Migrations
                     b.HasOne("Knorooms.Modules.Modules.Tenants.Domain.Institution", null)
                         .WithMany()
                         .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Knorooms.Modules.Modules.Files.Domain.StoredFile", b =>
+                {
+                    b.HasOne("Knorooms.Modules.Modules.Tenants.Domain.Institution", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Knorooms.Modules.Modules.Authorization.Domain.TenantMembership", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "UploadedByUserId")
+                        .HasPrincipalKey("TenantId", "UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

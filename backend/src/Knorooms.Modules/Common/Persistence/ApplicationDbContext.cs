@@ -1,3 +1,4 @@
+using Knorooms.Modules.Modules.Files.Domain;
 using Knorooms.Modules.Modules.Academic.Domain;
 using Knorooms.Modules.Modules.Attendance.Domain;
 using Knorooms.Modules.Modules.Audit.Domain;
@@ -63,6 +64,9 @@ public sealed partial class ApplicationDbContext(
     // 6. Platform (Outbox)
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
+    // Files
+    public DbSet<StoredFile> StoredFiles => Set<StoredFile>();
+
     // 7. Students
     public DbSet<StudentRecord> Students => Set<StudentRecord>();
     public DbSet<Guardian> Guardians => Set<Guardian>();
@@ -121,6 +125,10 @@ public sealed partial class ApplicationDbContext(
             .HasQueryFilter(e =>
                 (CurrentTenantId != null && e.TenantId == CurrentTenantId) ||
                 CurrentExecutionMode == DatabaseExecutionMode.PlatformSupport);
+
+        // Files
+        modelBuilder.Entity<StoredFile>()
+            .HasQueryFilter(e => CurrentTenantId != null && e.TenantId == CurrentTenantId);
 
         modelBuilder.Entity<StudentRecord>()
             .HasQueryFilter(e => CurrentTenantId != null && e.TenantId == CurrentTenantId);

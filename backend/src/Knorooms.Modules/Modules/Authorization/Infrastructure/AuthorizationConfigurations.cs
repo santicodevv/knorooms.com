@@ -48,9 +48,7 @@ internal sealed class InstitutionRoleConfiguration : IEntityTypeConfiguration<In
     {
         builder.ToTable("institution_roles");
 
-        builder.HasKey(x => x.Id);
-
-        // Clave candidata compuesta (tenant_id, id) para integridad referencial estricta entre tablas del mismo tenant.
+        // Clave candidata compuesta (tenant_id, id).
         builder.HasAlternateKey(x => new { x.TenantId, x.Id })
             .HasName("ak_institution_roles_tenant_id");
 
@@ -201,9 +199,9 @@ internal sealed class TenantMembershipConfiguration : IEntityTypeConfiguration<T
         builder.Property(x => x.UpdatedAtUtc)
             .HasColumnName("updated_at_utc");
 
-        builder.HasIndex(x => new { x.TenantId, x.UserId })
-            .IsUnique()
-            .HasDatabaseName("ux_tenant_memberships_tenant_user");
+        // Clave candidata compuesta para relacionar archivos con la membresía correcta.
+        builder.HasAlternateKey(x => new { x.TenantId, x.UserId })
+            .HasName("ak_tenant_memberships_tenant_user");
 
         builder.HasIndex(x => x.UserId)
             .HasDatabaseName("ix_tenant_memberships_user_id");
@@ -266,7 +264,7 @@ internal sealed class TenantMembershipRoleConfiguration : IEntityTypeConfigurati
             .IsUnique()
             .HasDatabaseName("ux_tenant_membership_roles_unique");
 
-        // FK compuesta: impide a nivel de PostgreSQL asignar un rol de otro tenant a una membresía.
+        // FK compuesta: impide asignar un rol de otro tenant a una membresía.
         builder.HasOne<InstitutionRole>()
             .WithMany()
             .HasForeignKey(x => new { x.TenantId, x.RoleId })
