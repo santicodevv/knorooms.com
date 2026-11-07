@@ -1,10 +1,10 @@
-using Knorooms.Modules.Modules.Files.Domain;
 using Knorooms.Modules.Modules.Academic.Domain;
 using Knorooms.Modules.Modules.Attendance.Domain;
 using Knorooms.Modules.Modules.Audit.Domain;
 using Knorooms.Modules.Modules.Authorization.Domain;
 using Knorooms.Modules.Modules.Enrollments.Domain;
 using Knorooms.Modules.Modules.Entitlements.Domain;
+using Knorooms.Modules.Modules.Files.Domain;
 using Knorooms.Modules.Modules.Grading.Domain;
 using Knorooms.Modules.Modules.Identity.Domain;
 using Knorooms.Modules.Modules.Platform.Domain;
