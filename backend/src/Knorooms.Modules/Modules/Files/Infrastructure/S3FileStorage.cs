@@ -5,7 +5,7 @@ using Microsoft.Extensions.Options;
 
 namespace Knorooms.Modules.Modules.Files.Infrastructure;
 
-public sealed class S3FileStorage(
+internal sealed class S3FileStorage(
     IAmazonS3 s3Client,
     IOptions<FileStorageOptions> options) : IFileStorage
 {
