@@ -1,3 +1,5 @@
+using Amazon.Runtime;
+using Amazon.S3;
 using Knorooms.Modules.Common.Persistence;
 using Knorooms.Modules.Modules.Academic.Application;
 using Knorooms.Modules.Modules.Academic.Contracts;
@@ -11,6 +13,9 @@ using Knorooms.Modules.Modules.Enrollments.Application;
 using Knorooms.Modules.Modules.Enrollments.Contracts;
 using Knorooms.Modules.Modules.Entitlements.Application;
 using Knorooms.Modules.Modules.Entitlements.Contracts;
+using Knorooms.Modules.Modules.Files.Application;
+using Knorooms.Modules.Modules.Files.Contracts;
+using Knorooms.Modules.Modules.Files.Infrastructure;
 using Knorooms.Modules.Modules.Grading.Application;
 using Knorooms.Modules.Modules.Grading.Contracts;
 using Knorooms.Modules.Modules.Identity.Application;
@@ -50,6 +55,30 @@ public static class ModulesDependencyInjection
         services.AddOptions<TokenSigningOptions>()
             .BindConfiguration(TokenSigningOptions.SectionName);
 
+        services.AddOptions<FileStorageOptions>()
+            .BindConfiguration(FileStorageOptions.SectionName);
+
+        services.AddSingleton<IAmazonS3>(sp =>
+        {
+            var storageOptions = sp.GetRequiredService<IOptions<FileStorageOptions>>().Value;
+
+            var credentials = new BasicAWSCredentials(
+                storageOptions.AccessKey,
+                storageOptions.SecretKey);
+
+            var config = new AmazonS3Config
+            {
+                ServiceURL = storageOptions.ServiceUrl,
+                ForcePathStyle = storageOptions.ForcePathStyle,
+                AuthenticationRegion = storageOptions.Region
+            };
+
+            return new AmazonS3Client(credentials, config);
+        });
+
+        services.AddScoped<IFileStorage, S3FileStorage>();
+        services.AddScoped<IStoredFileService, StoredFileService>();
+
         services.AddDbContext<ApplicationDbContext>((sp, options) =>
         {
             var resolvedConnectionString = !string.IsNullOrWhiteSpace(connectionStringOverride)
@@ -74,7 +103,6 @@ public static class ModulesDependencyInjection
         services.AddOptions<InvitationOptions>().BindConfiguration(InvitationOptions.SectionName);
         services.AddScoped<IAdministratorInvitationService, AdministratorInvitationService>();
         services.AddScoped<SmtpInvitationEmailSender>();
-        // El adaptador posee su HttpClient: cada petición o lote debe disponer de su propia instancia.
         services.AddScoped<ResendInvitationEmailSender>(sp => new ResendInvitationEmailSender(
             new HttpClient(new SocketsHttpHandler { PooledConnectionLifetime = TimeSpan.FromMinutes(5) }) { Timeout = TimeSpan.FromSeconds(15) },
             sp.GetRequiredService<IOptions<InvitationOptions>>()));

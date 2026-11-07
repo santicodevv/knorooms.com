@@ -10,7 +10,6 @@ public static class PostgresRlsPolicySql
 {
     private static readonly string[] StrictlyIsolatedTenantTables =
     [
-        "stored_files",
         "students",
         "guardians",
         "student_guardian_links",
