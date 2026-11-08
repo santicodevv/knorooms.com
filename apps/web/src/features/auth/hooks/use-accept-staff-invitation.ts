@@ -5,10 +5,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import toast from "react-hot-toast";
 import type { ProblemDetails } from "@/lib/api/types";
-import {
-  acceptInvitationSchema,
-  type AcceptInvitationValues,
-} from "../schemas/invitation-schema";
+import { acceptInvitationSchema, type AcceptInvitationValues } from "../schemas/invitation-schema";
 import { acceptStaffInvitation } from "../api/accept-staff-invitation-api";
 
 export function useAcceptStaffInvitation() {
@@ -22,8 +19,7 @@ export function useAcceptStaffInvitation() {
     control: form.control,
     name: ["invitationId", "token"],
   });
-  const validLink =
-    /^[0-9a-f-]{36}$/i.test(idValue) && /^[A-Fa-f0-9]{64}$/.test(tokenValue);
+  const validLink = /^[0-9a-f-]{36}$/i.test(idValue) && /^[A-Fa-f0-9]{64}$/.test(tokenValue);
 
   useEffect(() => {
     const hash = window.location.hash;

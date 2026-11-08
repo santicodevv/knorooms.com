@@ -36,9 +36,7 @@ export function AcceptStaffInvitationCard() {
             <Label htmlFor="displayName">Nombre completo</Label>
             <Input id="displayName" autoComplete="name" {...form.register("displayName")} />
             {form.formState.errors.displayName ? (
-              <p className="text-sm text-red-700">
-                {form.formState.errors.displayName.message}
-              </p>
+              <p className="text-sm text-red-700">{form.formState.errors.displayName.message}</p>
             ) : null}
           </div>
           <div className="space-y-2">
@@ -54,9 +52,7 @@ export function AcceptStaffInvitationCard() {
               menos 12 caracteres con mayúsculas, minúsculas y números.
             </p>
             {form.formState.errors.password ? (
-              <p className="text-sm text-red-700">
-                {form.formState.errors.password.message}
-              </p>
+              <p className="text-sm text-red-700">{form.formState.errors.password.message}</p>
             ) : null}
           </div>
           <Button type="submit" disabled={form.formState.isSubmitting}>

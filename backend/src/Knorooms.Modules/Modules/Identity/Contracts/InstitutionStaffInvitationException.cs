@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Knorooms.SharedKernel.Results;
 
 namespace Knorooms.Modules.Modules.Identity.Contracts;

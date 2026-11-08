@@ -57,7 +57,10 @@ export function useStaffInvitations(
       return false;
     }
 
-    setInvitations((current) => [result.data, ...current.filter((item) => item.id !== result.data.id)]);
+    setInvitations((current) => [
+      result.data,
+      ...current.filter((item) => item.id !== result.data.id),
+    ]);
     toast.success("Invitación creada y añadida a la cola de envío.");
     router.refresh();
     return true;
@@ -93,9 +96,7 @@ export function useStaffInvitations(
 
     setInvitations((current) =>
       current.map((item) =>
-        item.id === invitation.id
-          ? { ...item, revokedAtUtc: new Date().toISOString() }
-          : item,
+        item.id === invitation.id ? { ...item, revokedAtUtc: new Date().toISOString() } : item,
       ),
     );
     toast.success("Invitación revocada.");

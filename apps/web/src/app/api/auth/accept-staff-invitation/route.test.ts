@@ -29,9 +29,7 @@ describe("Aceptación de invitaciones de personal", () => {
     const fetcher = vi.fn();
     vi.stubGlobal("fetch", fetcher);
 
-    const response = await POST(
-      request("colegio.localhost:3000", "http://otro.localhost:3000"),
-    );
+    const response = await POST(request("colegio.localhost:3000", "http://otro.localhost:3000"));
 
     expect(response.status).toBe(403);
     expect(fetcher).not.toHaveBeenCalled();
@@ -56,17 +54,11 @@ describe("Aceptación de invitaciones de personal", () => {
     const fetcher = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
     vi.stubGlobal("fetch", fetcher);
 
-    const response = await POST(
-      request("colegio.localhost:3000", "http://colegio.localhost:3000"),
-    );
+    const response = await POST(request("colegio.localhost:3000", "http://colegio.localhost:3000"));
 
     expect(response.status).toBe(204);
     expect(response.headers.get("Cache-Control")).toBe("no-store");
-    expect(fetcher.mock.calls[0][0]).toBe(
-      "http://localhost:5080/api/invitations/staff/accept",
-    );
-    expect(fetcher.mock.calls[0][1].headers["X-Forwarded-Host"]).toBe(
-      "colegio.localhost:3000",
-    );
+    expect(fetcher.mock.calls[0][0]).toBe("http://localhost:5080/api/invitations/staff/accept");
+    expect(fetcher.mock.calls[0][1].headers["X-Forwarded-Host"]).toBe("colegio.localhost:3000");
   });
 });

@@ -45,9 +45,7 @@ export async function fetchSchoolRoles(): Promise<ApiResult<RoleDto[]>> {
   return bffFetch<RoleDto[]>("tenant/roles");
 }
 
-export async function fetchStaffInvitations(): Promise<
-  ApiResult<InstitutionStaffInvitationDto[]>
-> {
+export async function fetchStaffInvitations(): Promise<ApiResult<InstitutionStaffInvitationDto[]>> {
   return bffFetch<InstitutionStaffInvitationDto[]>("tenant/staff-invitations");
 }
 
@@ -67,7 +65,8 @@ export async function resendStaffInvitation(
   csrfToken: string,
 ): Promise<ApiResult<void>> {
   return bffFetch<void>(`tenant/staff-invitations/${encodeURIComponent(id)}/resend`, {
-    method: "POST", csrfToken,
+    method: "POST",
+    csrfToken,
   });
 }
 
@@ -76,6 +75,7 @@ export async function revokeStaffInvitation(
   csrfToken: string,
 ): Promise<ApiResult<void>> {
   return bffFetch<void>(`tenant/staff-invitations/${encodeURIComponent(id)}/revoke`, {
-    method: "POST", csrfToken,
+    method: "POST",
+    csrfToken,
   });
 }

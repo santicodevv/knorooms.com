@@ -79,9 +79,7 @@ export function StaffInvitationsPanel({
           </label>
 
           <fieldset className="space-y-3">
-            <legend className="text-xs font-semibold text-slate-700">
-              Roles que se asignarán
-            </legend>
+            <legend className="text-xs font-semibold text-slate-700">Roles que se asignarán</legend>
             {roles.length ? (
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {roles.map((role) => (
@@ -111,9 +109,7 @@ export function StaffInvitationsPanel({
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-amber-700">
-                No hay roles disponibles que puedas asignar.
-              </p>
+              <p className="text-xs text-amber-700">No hay roles disponibles que puedas asignar.</p>
             )}
           </fieldset>
 
@@ -121,7 +117,10 @@ export function StaffInvitationsPanel({
             <p className="text-[11px] text-slate-500">
               La invitación vence en 48 horas y solo puede utilizarse una vez.
             </p>
-            <Button type="submit" disabled={state.creating || !roles.length || !selectedRoles.length}>
+            <Button
+              type="submit"
+              disabled={state.creating || !roles.length || !selectedRoles.length}
+            >
               <MailPlus />
               {state.creating ? "Enviando…" : "Enviar invitación"}
             </Button>
@@ -134,12 +133,7 @@ export function StaffInvitationsPanel({
         title="Invitaciones del colegio"
         description="Consulta el estado y administra las invitaciones pendientes."
         headerAction={
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={state.refreshing}
-            onClick={state.refresh}
-          >
+          <Button variant="outline" size="sm" disabled={state.refreshing} onClick={state.refresh}>
             <RefreshCw className={state.refreshing ? "animate-spin" : ""} />
             Actualizar
           </Button>

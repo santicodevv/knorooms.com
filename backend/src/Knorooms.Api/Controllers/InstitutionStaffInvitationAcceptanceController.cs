@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using Knorooms.Api.Common;
 using Knorooms.Modules.Modules.Identity.Contracts;
 using Microsoft.AspNetCore.Authorization;

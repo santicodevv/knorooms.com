@@ -101,8 +101,8 @@ public sealed partial class ApplicationDbContext(
         modelBuilder.Entity<InstitutionStaffInvitation>()
     .HasQueryFilter(e => CurrentTenantId != null && e.TenantId == CurrentTenantId);
 
-     modelBuilder.Entity<InstitutionStaffInvitationRole>()
-    .HasQueryFilter(e => CurrentTenantId != null && e.TenantId == CurrentTenantId);
+        modelBuilder.Entity<InstitutionStaffInvitationRole>()
+       .HasQueryFilter(e => CurrentTenantId != null && e.TenantId == CurrentTenantId);
         modelBuilder.Entity<InstitutionSubscription>().HasOne<Institution>().WithMany().HasForeignKey(e => e.TenantId).OnDelete(DeleteBehavior.Restrict);
         modelBuilder.Entity<InstitutionSubscription>().HasQueryFilter(e => CurrentTenantId != null && e.TenantId == CurrentTenantId);
         modelBuilder.Entity<SubscriptionModuleOverride>().HasQueryFilter(e => CurrentTenantId != null && e.TenantId == CurrentTenantId);

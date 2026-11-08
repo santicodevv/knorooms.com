@@ -1,4 +1,4 @@
-﻿using Knorooms.Modules.Modules.Authorization.Domain;
+using Knorooms.Modules.Modules.Authorization.Domain;
 using Knorooms.Modules.Modules.Identity.Domain;
 using Knorooms.Modules.Modules.Tenants.Domain;
 using Microsoft.EntityFrameworkCore;

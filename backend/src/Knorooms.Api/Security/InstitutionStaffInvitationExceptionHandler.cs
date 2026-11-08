@@ -1,4 +1,4 @@
-﻿using Knorooms.Modules.Modules.Identity.Contracts;
+using Knorooms.Modules.Modules.Identity.Contracts;
 using Knorooms.SharedKernel.Results;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;

@@ -27,9 +27,7 @@ async function SchoolMembersPage() {
     ? await serverApiFetch<TenantContextDto>("/api/tenant/context")
     : null;
   const membersResult =
-    session && contextResult?.ok
-      ? await serverApiFetch<MemberDto[]>("/api/tenant/members")
-      : null;
+    session && contextResult?.ok ? await serverApiFetch<MemberDto[]>("/api/tenant/members") : null;
   const canManageMembers = Boolean(
     contextResult?.ok && contextResult.data.permissions.includes("institution.members.manage"),
   );

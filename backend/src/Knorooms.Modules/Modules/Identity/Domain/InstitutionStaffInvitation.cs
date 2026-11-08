@@ -1,4 +1,4 @@
-﻿using System.Net.Mail;
+using System.Net.Mail;
 using Knorooms.SharedKernel.Domain;
 using Knorooms.SharedKernel.Results;
 
