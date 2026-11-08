@@ -1,11 +1,17 @@
-import { SchoolRouteBoundary } from "@/features/school/components/school-route-boundary";
 import { headers } from "next/headers";
 import { MembersManager } from "@/components/school/members-manager";
 import { SchoolShell } from "@/components/school/school-shell";
-import { serverApiFetch } from "@/lib/api/server-api";
-import type { MemberDto, TenantContextDto } from "@/lib/api/types";
+import { StaffInvitationsPanel } from "@/features/school/components/staff-invitations-panel";
+import { SchoolRouteBoundary } from "@/features/school/components/school-route-boundary";
 import { getServerSession } from "@/lib/auth/session-store";
+import { serverApiFetch } from "@/lib/api/server-api";
 import { resolveHost } from "@/lib/tenancy/host";
+import type {
+  InstitutionStaffInvitationDto,
+  MemberDto,
+  RoleDto,
+  TenantContextDto,
+} from "@/lib/api/types";
 
 async function SchoolMembersPage() {
   const incomingHeaders = await headers();
@@ -20,13 +26,28 @@ async function SchoolMembersPage() {
   const contextResult = session
     ? await serverApiFetch<TenantContextDto>("/api/tenant/context")
     : null;
-
   const membersResult =
-    session && contextResult?.ok ? await serverApiFetch<MemberDto[]>("/api/tenant/members") : null;
-
+    session && contextResult?.ok
+      ? await serverApiFetch<MemberDto[]>("/api/tenant/members")
+      : null;
   const canManageMembers = Boolean(
     contextResult?.ok && contextResult.data.permissions.includes("institution.members.manage"),
   );
+  const [invitationsResult, rolesResult] = canManageMembers
+    ? await Promise.all([
+        serverApiFetch<InstitutionStaffInvitationDto[]>("/api/tenant/staff-invitations"),
+        serverApiFetch<RoleDto[]>("/api/tenant/roles"),
+      ])
+    : [null, null];
+
+  const assignableRoles =
+    rolesResult?.ok && contextResult?.ok
+      ? rolesResult.data.filter((role) =>
+          role.permissions.every((permission) =>
+            contextResult.data.permissions.includes(permission),
+          ),
+        )
+      : [];
 
   return (
     <SchoolShell
@@ -38,12 +59,28 @@ async function SchoolMembersPage() {
       contextResult={contextResult}
     >
       {session && contextResult?.ok ? (
-        <MembersManager
-          initialMembers={membersResult?.ok ? membersResult.data : []}
-          initialProblem={membersResult && !membersResult.ok ? membersResult.problem : null}
-          csrfToken={session.csrfToken}
-          canManageMembers={canManageMembers}
-        />
+        <div className="space-y-6">
+          <MembersManager
+            initialMembers={membersResult?.ok ? membersResult.data : []}
+            initialProblem={membersResult && !membersResult.ok ? membersResult.problem : null}
+            csrfToken={session.csrfToken}
+            canManageMembers={canManageMembers}
+          />
+          {canManageMembers ? (
+            <StaffInvitationsPanel
+              initialInvitations={invitationsResult?.ok ? invitationsResult.data : []}
+              roles={assignableRoles}
+              csrfToken={session.csrfToken}
+              initialProblem={
+                invitationsResult && !invitationsResult.ok
+                  ? invitationsResult.problem
+                  : rolesResult && !rolesResult.ok
+                    ? rolesResult.problem
+                    : null
+              }
+            />
+          ) : null}
+        </div>
       ) : null}
     </SchoolShell>
   );

@@ -1,0 +1,51 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import toast from "react-hot-toast";
+import type { ProblemDetails } from "@/lib/api/types";
+import {
+  acceptInvitationSchema,
+  type AcceptInvitationValues,
+} from "../schemas/invitation-schema";
+import { acceptStaffInvitation } from "../api/accept-staff-invitation-api";
+
+export function useAcceptStaffInvitation() {
+  const [done, setDone] = useState(false);
+  const [problem, setProblem] = useState<ProblemDetails | null>(null);
+  const form = useForm<AcceptInvitationValues>({
+    resolver: zodResolver(acceptInvitationSchema),
+    defaultValues: { invitationId: "", token: "", displayName: "", password: "" },
+  });
+  const [idValue, tokenValue] = useWatch({
+    control: form.control,
+    name: ["invitationId", "token"],
+  });
+  const validLink =
+    /^[0-9a-f-]{36}$/i.test(idValue) && /^[A-Fa-f0-9]{64}$/.test(tokenValue);
+
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (!hash) return;
+    const values = new URLSearchParams(hash.slice(1));
+    form.setValue("invitationId", values.get("id") ?? "");
+    form.setValue("token", values.get("token") ?? "");
+    window.history.replaceState(null, "", window.location.pathname);
+  }, [form]);
+
+  const submit = form.handleSubmit(async (values) => {
+    setProblem(null);
+    const error = await acceptStaffInvitation(values);
+    if (error) {
+      setProblem(error);
+      toast.error(error.detail ?? error.title ?? "No se pudo activar el acceso.");
+      return;
+    }
+    form.reset();
+    setDone(true);
+    toast.success("Acceso activado. Ya puede iniciar sesión en su colegio.");
+  });
+
+  return { form, validLink, done, problem, submit };
+}

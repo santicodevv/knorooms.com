@@ -3,8 +3,8 @@ using System.Globalization;
 namespace Knorooms.Modules.Common.Persistence;
 
 /// <summary>
-/// Definición declarativa y auditable de las funciones y políticas Row-Level Security (RLS) de PostgreSQL.
-/// Se incorpora en la migración inicial de EF Core y se ejecuta sobre PostgreSQL real.
+/// DefiniciÃ³n declarativa y auditable de las funciones y polÃ­ticas Row-Level Security (RLS) de PostgreSQL.
+/// Se incorpora en la migraciÃ³n inicial de EF Core y se ejecuta sobre PostgreSQL real.
 /// </summary>
 public static class PostgresRlsPolicySql
 {
@@ -69,7 +69,7 @@ public static class PostgresRlsPolicySql
             $$;
             """);
 
-        // 1. Tablas académicas e institucionales estrictas: NI SIQUIERA plataforma global puede leer/escribir sin tenant activo.
+        // 1. Tablas acadÃ©micas e institucionales estrictas: NI SIQUIERA plataforma global puede leer/escribir sin tenant activo.
         foreach (var table in StrictlyIsolatedTenantTables)
         {
             sb.AppendLine(CultureInfo.InvariantCulture, $"""
@@ -91,7 +91,7 @@ public static class PostgresRlsPolicySql
                 """);
         }
 
-        // 2. Tablas de roles institucionales: accesibles en el tenant activo o durante el alta inicial de institución (platform_onboarding).
+        // 2. Tablas de roles institucionales: accesibles en el tenant activo o durante el alta inicial de instituciÃ³n (platform_onboarding).
         foreach (var table in OnboardingAwareTenantTables)
         {
             sb.AppendLine(CultureInfo.InvariantCulture, $"""
@@ -111,7 +111,7 @@ public static class PostgresRlsPolicySql
                 """);
         }
 
-        // 3. Membresías por institución: lectura permitida al propio usuario (para /api/me) o al tenant activo; escritura solo al tenant activo o platform_onboarding.
+        // 3. MembresÃ­as por instituciÃ³n: lectura permitida al propio usuario (para /api/me) o al tenant activo; escritura solo al tenant activo o platform_onboarding.
         sb.AppendLine("""
             ALTER TABLE public.tenant_memberships ENABLE ROW LEVEL SECURITY;
             ALTER TABLE public.tenant_memberships FORCE ROW LEVEL SECURITY;
@@ -157,7 +157,7 @@ public static class PostgresRlsPolicySql
                 );
             """);
 
-        // 5. Bitácora de auditoría: cada tenant solo puede leer sus propios registros; plataforma global lee auditoría global; inserción permitida en modos válidos.
+        // 5. BitÃ¡cora de auditorÃ­a: cada tenant solo puede leer sus propios registros; plataforma global lee auditorÃ­a global; inserciÃ³n permitida en modos vÃ¡lidos.
         sb.AppendLine("""
             ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
             ALTER TABLE public.audit_logs FORCE ROW LEVEL SECURITY;
@@ -195,6 +195,35 @@ public static class PostgresRlsPolicySql
         );
         """;
 
+    public static string BuildStaffInvitationUpSql() => """
+        ALTER TABLE public.institution_staff_invitations ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE public.institution_staff_invitations FORCE ROW LEVEL SECURITY;
+        DROP POLICY IF EXISTS rls_institution_staff_invitations ON public.institution_staff_invitations;
+        CREATE POLICY rls_institution_staff_invitations ON public.institution_staff_invitations
+        FOR ALL USING (
+            public.app_execution_mode() IN ('tenant', 'platform_onboarding')
+            AND public.app_current_tenant_id() IS NOT NULL
+            AND tenant_id = public.app_current_tenant_id()
+        ) WITH CHECK (
+            public.app_execution_mode() IN ('tenant', 'platform_onboarding')
+            AND public.app_current_tenant_id() IS NOT NULL
+            AND tenant_id = public.app_current_tenant_id()
+        );
+
+        ALTER TABLE public.institution_staff_invitation_roles ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE public.institution_staff_invitation_roles FORCE ROW LEVEL SECURITY;
+        DROP POLICY IF EXISTS rls_institution_staff_invitation_roles ON public.institution_staff_invitation_roles;
+        CREATE POLICY rls_institution_staff_invitation_roles ON public.institution_staff_invitation_roles
+        FOR ALL USING (
+            public.app_execution_mode() IN ('tenant', 'platform_onboarding')
+            AND public.app_current_tenant_id() IS NOT NULL
+            AND tenant_id = public.app_current_tenant_id()
+        ) WITH CHECK (
+            public.app_execution_mode() IN ('tenant', 'platform_onboarding')
+            AND public.app_current_tenant_id() IS NOT NULL
+            AND tenant_id = public.app_current_tenant_id()
+        );
+        """;
     public static string BuildCommercialUpSql() => """
         ALTER TABLE public.plan_versions ENABLE ROW LEVEL SECURITY;
         ALTER TABLE public.plan_versions FORCE ROW LEVEL SECURITY;
