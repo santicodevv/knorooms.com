@@ -14,7 +14,7 @@
     "test:coverage": "vitest run --coverage --reporter=default --reporter=json --outputFile.json=test-results/vitest-results.json"
   },
   "dependencies": {
-    "@hookform/resolvers": "^6.0.2",
+    "@hookform/resolvers": "^7.0.3",
     "clsx": "^2.1.1",
     "ioredis": "^6.0.0",
     "lucide-react": "^1.65.0",
