@@ -4,6 +4,7 @@ using Knorooms.Api.Configuration;
 using Knorooms.Api.Security;
 using Knorooms.Modules;
 using Knorooms.Modules.Common.Persistence;
+using Knorooms.Modules.Modules.Entitlements.Contracts;
 using Knorooms.Modules.Modules.Identity.Contracts;
 using Knorooms.Modules.Modules.Platform.Contracts;
 using Knorooms.SharedKernel.Tenancy;
@@ -125,6 +126,7 @@ if (app.Configuration.GetValue("Database:AutoMigrateOnStartup", false))
             db,
             tenantAccessor,
             platformService,
+            scope.ServiceProvider.GetRequiredService<IInstitutionModulesService>(),
             tokenOptions.Issuer,
             logger);
     }
