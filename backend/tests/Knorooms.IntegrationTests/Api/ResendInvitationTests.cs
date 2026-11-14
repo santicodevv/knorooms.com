@@ -18,7 +18,7 @@ public sealed class ResendInvitationTests
         await service.SendAsync("director@example.test", "https://school.example.test/accept-invitation#test"); var first = handler.Key;
         await service.SendAsync("director@example.test", "https://school.example.test/accept-invitation#test"); Assert.Equal(first, handler.Key); Assert.Equal("https://api.resend.com/emails", handler.Url); Assert.Equal("Bearer test-key-not-real", handler.Authorization);
         using var json = JsonDocument.Parse(handler.Body!); Assert.Equal("director@example.test", json.RootElement.GetProperty("to")[0].GetString());
-        handler.Fail = true; var error = await Assert.ThrowsAsync<InvalidOperationException>(() => service.SendAsync("director@example.test", "https://school.example.test/#different")); Assert.DoesNotContain("test-key", error.Message); Assert.DoesNotContain("different", error.Message);
+        handler.Fail = true; var error = await Assert.ThrowsAsync<InvalidOperationException>(() => service.SendAsync("director@example.test", "https://school.example.test/#different")); Assert.Contains("HTTP 400", error.Message); Assert.Contains("validation_error", error.Message); Assert.DoesNotContain("test-key", error.Message); Assert.DoesNotContain("different", error.Message);
     }
     [Fact]
     public async Task Resend_RemainsUsableAfterAnEarlierRequestScopeIsDisposed()
@@ -52,6 +52,6 @@ public sealed class ResendInvitationTests
         public string? Body { get; private set; }
         public string? Authorization { get; private set; }
         public bool Fail { get; set; }
-        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) { Url = request.RequestUri!.ToString(); Key = request.Headers.GetValues("Idempotency-Key").Single(); Authorization = request.Headers.Authorization!.ToString(); Body = await request.Content!.ReadAsStringAsync(cancellationToken); return new(Fail ? HttpStatusCode.BadRequest : HttpStatusCode.OK); }
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) { Url = request.RequestUri!.ToString(); Key = request.Headers.GetValues("Idempotency-Key").Single(); Authorization = request.Headers.Authorization!.ToString(); Body = await request.Content!.ReadAsStringAsync(cancellationToken); return Fail ? new(HttpStatusCode.BadRequest) { Content = new StringContent("{\\"name\\":\\"validation_error\\",\\"message\\":\\"Sensitive provider details must not escape\\"}") } : new(HttpStatusCode.OK); }
     }
 }
