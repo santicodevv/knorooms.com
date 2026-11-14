@@ -4,10 +4,16 @@ using System.Security.Cryptography;
 using Knorooms.Api.Contracts;
 using Knorooms.Api.Controllers;
 using Knorooms.IntegrationTests.Infrastructure;
+using Knorooms.Modules.Common.Persistence;
 using Knorooms.Modules.Modules.Authorization.Contracts;
+using Knorooms.Modules.Modules.Authorization.Domain;
 using Knorooms.Modules.Modules.Identity.Contracts;
 using Knorooms.Modules.Modules.Platform.Contracts;
 using Knorooms.Modules.Modules.Tenants.Contracts;
+using Knorooms.Modules.Modules.Identity.Domain;
+using Knorooms.SharedKernel.Authorization;
+using Knorooms.SharedKernel.Tenancy;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -85,6 +91,38 @@ public sealed class InstitutionStaffInvitationsIntegrationTests(
             (await rolesResponse.Content.ReadFromJsonAsync<IReadOnlyList<RoleDto>>())!;
 
         var teacher = Assert.Single(roles, role => role.Code == "Teacher");
+
+        var guardian = Assert.Single(roles, role => role.Code == SystemRoleCatalog.Guardian);
+        using var guardianInvitation = await Send(HttpMethod.Post, "/api/tenant/staff-invitations",
+            new CreateInstitutionStaffInvitationCommand($"guardian-invite-{suffix}@example.test", [guardian.Id]),
+            tenantHost);
+        Assert.Equal(HttpStatusCode.Forbidden, guardianInvitation.StatusCode);
+
+        var guardianSubject = $"guardian-{suffix}";
+        var guardianEmail = $"{guardianSubject}@example.test";
+        await using (var scope = app.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var accessor = scope.ServiceProvider.GetRequiredService<ITenantContextAccessor>();
+            using var tenant = accessor.BeginScope(ExecutionScopeContext.Anonymous with
+            {
+                HostKind = TenantHostKind.Institution,
+                TenantId = institution.Id,
+                ExecutionMode = DatabaseExecutionMode.Tenant
+            });
+            var user = UserAccount.Create(guardianSubject, TestOidcAuthHandler.Issuer, guardianEmail, "Responsable familiar").Value;
+            var role = await db.InstitutionRoles.SingleAsync(role => role.Id == guardian.Id);
+            db.Users.Add(user);
+            db.TenantMemberships.Add(TenantMembership.Create(institution.Id, user.Id, [role]).Value);
+            await db.SaveChangesAsync();
+        }
+
+        using var studentsRequest = new HttpRequestMessage(HttpMethod.Get, "/api/tenant/students");
+        studentsRequest.Headers.Add("X-Forwarded-Host", tenantHost);
+        studentsRequest.Headers.Add(TestOidcAuthHandler.SubjectHeader, guardianSubject);
+        studentsRequest.Headers.Add(TestOidcAuthHandler.EmailHeader, guardianEmail);
+        using var studentsResponse = await client.SendAsync(studentsRequest);
+        Assert.Equal(HttpStatusCode.Forbidden, studentsResponse.StatusCode);
 
         // Crear invitación.
         var recipient = $"teacher-{suffix}@example.test";

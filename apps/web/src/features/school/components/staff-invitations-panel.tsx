@@ -41,6 +41,7 @@ export function StaffInvitationsPanel({
 }: StaffInvitationsPanelProps) {
   const state = useStaffInvitations(initialInvitations, initialProblem, csrfToken);
   const [email, setEmail] = useState("");
+  const staffRoles = roles.filter((role) => role.code !== "Guardian");
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [showAll, setShowAll] = useState(false);
 
@@ -80,9 +81,9 @@ export function StaffInvitationsPanel({
 
           <fieldset className="space-y-3">
             <legend className="text-xs font-semibold text-slate-700">Roles que se asignarán</legend>
-            {roles.length ? (
+            {staffRoles.length ? (
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {roles.map((role) => (
+                {staffRoles.map((role) => (
                   <label
                     key={role.id}
                     className="flex cursor-pointer items-start gap-2 rounded-lg border border-slate-200 p-3 text-xs hover:border-blue-300"
@@ -119,7 +120,7 @@ export function StaffInvitationsPanel({
             </p>
             <Button
               type="submit"
-              disabled={state.creating || !roles.length || !selectedRoles.length}
+              disabled={state.creating || !staffRoles.length || !selectedRoles.length}
             >
               <MailPlus />
               {state.creating ? "Enviando…" : "Enviar invitación"}

@@ -84,6 +84,8 @@ internal sealed class InstitutionStaffInvitationService : IInstitutionStaffInvit
         if (roles.Count != roleIds.Length)
             throw new InstitutionStaffInvitationException(Error.Validation("Invitation.Roles.Invalid", "Uno o más roles no pertenecen al colegio actual."));
 
+        RejectGuardianRole(roles);
+
         var actorPermissions = access.EffectivePermissions;
         var requestedPermissions = roles
             .SelectMany(role => role.Permissions)
@@ -167,6 +169,16 @@ internal sealed class InstitutionStaffInvitationService : IInstitutionStaffInvit
         }
 
         return Map(invitation);
+    }
+
+    private static void RejectGuardianRole(IEnumerable<InstitutionRole> roles)
+    {
+        if (roles.Any(role => role.Code == SystemRoleCatalog.Guardian))
+        {
+            throw new InstitutionStaffInvitationException(Error.Forbidden(
+                "Invitation.Roles.GuardianUnavailable",
+                "El rol de responsable familiar no está disponible para invitaciones de personal."));
+        }
     }
 
     public async Task<IReadOnlyList<InstitutionStaffInvitationDto>> ListAsync(
@@ -378,6 +390,8 @@ internal sealed class InstitutionStaffInvitationService : IInstitutionStaffInvit
 
         if (roles.Count != roleIds.Length || roles.Count == 0)
             throw new InstitutionStaffInvitationException(Error.Conflict("Invitation.Roles.Unavailable", "Los roles de esta invitación ya no están disponibles."));
+
+        RejectGuardianRole(roles);
 
         var user = await _db.Users
             .SingleOrDefaultAsync(account => account.Email == invitation.Email,
