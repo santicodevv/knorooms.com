@@ -47,6 +47,8 @@ public static class PermissionCatalog
     public const string InstitutionGradingApprove = "institution.grading.approve";
     public const string InstitutionReportCardsRead = "institution.report-cards.read";
     public const string InstitutionReportCardsPublish = "institution.report-cards.publish";
+    public const string InstitutionFilesRead = "institution.files.read";
+    public const string InstitutionFilesManage = "institution.files.manage";
 
     public const string InstitutionStudentsCreate = "institution.students.create";
     public const string InstitutionStudentsUpdate = "institution.students.update";
@@ -91,6 +93,8 @@ public static class PermissionCatalog
         new(InstitutionGradingApprove, "Aprobar y cerrar calificaciones", "Permite a coordinación/dirección revisar y aprobar cierres de evaluación.", PermissionScope.Institution, "Grading"),
         new(InstitutionReportCardsRead, "Consultar boletines", "Permite consultar boletines publicados.", PermissionScope.Institution, "ReportCards"),
         new(InstitutionReportCardsPublish, "Publicar boletines", "Permite emitir versiones históricas inmutables de boletines.", PermissionScope.Institution, "ReportCards"),
+        new(InstitutionFilesRead, "Consultar archivos", "Permite consultar y descargar archivos privados del colegio.", PermissionScope.Institution, "Files"),
+        new(InstitutionFilesManage, "Gestionar archivos", "Permite subir y eliminar archivos privados del colegio.", PermissionScope.Institution, "Files"),
         new(InstitutionStudentsCreate, "Registrar estudiantes", "Permite registrar estudiantes en el colegio activo.", PermissionScope.Institution, "Students"),
         new(InstitutionStudentsUpdate, "Editar estudiantes", "Permite editar estudiantes en el colegio activo.", PermissionScope.Institution, "Students"),
         new(InstitutionStudentsDeactivate, "Desactivar estudiantes", "Permite desactivar estudiantes en el colegio activo.", PermissionScope.Institution, "Students"),
@@ -162,7 +166,8 @@ public static class SystemRoleCatalog
                     PermissionCatalog.InstitutionGradingRead,
                     PermissionCatalog.InstitutionGradingApprove,
                     PermissionCatalog.InstitutionReportCardsRead,
-                    PermissionCatalog.InstitutionReportCardsPublish
+                    PermissionCatalog.InstitutionReportCardsPublish,
+                    PermissionCatalog.InstitutionFilesRead
                 ]),
             [AcademicCoordinator] = (
                 "Coordinación académica",
@@ -198,7 +203,9 @@ public static class SystemRoleCatalog
                     PermissionCatalog.InstitutionAcademicRead,
                     PermissionCatalog.InstitutionEnrollmentsRead,
                     PermissionCatalog.InstitutionEnrollmentsManage,
-                    PermissionCatalog.InstitutionReportCardsRead
+                    PermissionCatalog.InstitutionReportCardsRead,
+                    PermissionCatalog.InstitutionFilesRead,
+                    PermissionCatalog.InstitutionFilesManage
                 ]),
             [Teacher] = (
                 "Docente",
