@@ -15,6 +15,8 @@ public sealed record RoleDto(
     bool IsSystem,
     IReadOnlyList<string> Permissions);
 
+public sealed record UpdateRolePermissionsRequest(string[] Permissions);
+
 public sealed record MemberDto(
     Guid MembershipId,
     Guid UserId,
@@ -52,6 +54,9 @@ public interface ITenantAuthorizationService
     Task<IReadOnlyList<MemberDto>> ListMembersAsync(CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<RoleDto>> ListRolesAsync(CancellationToken cancellationToken = default);
+
+    Task<Result> UpdateRolePermissionsAsync(
+        Guid roleId, IReadOnlyList<string> permissions, Guid actorUserId, CancellationToken cancellationToken = default);
 
     Task<Result> RevokeMemberAsync(
         Guid membershipId,
