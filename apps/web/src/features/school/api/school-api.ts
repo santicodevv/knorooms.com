@@ -79,3 +79,15 @@ export async function revokeStaffInvitation(
     csrfToken,
   });
 }
+
+export function updateSchoolRolePermissions(
+  roleId: string,
+  permissions: string[],
+  csrfToken: string,
+) {
+  return bffFetch<void>(`tenant/roles/${encodeURIComponent(roleId)}/permissions`, {
+    method: "PUT",
+    body: { permissions },
+    csrfToken,
+  });
+}

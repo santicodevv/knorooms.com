@@ -63,6 +63,22 @@ public sealed class TenantController(
         return Ok(roles);
     }
 
+    [HttpGet("roles/permissions")]
+    [Authorize(Policy = PermissionCatalog.InstitutionRolesManage)]
+    public IActionResult ListInstitutionPermissions() =>
+        Ok(PermissionCatalog.All.Where(permission => permission.Scope == PermissionScope.Institution)
+            .Select(permission => new { permission.Code, permission.Name, permission.Description }));
+
+    [HttpPut("roles/{roleId:guid}/permissions")]
+    [Authorize(Policy = PermissionCatalog.InstitutionRolesManage)]
+    public async Task<IActionResult> UpdateRolePermissions(
+        Guid roleId, UpdateRolePermissionsRequest request, CancellationToken cancellationToken)
+    {
+        var result = await tenantAuthorizationService.UpdateRolePermissionsAsync(
+            roleId, request.Permissions, HttpContext.GetAuthenticatedUserId(), cancellationToken);
+        return result.IsSuccess ? NoContent() : this.ToProblemResult(result.Error);
+    }
+
     [HttpGet("support-access")]
     [Authorize(Policy = PermissionCatalog.InstitutionSupportAccessRead)]
     public async Task<ActionResult<IReadOnlyList<SupportAccessGrantDto>>> ListSupportAccessGrants(

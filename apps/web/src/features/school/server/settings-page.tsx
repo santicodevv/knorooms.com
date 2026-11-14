@@ -1,3 +1,9 @@
+import { serverApiFetch } from "@/lib/api/server-api";
+import type { RoleDto } from "@/lib/api/types";
+import {
+  RolePermissionsEditor,
+  type EditablePermission,
+} from "../components/role-permissions-editor";
 import Link from "next/link";
 import { SchoolShell } from "@/components/school/school-shell";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +13,16 @@ export async function SchoolSettingsPage({ moodle = false }: { moodle?: boolean 
   const data = await getSchoolContext(),
     context = data.contextResult?.ok ? data.contextResult.data : null;
   const capabilities = context ? await getSchoolCapabilities() : null;
+  const canEditRoles =
+    !moodle &&
+    context?.roles.some((role) => role.code === "InstitutionAdmin") &&
+    context.permissions.includes("institution.roles.manage");
+  const [roles, catalog] = canEditRoles
+    ? await Promise.all([
+        serverApiFetch<RoleDto[]>("/api/tenant/roles"),
+        serverApiFetch<EditablePermission[]>("/api/tenant/roles/permissions"),
+      ])
+    : [null, null];
   return (
     <SchoolShell
       {...data}
@@ -82,6 +98,25 @@ export async function SchoolSettingsPage({ moodle = false }: { moodle?: boolean 
                   </div>
                 </div>
               </SchoolPanel>
+              {canEditRoles && data.session && (
+                <SchoolPanel title="Permisos de los roles">
+                  {roles?.ok && catalog?.ok ? (
+                    roles.data
+                      .filter((role) => role.code !== "Guardian")
+                      .map((role) => (
+                        <RolePermissionsEditor
+                          key={role.id}
+                          role={role}
+                          catalog={catalog.data}
+                          actorPermissions={context.permissions}
+                          csrfToken={data.session!.csrfToken}
+                        />
+                      ))
+                  ) : (
+                    <p className="p-4 text-sm">No se pudo cargar el catálogo de permisos.</p>
+                  )}
+                </SchoolPanel>
+              )}
               {context.permissions.includes("institution.grading.read") && (
                 <SchoolPanel title="Reglas académicas">
                   <Link

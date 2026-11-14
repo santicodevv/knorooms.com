@@ -121,6 +121,18 @@ public sealed class InstitutionRole : TenantScopedEntity
 
         return Result.Success(role);
     }
+
+    internal void ReplacePermissions(IReadOnlySet<string> permissions)
+    {
+        _permissions.RemoveAll(existing => !permissions.Contains(existing.PermissionCode));
+        var current = _permissions.Select(existing => existing.PermissionCode).ToHashSet(StringComparer.Ordinal);
+        foreach (var permission in permissions.Where(permission => !current.Contains(permission)))
+        {
+            _permissions.Add(new InstitutionRolePermission(TenantId, Id, permission));
+        }
+
+        MarkUpdated();
+    }
 }
 
 public sealed class InstitutionRolePermission : TenantScopedEntity
