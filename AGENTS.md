@@ -47,7 +47,7 @@ knorooms/
 │   ├── Knorooms.slnx                # Solución .NET
 │   ├── src/
 │   │   ├── Knorooms.SharedKernel/   # Primitivas de dominio, Result, Tenancy, PermissionCatalog
-│   │   ├── Knorooms.Modules/        # 12 módulos de negocio + ApplicationDbContext + RLS
+│   │   ├── Knorooms.Modules/        # 14 módulos de negocio + ApplicationDbContext + RLS
 │   │   └── Knorooms.Api/            # Host HTTP, validación JWT Bearer propia, middlewares, Controllers
 │   └── tests/
 │       ├── Knorooms.UnitTests/      # Pruebas de dominio, subdominios y NetArchTest
@@ -61,7 +61,7 @@ knorooms/
 └── README.md
 ```
 
-### Los 12 Módulos actuales de `Knorooms.Modules`
+### Los 14 módulos actuales de `Knorooms.Modules`
 Ubicados en `backend/src/Knorooms.Modules/Modules/<NombreModulo>/`:
 1. `Identity`
 2. `Tenants`
@@ -75,6 +75,8 @@ Ubicados en `backend/src/Knorooms.Modules/Modules/<NombreModulo>/`:
 10. `Authorization`
 11. `SupportAccess`
 12. `Audit`
+13. `Subscriptions`
+14. `Entitlements`
 
 Cada módulo separa `Contracts` (público), `Domain`, `Application` (`internal`) e `Infrastructure` (`internal`).
 
