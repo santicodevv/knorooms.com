@@ -13,7 +13,7 @@ flowchart LR
     Browser["Navegador Web\n(Sin tokens en JS)"]
     BFF["Next.js App Router BFF\n(Cookie HttpOnly + Redis AES-256-GCM)"]
     API["ASP.NET Core Web API\n(Knorooms.Api)"]
-    Modules["Monolito Modular\n(Knorooms.Modules - 12 módulos)"]
+    Modules["Monolito Modular\n(Knorooms.Modules - 14 módulos)"]
     PG[("PostgreSQL 17\nShared Schema + RLS FORCED\nRol: knorooms_app (NOBYPASSRLS)")]
 
     Browser <-->|"Cookie __Host-knorooms_session\n+ X-CSRF-Token"| BFF
@@ -27,7 +27,7 @@ Los JWT y refresh tokens son emitidos por el propio backend de KNOROOMS (no hay 
 
 ---
 
-## 2. Los 12 Módulos actuales del Backend (`Knorooms.Modules`)
+## 2. Los 14 módulos actuales del Backend (`Knorooms.Modules`)
 
 | # | Módulo | Ámbito | Responsabilidad principal | Estado observado en código |
 |---|---|---|---|---|
@@ -43,6 +43,8 @@ Los JWT y refresh tokens son emitidos por el propio backend de KNOROOMS (no hay 
 | 10 | `Attendance` | Tenant | Registro de asistencia diaria/por sección (`AttendanceRecord`: presente, ausente, tardanza, justificado). | Dominio, servicios y API implementados; validación funcional pendiente |
 | 11 | `Grading` | Tenant | Políticas de evaluación versionadas (`EvaluationPolicyVersion`) y calificaciones (`GradeEntry`) con separación de funciones. | Dominio, servicios y API implementados; validación funcional pendiente |
 | 12 | `ReportCards` | Tenant | Instantáneas históricas inmutables de boletines publicados (`ReportCardSnapshot`) y rectificaciones auditadas. | Dominio, servicios y API implementados; validación funcional pendiente |
+| 13 | `Subscriptions` | Global / Tenant | Suscripciones, vigencia y administración comercial de cada colegio. | Implementado (orden 3) |
+| 14 | `Entitlements` | Tenant | Módulos habilitados y derechos de uso según configuración y vigencia. | Implementado (orden 3) |
 
 ---
 
@@ -53,9 +55,9 @@ Los JWT y refresh tokens son emitidos por el propio backend de KNOROOMS (no hay 
 3. **Consecuencias desacopladas y entrega confiable**: las entidades registran eventos de dominio (`IDomainEvent`) que `ApplicationDbContext.SaveChangesAsync` convierte atómicamente en registros `OutboxMessage` dentro de la misma transacción PostgreSQL antes del `COMMIT`. `OutboxProcessorHostedService` los procesa posteriormente.
 
 ## 4. Evolución acordada: SaaS escolar y Moodle
-Los 12 módulos anteriores describen el código actual, no el alcance completo del producto ni un límite al número de módulos. La revisión documental no ejecutó pruebas funcionales. En evaluación y boletines existen hallazgos pendientes de corregir antes del piloto.
+Los 14 módulos anteriores describen el código actual, no el alcance completo del producto ni un límite al número de módulos. La revisión documental no ejecutó pruebas funcionales. En evaluación y boletines existen hallazgos pendientes de corregir antes del piloto.
 
-La arquitectura objetivo incorpora Subscriptions, Entitlements e Integrations dentro de Knorooms.Modules, sin nuevos despliegues ni proyectos por módulo. Platform coordina la ficha del colegio; Academic es responsable de la carga académica; Integrations importa mediante contratos sin publicar notas oficiales.
+`Subscriptions` y `Entitlements` ya forman parte de `Knorooms.Modules`. La integración con Moodle está prevista para el orden 4 dentro del mismo monolito. Platform coordina la ficha del colegio; Academic es responsable de la carga académica; Integrations importa mediante contratos sin publicar notas oficiales.
 
 - [Alcance escolar vigente](../product/scope.md).
 - [Responsabilidades y seguridad SaaS/Moodle](saas-administration-and-moodle.md).
