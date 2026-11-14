@@ -46,7 +46,8 @@ public sealed partial class ApplicationDbContext(
     public DbSet<AdministratorInvitation> AdministratorInvitations => Set<AdministratorInvitation>();
     public DbSet<UserAccount> Users => Set<UserAccount>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
-
+    public DbSet<InstitutionStaffInvitation> InstitutionStaffInvitations => Set<InstitutionStaffInvitation>();
+    public DbSet<InstitutionStaffInvitationRole> InstitutionStaffInvitationRoles => Set<InstitutionStaffInvitationRole>();
     // 3. Authorization
     public DbSet<PermissionRecord> Permissions => Set<PermissionRecord>();
     public DbSet<InstitutionRole> InstitutionRoles => Set<InstitutionRole>();
@@ -97,7 +98,11 @@ public sealed partial class ApplicationDbContext(
         modelBuilder.Entity<InstitutionModuleSettings>().HasOne<Institution>().WithMany().HasForeignKey(e => e.TenantId).OnDelete(DeleteBehavior.Restrict);
         modelBuilder.Entity<InstitutionModuleSettings>().HasQueryFilter(e => (CurrentTenantId != null && e.TenantId == CurrentTenantId) || CurrentExecutionMode == DatabaseExecutionMode.PlatformDirectory);
         modelBuilder.Entity<AdministratorInvitation>().HasQueryFilter(e => (CurrentTenantId != null && e.TenantId == CurrentTenantId) || CurrentExecutionMode == DatabaseExecutionMode.PlatformDirectory);
+        modelBuilder.Entity<InstitutionStaffInvitation>()
+    .HasQueryFilter(e => CurrentTenantId != null && e.TenantId == CurrentTenantId);
 
+        modelBuilder.Entity<InstitutionStaffInvitationRole>()
+       .HasQueryFilter(e => CurrentTenantId != null && e.TenantId == CurrentTenantId);
         modelBuilder.Entity<InstitutionSubscription>().HasOne<Institution>().WithMany().HasForeignKey(e => e.TenantId).OnDelete(DeleteBehavior.Restrict);
         modelBuilder.Entity<InstitutionSubscription>().HasQueryFilter(e => CurrentTenantId != null && e.TenantId == CurrentTenantId);
         modelBuilder.Entity<SubscriptionModuleOverride>().HasQueryFilter(e => CurrentTenantId != null && e.TenantId == CurrentTenantId);

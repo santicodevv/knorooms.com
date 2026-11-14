@@ -73,6 +73,7 @@ public static class ModulesDependencyInjection
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddOptions<InvitationOptions>().BindConfiguration(InvitationOptions.SectionName);
         services.AddScoped<IAdministratorInvitationService, AdministratorInvitationService>();
+        services.AddScoped<IInstitutionStaffInvitationService, InstitutionStaffInvitationService>();
         services.AddScoped<SmtpInvitationEmailSender>();
         // El adaptador posee su HttpClient: cada petición o lote debe disponer de su propia instancia.
         services.AddScoped<ResendInvitationEmailSender>(sp => new ResendInvitationEmailSender(

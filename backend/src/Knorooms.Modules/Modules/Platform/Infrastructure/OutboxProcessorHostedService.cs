@@ -74,6 +74,12 @@ internal sealed class OutboxProcessorHostedService(
                         ?? throw new InvalidOperationException("Evento de invitación inválido.");
                     await scope.ServiceProvider.GetRequiredService<IAdministratorInvitationService>().DeliverAsync(payload, cancellationToken);
                 }
+                else if (message.EventType == typeof(InstitutionStaffInvitationQueued).FullName)
+                {
+                    var staffPayload = JsonSerializer.Deserialize<InstitutionStaffInvitationQueued>(message.PayloadJson)
+                        ?? throw new InvalidOperationException("Evento de invitacion de personal invalido.");
+                    await scope.ServiceProvider.GetRequiredService<IInstitutionStaffInvitationService>().DeliverAsync(staffPayload, cancellationToken);
+                }
                 if (logger.IsEnabled(LogLevel.Information))
                 {
                     logger.LogInformation(
@@ -87,7 +93,10 @@ internal sealed class OutboxProcessorHostedService(
             }
             catch (Exception ex)
             {
-                message.MarkFailed(message.EventType == typeof(AdministratorInvitationQueued).FullName ? "No se pudo enviar la invitación." : ex.Message);
+                var isInvitationEvent =
+                    message.EventType == typeof(AdministratorInvitationQueued).FullName ||
+                    message.EventType == typeof(InstitutionStaffInvitationQueued).FullName;
+                message.MarkFailed(isInvitationEvent ? "No se pudo enviar la invitacion." : ex.Message);
             }
         }
 

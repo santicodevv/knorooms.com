@@ -173,13 +173,8 @@ public static class SystemRoleCatalog
                 ]),
             [Guardian] = (
                 "Responsable familiar",
-                "Consulta boletines, asistencia y seguimiento de sus estudiantes vinculados con permiso académico.",
-                [
-                    PermissionCatalog.InstitutionContextRead,
-                    PermissionCatalog.InstitutionStudentsRead,
-                    PermissionCatalog.InstitutionAttendanceRead,
-                    PermissionCatalog.InstitutionReportCardsRead
-                ])
+                "Identifica a responsables familiares para un futuro portal con acceso por estudiante vinculado.",
+                [PermissionCatalog.InstitutionContextRead])
         };
 
     private static string[] AllInstitutionPermissions() =>
