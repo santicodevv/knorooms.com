@@ -32,7 +32,7 @@ KNOROOMS implementa un **Monolito Modular** con defensa en profundidad para el a
 | :--- | :--- | :--- |
 | **Frontend + BFF** | Next.js 16 (App Router), React 19, TypeScript 5, Tailwind CSS v4, componentes propios con Tailwind CSS | Enrutamiento por subdominio (`src/proxy.ts`), Backend for Frontend (BFF), formulario de login propio, sesiones cifradas (AES-256-GCM) en Redis, cookies `HttpOnly` host-only, protección CSRF y arquitectura Feature-Sliced (`schemas/`, `api/`, `hooks/`, `components/`). |
 | **Backend API** | ASP.NET Core Web API (.NET 10 LTS), C#, FluentValidation, OpenAPI | Controladores REST delgados, credenciales locales (PBKDF2-HMAC-SHA256) y emisión/validación de JWT propios (HS256), resolución de tenant e identidad, autorización RBAC + ABAC con denegación por defecto y respuestas `ProblemDetails` (RFC 9457). |
-| **Módulos de Dominio** | `Knorooms.Modules` + `Knorooms.SharedKernel` | 12 módulos lógicos (`Tenants`, `Identity`, `Authorization`, `SupportAccess`, `Audit`, `Platform`, `Students`, `Academic`, `Enrollments`, `Attendance`, `Grading`, `ReportCards`), contratos síncronos y **Transactional Outbox** (`outbox_messages`). |
+| **Módulos de Dominio** | `Knorooms.Modules` + `Knorooms.SharedKernel` | 14 módulos lógicos (`Tenants`, `Identity`, `Authorization`, `SupportAccess`, `Audit`, `Platform`, `Students`, `Academic`, `Enrollments`, `Attendance`, `Grading`, `ReportCards`, `Subscriptions`, `Entitlements`), contratos síncronos y **Transactional Outbox** (`outbox_messages`). |
 | **Persistencia y Aislamiento** | PostgreSQL 17 + Entity Framework Core 10 (`Npgsql`) | Base de datos y esquema (`public`) compartidos, `TenantId` (`UUID`), **Row-Level Security (`ENABLE` + `FORCE ROW LEVEL SECURITY`)**, rol de aplicación `knorooms_app` con `NOBYPASSRLS`, filtros globales de EF Core y claves foráneas compuestas `(tenant_id, <fk>_id)`. |
 
 ### Identificación por Subdominio
@@ -70,7 +70,7 @@ knorooms.com/
 │   ├── Knorooms.slnx                   # Solución .NET 10
 │   ├── src/
 │   │   ├── Knorooms.SharedKernel/      # Primitivas compartidas (Entity, TenantEntity, Result, Permisos)
-│   │   ├── Knorooms.Modules/           # 12 módulos, ApplicationDbContext, PostgresRlsInterceptor y Migraciones
+│   │   ├── Knorooms.Modules/           # 14 módulos, ApplicationDbContext, PostgresRlsInterceptor y Migraciones
 │   │   └── Knorooms.Api/               # Host ASP.NET Core, Controllers, Middlewares y Validaciones
 │   └── tests/
 │       ├── Knorooms.UnitTests/         # Pruebas unitarias y de arquitectura modular (NetArchTest)
