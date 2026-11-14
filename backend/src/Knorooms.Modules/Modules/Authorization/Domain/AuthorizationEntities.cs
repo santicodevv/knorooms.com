@@ -11,7 +11,7 @@ public enum MembershipStatus
 }
 
 /// <summary>
-/// Registro persistido del catálogo central de permisos.
+/// Registro persistido del catÃ¡logo central de permisos.
 /// </summary>
 public sealed class PermissionRecord
 {
@@ -41,8 +41,8 @@ public sealed class PermissionRecord
 }
 
 /// <summary>
-/// Rol dentro de una institución educativa (predefinido o personalizado por el colegio).
-/// Un rol institucional jamás puede contener permisos de ámbito global (Platform).
+/// Rol dentro de una instituciÃ³n educativa (predefinido o personalizado por el colegio).
+/// Un rol institucional jamÃ¡s puede contener permisos de Ã¡mbito global (Platform).
 /// </summary>
 public sealed class InstitutionRole : TenantScopedEntity
 {
@@ -100,7 +100,7 @@ public sealed class InstitutionRole : TenantScopedEntity
             {
                 return Result.Failure<InstitutionRole>(Error.Validation(
                     "Role.UnknownPermission",
-                    $"El permiso '{perm}' no existe en el catálogo institucional."));
+                    $"El permiso '{perm}' no existe en el catÃ¡logo institucional."));
             }
         }
 
@@ -120,6 +120,18 @@ public sealed class InstitutionRole : TenantScopedEntity
         }
 
         return Result.Success(role);
+    }
+
+    internal void ReplacePermissions(IReadOnlySet<string> permissions)
+    {
+        _permissions.RemoveAll(existing => !permissions.Contains(existing.PermissionCode));
+        var current = _permissions.Select(existing => existing.PermissionCode).ToHashSet(StringComparer.Ordinal);
+        foreach (var permission in permissions.Where(permission => !current.Contains(permission)))
+        {
+            _permissions.Add(new InstitutionRolePermission(TenantId, Id, permission));
+        }
+
+        MarkUpdated();
     }
 }
 
@@ -153,8 +165,8 @@ public sealed record MembershipRevokedDomainEvent(
 }
 
 /// <summary>
-/// Membresía independiente de un usuario en una institución educativa.
-/// Un mismo usuario puede tener membresías en varios colegios con roles distintos en cada uno.
+/// MembresÃ­a independiente de un usuario en una instituciÃ³n educativa.
+/// Un mismo usuario puede tener membresÃ­as en varios colegios con roles distintos en cada uno.
 /// </summary>
 public sealed class TenantMembership : TenantScopedEntity
 {
@@ -202,7 +214,7 @@ public sealed class TenantMembership : TenantScopedEntity
         {
             return Result.Failure<TenantMembership>(Error.Conflict(
                 "Membership.CrossTenantRoleDenied",
-                "No se puede asignar un rol que pertenece a otra institución."));
+                "No se puede asignar un rol que pertenece a otra instituciÃ³n."));
         }
 
         var membership = new TenantMembership
@@ -240,7 +252,25 @@ public sealed class TenantMembership : TenantScopedEntity
         return Result.Success();
     }
 
-    public Result Revoke(Guid revokedByUserId, string reason = "Revocado por administración institucional")
+    public Result ReplaceRoles(IEnumerable<InstitutionRole> roles)
+    {
+        var roleList = roles?.DistinctBy(role => role.Id).ToList() ?? [];
+
+        if (roleList.Count == 0)
+            return Result.Failure(Error.Validation("Membership.EmptyRoles", "A membership must have at least one institutional role."));
+
+        if (roleList.Any(role => role.TenantId != TenantId))
+            return Result.Failure(Error.Conflict("Membership.CrossTenantRoleDenied", "No se puede asignar un rol de otro colegio."));
+
+        _roles.Clear();
+
+        foreach (var role in roleList)
+            _roles.Add(new TenantMembershipRole(TenantId, Id, role.Id));
+
+        MarkUpdated();
+        return Result.Success();
+    }
+    public Result Revoke(Guid revokedByUserId, string reason = "Revocado por administraciÃ³n institucional")
     {
         if (Status == MembershipStatus.Revoked)
         {

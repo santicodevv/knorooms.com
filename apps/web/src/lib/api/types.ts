@@ -107,6 +107,22 @@ export interface MemberDto {
   createdAt: string;
 }
 
+export interface InstitutionStaffInvitationDto {
+  id: string;
+  tenantId: string;
+  email: string;
+  expiresAtUtc: string;
+  acceptedAtUtc: string | null;
+  revokedAtUtc: string | null;
+  deliveryStatus: string;
+  roleIds: string[];
+}
+
+export interface CreateInstitutionStaffInvitationRequest {
+  email: string;
+  roleIds: string[];
+}
+
 export interface RoleDto {
   id: string;
   code: string;

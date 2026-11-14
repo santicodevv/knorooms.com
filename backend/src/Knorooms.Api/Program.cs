@@ -4,6 +4,7 @@ using Knorooms.Api.Configuration;
 using Knorooms.Api.Security;
 using Knorooms.Modules;
 using Knorooms.Modules.Common.Persistence;
+using Knorooms.Modules.Modules.Entitlements.Contracts;
 using Knorooms.Modules.Modules.Identity.Contracts;
 using Knorooms.Modules.Modules.Platform.Contracts;
 using Knorooms.SharedKernel.Tenancy;
@@ -42,6 +43,7 @@ builder.Services.AddKnoroomsModules(connectionStringOverride: null, enableOutbox
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<CommercialExceptionHandler>();
+builder.Services.AddExceptionHandler<Knorooms.Api.Security.InstitutionStaffInvitationExceptionHandler>();
 builder.Services.AddControllers();
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddOpenApi();
@@ -81,7 +83,7 @@ builder.Services
         };
     });
 
-// Autorización RBAC + ABAC con denegación por defecto para cualquier endpoint no marcado con [AllowAnonymous].
+// AutorizaciÃ³n RBAC + ABAC con denegaciÃ³n por defecto para cualquier endpoint no marcado con [AllowAnonymous].
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, KnoroomsAuthorizationPolicyProvider>();
 builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
 builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, ProblemDetailsAuthorizationMiddlewareResultHandler>();
@@ -125,6 +127,7 @@ if (app.Configuration.GetValue("Database:AutoMigrateOnStartup", false))
             db,
             tenantAccessor,
             platformService,
+            scope.ServiceProvider.GetRequiredService<IInstitutionModulesService>(),
             tokenOptions.Issuer,
             logger);
     }

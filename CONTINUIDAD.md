@@ -1,8 +1,8 @@
 # KNOROOMS — Guía de continuidad para el propietario y la próxima IA
 
-**Fecha de corte: 20 de octubre de 2026.**
-**Proyecto:** `C:\dev\WebSite\knorooms.com`.
-**Estado:** etapas 1, 2 y 3 implementadas localmente; próxima etapa funcional: Moodle para un piloto (orden 4).
+**Estado de Git revisado el 13 de noviembre de 2026.**
+**Proyecto:** las rutas de esta guía son relativas a la raíz del repositorio.
+**Estado:** etapas 1, 2 y 3 integradas en `main`; próxima etapa funcional: Moodle para un piloto (orden 4).
 
 **Actualización prioritaria 22/10/2026:** el propietario cambió el flujo: módulos directos por institución, sin seleccionar planes; asistente de tres pasos, ficha con pestañas, listado paginado, invitaciones contextuales con Resend y toasts. Ver [ADR-0006](docs/decisions/0006-direct-institution-modules-and-resend.md) y [guía vigente](docs/architecture/institution-management.md). Las descripciones de planes de abajo son antecedentes y compatibilidad; no representan el nuevo flujo visible. Moodle sigue pendiente.
 
@@ -15,8 +15,8 @@ Este archivo permite retomar el trabajo sin depender del historial del chat. Es 
 1. KNOROOMS es un SaaS para **colegios y escuelas de República Dominicana**, no para universidades en esta primera versión.
 2. El equipo propietario administra colegios, suscripciones, módulos y acompañamiento desde una consola global. Cada colegio conserva sus datos, usuarios y permisos.
 3. Moodle es opcional para cada colegio, pero es parte central del producto pendiente de construir. No debe desaparecer del plan mientras se agregan pantallas académicas.
-4. Las etapas 2 y 3 están en el árbol de trabajo local, con numerosos archivos modificados y sin seguimiento de Git. **Un clon del remoto puede no contenerlas.**
-5. No se desplegaron estas etapas a producción ni se hizo commit/push desde este trabajo. No confundir el nombre del dominio con un despliegue verificado.
+4. Las etapas 2 y 3 están integradas en `main`. Revisa el historial y el estado del checkout antes de retomar el trabajo.
+5. Consulta el [flujo de Scrum](docs/SCRUM.md) y el [tablero KNO en Jira](https://welin1924-1793141597420.atlassian.net/jira/software/projects/KNO/boards/1) para conocer el trabajo pendiente. El estado de los despliegues se verifica por separado.
 6. Un colegio sin suscripción activa puede consultar sus datos, pero no registrar cambios académicos. Esto es comportamiento intencional.
 7. No hay precios comerciales definidos, planes precargados, conexión Moodle activa ni pasarela de cobro implementada.
 8. Hay limitaciones académicas conocidas que deben corregirse antes de importar notas o usar boletas como producto oficial.
@@ -25,7 +25,7 @@ Este archivo permite retomar el trabajo sin depender del historial del chat. Es 
 
 El proyecto nace de la experiencia con dos sistemas universitarios anteriores, EFB y SEBTI, donde se trabajó con Moodle, jerarquías, sincronización, récord de notas y proyección académica. Esos sistemas son referencias de problemas y experiencia, **no la especificación escolar que debe copiarse literalmente**.
 
-Referencias locales históricas: `C:\dev\WebSite\campusefb` y `C:\dev\WebSite\MODDLE`. Sus bases, credenciales, reglas de aprobación y despliegues son independientes. No asumir que la base Neon de EFB/SEBTI corresponde a KNOROOMS. En KNOROOMS se verificó PostgreSQL local con Docker; no se verificó un destino remoto de producción.
+Los repositorios históricos de EFB y SEBTI sirven como referencia. Sus bases, credenciales, reglas de aprobación y despliegues son independientes. No asumir que la base Neon de EFB/SEBTI corresponde a KNOROOMS. En KNOROOMS se verificó PostgreSQL local con Docker; no se verificó un destino remoto de producción.
 
 La decisión posterior fue enfocarse primero en colegios/escuelas. La estructura conceptual es:
 
@@ -56,7 +56,7 @@ Antes de modificar código:
 
 Los documentos Word de la raíz son antecedentes. Las decisiones técnicas vigentes y los ADR posteriores prevalecen sobre propuestas antiguas: el backend es .NET, no NestJS; la autenticación es propia, no Keycloak/OIDC externo.
 
-Existen párrafos históricos que aún hablan de «12 módulos», de suscripciones pendientes o de invitaciones por completar. La fotografía actual tiene **14 módulos** y las etapas 2/3 implementadas. Interpretar esos párrafos en su contexto temporal; contrastar con el código y las guías específicas. El ADR-0004 sustituyó la decisión antigua de proveedor de identidad externo.
+El backend tiene **14 módulos**, incluidos `Subscriptions` y `Entitlements`, y las etapas 2 y 3 están implementadas. Interpretar esos párrafos en su contexto temporal; contrastar con el código y las guías específicas. El ADR-0004 sustituyó la decisión antigua de proveedor de identidad externo.
 
 ## 4. Qué existe y con qué alcance
 
@@ -236,7 +236,7 @@ Windows/PowerShell en el entorno usado, .NET SDK 10 y dotnet-ef, Node/pnpm segú
 Desde la raíz:
 
 ```powershell
-Set-Location C:\dev\WebSite\knorooms.com
+# Ejecutar desde la raíz del repositorio.
 git status --short
 docker compose -f infrastructure/docker/docker-compose.yml up -d
 docker compose -f infrastructure/docker/docker-compose.mail.yml up -d
@@ -370,7 +370,7 @@ Antes de cualquier despliegue, confirmar destino, configuración, credenciales p
 
 ## 15. Texto listo para entregar a otra IA
 
-> Trabaja en C:\dev\WebSite\knorooms.com. Primero lee CONTINUIDAD.md, AGENTS.md y las reglas de backend/frontend, luego revisa git status incluyendo archivos sin seguimiento. No descartes cambios: las etapas 1–3 tienen trabajo local pendiente de commit. KNOROOMS es un SaaS escolar para República Dominicana, con .NET 10, Next.js BFF, PostgreSQL RLS y Redis. Ya existen ficha de colegio, invitaciones SMTP y planes/suscripciones/derechos. La próxima etapa funcional es Moodle para un piloto (orden 4), no universidades. Conserva consulta histórica al vencer una suscripción, bloquea cambios y mantén permisos separados de contratación. Moodle todavía no está implementado y no debe activarse ficticiamente. Antes de importar notas, resuelve carga académica y validación materia-sección. No copies credenciales de los sistemas anteriores ni alteres producción/Moodle remoto sin autorización. Dime qué tarea vas a abordar y desarrolla únicamente el alcance que te indique, preservando arquitectura, pruebas y documentación.
+> Trabaja desde la raíz del repositorio de KNOROOMS. Primero lee CONTINUIDAD.md, AGENTS.md y las reglas de backend/frontend, luego revisa git status incluyendo archivos sin seguimiento. Preserva los cambios locales. Las etapas 1–3 ya están integradas en main. KNOROOMS es un SaaS escolar para República Dominicana, con .NET 10, Next.js BFF, PostgreSQL RLS y Redis. Ya existen ficha de colegio, invitaciones SMTP y planes/suscripciones/derechos. La próxima etapa funcional es Moodle para un piloto (orden 4), no universidades. Conserva consulta histórica al vencer una suscripción, bloquea cambios y mantén permisos separados de contratación. Moodle todavía no está implementado y no debe activarse ficticiamente. Antes de importar notas, resuelve carga académica y validación materia-sección. No copies credenciales de los sistemas anteriores ni alteres producción/Moodle remoto sin autorización. Dime qué tarea vas a abordar y desarrolla únicamente el alcance que te indique, preservando arquitectura, pruebas y documentación.
 
 ## 16. Mantenimiento de esta guía
 
@@ -380,7 +380,7 @@ Actualizar fecha, estado, decisiones, pruebas ejecutadas, migraciones, limitacio
 Se reportó un botón esperando indefinidamente. La cuenta administrativa indicada existe, está activa y no estaba bloqueada. Las solicitudes diagnósticas de credenciales inválidas respondieron 401 rápidamente; no se reprodujo el intento exacto del usuario ni se cambió su contraseña. Se añadieron límites de 12 s para la API de autenticación, 5 s para comandos Redis y 25 s para el cliente; manejo de respuesta inválida, errores de persistencia de sesión con 503 sin cookie y verificación de resultados de la transacción Redis. No equivale a confirmar un acceso exitoso con la contraseña del usuario: queda repetir ese intento. Pasaron 50 pruebas frontend/BFF, lint, TypeScript, formato y build. Se reinició únicamente la web local.
 
 ## Cierre del rediseño de instituciones — 22/10/2026
-Flujo vigente en ADR-0006 y docs/architecture/institution-management.md. Se verificaron creación en 3 pasos, módulos/dependencias, guardado, ficha, modal y móvil con base QA aislada; luego se eliminó QA. Pasaron 105 pruebas (33 unitarias + 17 integración + 55 frontend), lint/tipos/formato/build. Migración AddDirectInstitutionModules aplicada a PostgreSQL local; respeta selecciones vigentes previas y conserva datos. La UI no depende de planes. Se reiniciaron API 5080 y web 3000. Resend preparado como proveedor predeterminado; el desarrollo mantiene SMTP/Mailpit explícito. Para correo real faltan clave de Resend y remitente verificado del propietario. Código y documentos siguen sin commit/push; no se desplegó producción.
+Flujo vigente en ADR-0006 y docs/architecture/institution-management.md. Se verificaron creación en 3 pasos, módulos/dependencias, guardado, ficha, modal y móvil con base QA aislada; luego se eliminó QA. Pasaron 105 pruebas (33 unitarias + 17 integración + 55 frontend), lint/tipos/formato/build. Migración AddDirectInstitutionModules aplicada a PostgreSQL local; respeta selecciones vigentes previas y conserva datos. La UI no depende de planes. Se reiniciaron API 5080 y web 3000. Resend preparado como proveedor predeterminado; el desarrollo mantiene SMTP/Mailpit explícito. Para correo real faltan clave de Resend y remitente verificado del propietario. Esta verificación histórica se realizó en el entorno local.
 
 ## Actualización visual — Tailwind propio (22/10/2026)
 ADR-0007 sustituye shadcn. Componentes React nativos en components/ui, sin Radix ni CVA; cambios de diseño preservan hooks/API y contratos. Resend MCP quedó registrado y autorizado en la sesión anterior; la clave y el remitente del backend todavía requieren validación. No afirmar que el envío real esté listo.

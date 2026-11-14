@@ -188,6 +188,76 @@ internal sealed class TenantAuthorizationService(
             .ToList();
     }
 
+    public async Task<Result> UpdateRolePermissionsAsync(
+        Guid roleId, IReadOnlyList<string> permissions, Guid actorUserId, CancellationToken cancellationToken = default)
+    {
+        var scope = tenantContextAccessor.Current;
+        if (scope.TenantId is not Guid tenantId || scope.UserId != actorUserId)
+        {
+            return Result.Failure(Error.Forbidden("Role.TenantRequired", "Se requiere una membresía activa en el colegio."));
+        }
+
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        await dbContext.LockCommercialTenantAsync(tenantId, cancellationToken);
+        var access = await ResolveUserAccessInCurrentTenantAsync(actorUserId, false, cancellationToken);
+        if (!access.Roles.Any(role => role.Code == SystemRoleCatalog.InstitutionAdmin) ||
+            !access.EffectivePermissions.Contains(PermissionCatalog.InstitutionRolesManage))
+        {
+            return Result.Failure(Error.Forbidden("Role.AdminRequired", "Solo la administración institucional puede editar permisos."));
+        }
+
+        if (permissions.Any(code => code is null || !PermissionCatalog.IsInstitutionScoped(code)))
+        {
+            return Result.Failure(Error.Validation("Role.InvalidPermission", "Seleccione únicamente permisos institucionales del catálogo."));
+        }
+
+        var role = await dbContext.InstitutionRoles.Include(x => x.Permissions)
+            .SingleOrDefaultAsync(x => x.TenantId == tenantId && x.Id == roleId, cancellationToken);
+        if (role is null)
+        {
+            return Result.Failure(Error.NotFound("Role.NotFound", "El rol no existe en este colegio."));
+        }
+
+        if (role.Code == SystemRoleCatalog.Guardian)
+        {
+            return Result.Failure(Error.Forbidden("Role.GuardianUnavailable", "El rol familiar se habilitará con el portal de familias."));
+        }
+
+        var requested = permissions.ToHashSet(StringComparer.Ordinal);
+        var previous = role.Permissions.Select(permission => permission.PermissionCode).ToHashSet(StringComparer.Ordinal);
+        if (requested.Except(previous).Any(code => !access.EffectivePermissions.Contains(code) && role.Code != SystemRoleCatalog.InstitutionAdmin))
+        {
+            return Result.Failure(Error.Forbidden("Role.PermissionDenied", "No puede delegar permisos que no tiene."));
+        }
+
+        if (role.Code == SystemRoleCatalog.InstitutionAdmin &&
+            (!requested.Contains(PermissionCatalog.InstitutionContextRead) ||
+             !requested.Contains(PermissionCatalog.InstitutionRolesRead) ||
+             !requested.Contains(PermissionCatalog.InstitutionRolesManage)))
+        {
+            return Result.Failure(Error.Conflict("Role.RequiredPermissions", "La administración debe conservar el acceso al editor de roles."));
+        }
+
+        if (previous.SetEquals(requested))
+        {
+            return Result.Success();
+        }
+
+        role.ReplacePermissions(requested);
+        dbContext.AuditLogs.Add(AuditLogEntry.Create(
+            tenantId, actorUserId, scope.AccessType.ToString(), scope.SupportAccessGrantId,
+            "institution.role.permissions.updated", nameof(InstitutionRole), role.Id.ToString(),
+            "Se actualizaron los permisos del rol.",
+            new Dictionary<string, string?>
+            {
+                ["added"] = string.Join(", ", requested.Except(previous).Order(StringComparer.Ordinal)),
+                ["removed"] = string.Join(", ", previous.Except(requested).Order(StringComparer.Ordinal))
+            }));
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return Result.Success();
+    }
+
     public async Task<Result> RevokeMemberAsync(
         Guid membershipId,
         Guid actorUserId,

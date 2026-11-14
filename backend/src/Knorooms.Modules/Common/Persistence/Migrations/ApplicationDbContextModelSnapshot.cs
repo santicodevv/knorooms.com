@@ -992,6 +992,102 @@ namespace Knorooms.Modules.Common.Persistence.Migrations
                     b.ToTable("administrator_invitations", (string)null);
                 });
 
+            modelBuilder.Entity("Knorooms.Modules.Modules.Identity.Domain.InstitutionStaffInvitation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("AcceptedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("accepted_at_utc");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("DeliveryStatus")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)")
+                        .HasColumnName("delivery_status");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)")
+                        .HasColumnName("email");
+
+                    b.Property<DateTimeOffset>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at_utc");
+
+                    b.Property<DateTimeOffset?>("RevokedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at_utc");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("token_hash");
+
+                    b.Property<DateTimeOffset?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.HasKey("Id");
+
+                    b.HasAlternateKey("TenantId", "Id")
+                        .HasName("ak_institution_staff_invitations_tenant_id");
+
+                    b.HasIndex("TenantId", "Email")
+                        .HasDatabaseName("ix_institution_staff_invitations_tenant_email");
+
+                    b.ToTable("institution_staff_invitations", (string)null);
+                });
+
+            modelBuilder.Entity("Knorooms.Modules.Modules.Identity.Domain.InstitutionStaffInvitationRole", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<Guid>("InvitationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("invitation_id");
+
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("role_id");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "RoleId");
+
+                    b.HasIndex("TenantId", "InvitationId", "RoleId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_institution_staff_invitation_roles_unique");
+
+                    b.ToTable("institution_staff_invitation_roles", (string)null);
+                });
+
             modelBuilder.Entity("Knorooms.Modules.Modules.Identity.Domain.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2052,6 +2148,32 @@ namespace Knorooms.Modules.Common.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Knorooms.Modules.Modules.Identity.Domain.InstitutionStaffInvitation", b =>
+                {
+                    b.HasOne("Knorooms.Modules.Modules.Tenants.Domain.Institution", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Knorooms.Modules.Modules.Identity.Domain.InstitutionStaffInvitationRole", b =>
+                {
+                    b.HasOne("Knorooms.Modules.Modules.Identity.Domain.InstitutionStaffInvitation", null)
+                        .WithMany("Roles")
+                        .HasForeignKey("TenantId", "InvitationId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Knorooms.Modules.Modules.Authorization.Domain.InstitutionRole", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "RoleId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Knorooms.Modules.Modules.Identity.Domain.RefreshToken", b =>
                 {
                     b.HasOne("Knorooms.Modules.Modules.Identity.Domain.UserAccount", null)
@@ -2166,6 +2288,11 @@ namespace Knorooms.Modules.Common.Persistence.Migrations
                 });
 
             modelBuilder.Entity("Knorooms.Modules.Modules.Authorization.Domain.TenantMembership", b =>
+                {
+                    b.Navigation("Roles");
+                });
+
+            modelBuilder.Entity("Knorooms.Modules.Modules.Identity.Domain.InstitutionStaffInvitation", b =>
                 {
                     b.Navigation("Roles");
                 });

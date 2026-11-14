@@ -102,6 +102,7 @@ public static class ModulesDependencyInjection
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddOptions<InvitationOptions>().BindConfiguration(InvitationOptions.SectionName);
         services.AddScoped<IAdministratorInvitationService, AdministratorInvitationService>();
+        services.AddScoped<IInstitutionStaffInvitationService, InstitutionStaffInvitationService>();
         services.AddScoped<SmtpInvitationEmailSender>();
         services.AddScoped<ResendInvitationEmailSender>(sp => new ResendInvitationEmailSender(
             new HttpClient(new SocketsHttpHandler { PooledConnectionLifetime = TimeSpan.FromMinutes(5) }) { Timeout = TimeSpan.FromSeconds(15) },
