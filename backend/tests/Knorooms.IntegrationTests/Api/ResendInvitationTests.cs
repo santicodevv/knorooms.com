@@ -52,6 +52,6 @@ public sealed class ResendInvitationTests
         public string? Body { get; private set; }
         public string? Authorization { get; private set; }
         public bool Fail { get; set; }
-        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) { Url = request.RequestUri!.ToString(); Key = request.Headers.GetValues("Idempotency-Key").Single(); Authorization = request.Headers.Authorization!.ToString(); Body = await request.Content!.ReadAsStringAsync(cancellationToken); return Fail ? new(HttpStatusCode.BadRequest) { Content = new StringContent("{\\"name\\":\\"validation_error\\",\\"message\\":\\"Sensitive provider details must not escape\\"}") } : new(HttpStatusCode.OK); }
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) { Url = request.RequestUri!.ToString(); Key = request.Headers.GetValues("Idempotency-Key").Single(); Authorization = request.Headers.Authorization!.ToString(); Body = await request.Content!.ReadAsStringAsync(cancellationToken); return Fail ? new(HttpStatusCode.BadRequest) { Content = new StringContent(JsonSerializer.Serialize(new { name = "validation_error", message = "Sensitive provider details must not escape" })) } : new(HttpStatusCode.OK); }
     }
 }
