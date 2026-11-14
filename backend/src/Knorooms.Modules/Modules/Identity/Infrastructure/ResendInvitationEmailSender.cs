@@ -23,7 +23,7 @@ internal sealed class ResendInvitationEmailSender(HttpClient http, IOptions<Invi
             from = options.Value.FromAddress,
             to = new[] { email },
             subject = "Active su acceso a KNOROOMS",
-            text = "Ha recibido una invitación para administrar su colegio. Abra el enlace para establecer su contraseña o confirmar la actual si ya tiene cuenta. El enlace vence en 48 horas y es de un solo uso.\\n\\n" + acceptanceUrl
+            text = "Ha recibido una invitación para administrar su colegio. Abra el enlace para establecer su contraseña o confirmar la actual si ya tiene cuenta. El enlace vence en 48 horas y es de un solo uso.\n\n" + acceptanceUrl
         });
         using var response = await http.SendAsync(request, cancellationToken);
         if (!response.IsSuccessStatusCode)
