@@ -4,7 +4,9 @@ Referencia del propietario: `school-portal-reference.html`, copia de `KNOROOMS-P
 
 ## Diseño y navegación
 
-Se conserva la dirección visual del HTML: barra lateral agrupada, azul como color principal, tarjetas blancas, fondos suaves, estados con contraste y fuente del sistema. Tailwind CSS y componentes propios; no se añade shadcn ni una biblioteca visual nueva.
+El propietario aprobó el 24/11/2026 sustituir la dirección visual del HTML por el diseño de Figma documentado en [figma-implementation.md](figma-implementation.md). La fase 0 se implementa bajo KNO-72: grises neutros, negro e IBM Plex Sans con pesos 400, 500, 600 y 700, cargada mediante `next/font`, descargada durante la compilación y servida desde el dominio propio. Esta aprobación reemplaza la preferencia anterior por azul y fuente del sistema únicamente en el portal del colegio; la administración global conserva su presentación y fuente del sistema.
+
+La implementación continúa por fases con aprobación del propietario entre entregas. La aprobación de la fase 0 no autoriza iniciar la fase 1. Se mantienen Tailwind CSS v4, componentes propios y todas las reglas funcionales de este documento; no se añade shadcn ni una biblioteca visual nueva.
 
 Las pantallas dejan de concentrar formularios y consultas distintas en una sola vista:
 
@@ -47,7 +49,7 @@ La aprobación de notas conserva la separación de actores del backend. Publicar
 
 Las acciones de escritura requieren permisos y capacidad de escritura del módulo. El BFF, CSRF, sesiones del servidor y aislamiento institucional se conservan. La administración global sigue usando su propia presentación. No hay migraciones ni cambios de reglas académicas para este rediseño.
 
-## Verificación realizada
+## Verificación anterior (23/10/2026)
 
 - Formato, ESLint y TypeScript sin errores.
 - Suite del frontend: 58 pruebas en 14 archivos, todas aprobadas.
@@ -57,3 +59,17 @@ Las acciones de escritura requieren permisos y capacidad de escritura del módul
 - Revisión móvil a 390 px: menú, tarjetas de estudiantes y ausencia de desbordamiento horizontal de la página.
 
 Los registros de prueba no se insertaron en la base habitual del propietario. No se desplegó a producción. Moodle y la validación normativa del modelo de evaluación continúan siendo trabajo funcional pendiente, independiente de este diseño.
+
+## Fundamentos visuales — fase 0 (KNO-72)
+
+Los tokens escolares se definen en `apps/web/src/app/globals.css` mediante `@theme static`, para conservar también los valores que utilizarán fases posteriores. El layout escolar aplica `.school-theme` y la variable de IBM Plex Sans; la fuente del documento raíz sigue siendo la del sistema. Las primitivas compartidas utilizan la variante `school:*`, manteniendo su apariencia previa fuera del portal. Las extensiones escolares de tamaño o color en `className` deben usar la misma variante.
+
+Se añaden `MenuItem`, `Checkbox`, `Switch`, `SegmentedControl`, `Skeleton`, `Dialog` y `SidePanel`. Los controles conservan semántica HTML nativa y reciben sus etiquetas del consumidor. `SegmentedControl` recibe la selección y el callback por propiedades; el estado de cada funcionalidad pertenece a su hook. Los diálogos se abren con `showModal()` mediante una referencia, lo que conserva modalidad, Escape y restauración del foco; su título se vincula mediante `aria-labelledby`.
+
+La revisión de diseño verificó una galería temporal a 1440 px: tipografía, colores, foco, controles, diálogo de 520 px y panel lateral de 480 px. La galería se retiró del árbol de rutas antes de la verificación final. El token `muted` conserva el valor de Figma (`#7F8790`), con contraste de 3,64:1 sobre blanco; no acredita conformidad AA para texto pequeño. Los textos funcionales deben priorizar `secondary` o `ink` cuando necesiten ese contraste.
+
+Verificación inicial de esta entrega (24/11/2026): `pnpm format:check`, `pnpm lint`, `pnpm typecheck` y `pnpm test` terminaron correctamente; 77 pruebas en 18 archivos, incluidas 13 nuevas de semántica de primitivas y regresión de `cn`. `pnpm build` compiló 24 páginas y terminó con código 0 en el reintento normal. El primer intento se detuvo con `SecurityFatalError` por la versión instalada de Next.js 16.4.3; el reintento conservó el aviso de actualización. No se suprimieron controles.
+
+El propietario autorizó corregir las dependencias mediante KNO-73. Se actualizaron Next.js y su configuración de ESLint a 16.4.5, Vitest y cobertura V8 a 4.1.12, junto con las resoluciones transitivas afectadas; ver [verificación de dependencias](../testing/frontend-dependencies.md). La instalación del conjunto se reprodujo con `pnpm install --frozen-lockfile` y `pnpm audit` terminó con código 0, sin vulnerabilidades conocidas, frente a los 16 avisos iniciales. No se añadieron excepciones ni se suprimieron comprobaciones. La fase 1 continúa pendiente de aprobación.
+
+Verificación final conjunta de KNO-72 y KNO-73: `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm test` y `pnpm build` terminaron con código 0. El build de Next.js 16.4.5 completó 24 páginas sin el aviso de vulnerabilidad. `pnpm test:coverage` y el resumen de CI también terminaron con código 0: 77 pruebas correctas en 18 archivos, sin fallos ni omisiones. No se cambiaron umbrales ni se excluyeron pruebas para completar la migración. La fase 0 queda terminada localmente, sin despliegue a producción.
