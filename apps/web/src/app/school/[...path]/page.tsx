@@ -1,6 +1,7 @@
 import { SchoolRouteBoundary } from "@/features/school/components/school-route-boundary";
 import { notFound } from "next/navigation";
 import { SchoolStudentsPage } from "@/features/school/server/students-page";
+import { SchoolEnrollmentsPage } from "@/features/school/server/enrollments-page";
 import { SchoolAcademicPage } from "@/features/school/server/academic-page";
 import { SchoolEvaluationsPage } from "@/features/school/server/evaluations-page";
 import { SchoolSettingsPage } from "@/features/school/server/settings-page";
@@ -8,11 +9,9 @@ async function SchoolRouteContent({ params }: { params: Promise<{ path: string[]
   const { path } = await params;
   const [area, view, action] = path;
   if (area === "students" && path.length === 2) return <SchoolStudentsPage path={path} />;
-  if (
-    (area === "guardians" || area === "enrollments") &&
-    (path.length === 1 || (view === "new" && path.length === 2 && area === "guardians"))
-  )
+  if (area === "guardians" && (path.length === 1 || (view === "new" && path.length === 2)))
     return <SchoolStudentsPage path={path} />;
+  if (area === "enrollments" && path.length === 1) return <SchoolEnrollmentsPage />;
   if (
     area === "academic" &&
     ["years", "grades", "sections", "subjects", "assignments"].includes(view) &&

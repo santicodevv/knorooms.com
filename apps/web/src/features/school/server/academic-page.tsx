@@ -1,12 +1,13 @@
-import { schoolViewKey, getSchoolCapabilities } from "./school-context";
-import { headers } from "next/headers";
+import "server-only";
+import { schoolViewKey, getSchoolCapabilities, getSchoolContext } from "./school-context";
 import { SchoolShell } from "@/components/school/school-shell";
 import { AcademicWorkspace } from "@/features/school/academic/components/academic-workspace";
 import { serverApiFetch } from "@/lib/api/server-api";
-import type { AcademicStructureOverviewDto, MemberDto, TenantContextDto } from "@/lib/api/types";
-import { getServerSession } from "@/lib/auth/session-store";
-import { resolveHost } from "@/lib/tenancy/host";
-
+import type {
+  AcademicStructureOverviewDto,
+  EnrollmentsOverviewDto,
+  MemberDto,
+} from "@/lib/api/types";
 const EMPTY_OVERVIEW: AcademicStructureOverviewDto = {
   academicYears: [],
   gradeLevels: [],
@@ -14,66 +15,80 @@ const EMPTY_OVERVIEW: AcademicStructureOverviewDto = {
   subjects: [],
   teacherAssignments: [],
 };
-
 export async function SchoolAcademicPage({ path = [] }: { path?: string[] } = {}) {
-  const incomingHeaders = await headers();
-  const rawHost =
-    incomingHeaders.get("x-forwarded-host") ??
-    incomingHeaders.get("host") ??
-    "colegio.localhost:3000";
-  const resolution = resolveHost(rawHost);
-  const slug = resolution.kind === "tenant" ? resolution.slug : "";
-
-  const session = await getServerSession();
-  const contextResult = session
-    ? await serverApiFetch<TenantContextDto>("/api/tenant/context")
-    : null;
-
+  const context = await getSchoolContext();
+  const { session, contextResult } = context;
   const capabilities = session && contextResult?.ok ? await getSchoolCapabilities() : null;
+  const permission = (value: string) =>
+    contextResult?.ok === true && contextResult.data.permissions.includes(value);
+  const readable = (code: string) =>
+    capabilities?.ok === true &&
+    capabilities.data.modules.some((item) => item.code === code && item.canRead);
   const writable = (code: string) =>
-    Boolean(
-      capabilities?.ok && capabilities.data.modules.some((m) => m.code === code && m.canWrite),
-    );
-  const canReadAcademic = Boolean(
-    contextResult?.ok && contextResult.data.permissions.includes("institution.academic.read"),
-  );
-  const canManageAcademic = Boolean(
-    contextResult?.ok &&
-    contextResult.data.permissions.includes("institution.academic.manage") &&
-    writable("academic"),
-  );
-  const canReadMembers = Boolean(
-    contextResult?.ok && contextResult.data.permissions.includes("institution.members.read"),
-  );
-
-  const [overviewResult, membersResult] =
-    session && contextResult?.ok && canReadAcademic
-      ? await Promise.all([
-          serverApiFetch<AcademicStructureOverviewDto>("/api/tenant/academic/overview"),
-          canReadMembers
-            ? serverApiFetch<MemberDto[]>("/api/tenant/members")
-            : Promise.resolve(null),
-        ])
-      : [null, null];
-
+    capabilities?.ok === true &&
+    capabilities.data.modules.some((item) => item.code === code && item.canWrite);
+  const canReadAcademic = permission("institution.academic.read") && readable("academic");
+  const canManageAcademic = permission("institution.academic.manage") && writable("academic");
+  const canReadMembers = permission("institution.members.read");
+  const canReadEnrollments = permission("institution.enrollments.read") && readable("enrollments");
+  const [overviewResult, membersResult, capacitiesResult] = await Promise.all([
+    canReadAcademic
+      ? serverApiFetch<AcademicStructureOverviewDto>("/api/tenant/academic/overview")
+      : Promise.resolve(null),
+    canReadAcademic && canReadMembers && path[1] === "assignments"
+      ? serverApiFetch<MemberDto[]>("/api/tenant/members")
+      : Promise.resolve(null),
+    canReadAcademic && canReadEnrollments && (path[1] === "grades" || path[1] === "sections")
+      ? serverApiFetch<EnrollmentsOverviewDto>("/api/tenant/enrollments/overview")
+      : Promise.resolve(null),
+  ]);
+  const initialProblem =
+    (capabilities && !capabilities.ok ? capabilities.problem : null) ??
+    (overviewResult && !overviewResult.ok ? overviewResult.problem : null) ??
+    (membersResult && !membersResult.ok ? membersResult.problem : null) ??
+    (capacitiesResult && !capacitiesResult.ok ? capacitiesResult.problem : null);
   return (
-    <SchoolShell
-      session={session}
-      rawHost={rawHost}
-      slug={slug}
-      returnTo={"/" + path.join("/")}
-      activeTab="academic"
-      contextResult={contextResult}
-    >
+    <SchoolShell {...context} returnTo={"/" + path.join("/")} activeTab="academic">
       {session && contextResult?.ok ? (
         <AcademicWorkspace
-          key={schoolViewKey(path, overviewResult?.ok ? overviewResult.data : null)}
+          key={schoolViewKey(
+            path,
+            overviewResult,
+            membersResult,
+            capacitiesResult,
+            capabilities,
+            contextResult.data.permissions,
+          )}
           path={path}
           initialOverview={overviewResult?.ok ? overviewResult.data : EMPTY_OVERVIEW}
-          initialProblem={overviewResult && !overviewResult.ok ? overviewResult.problem : null}
-          members={membersResult?.ok ? membersResult.data : []}
+          initialProblem={initialProblem}
+          members={
+            membersResult?.ok
+              ? membersResult.data.map(({ membershipId, displayName, status }) => ({
+                  membershipId,
+                  displayName,
+                  status,
+                }))
+              : []
+          }
           csrfToken={session.csrfToken}
+          canReadAcademic={canReadAcademic}
           canManageAcademic={canManageAcademic}
+          canReadMembers={canReadMembers}
+          membersAvailable={membersResult?.ok === true}
+          overviewAvailable={overviewResult?.ok === true}
+          canReadEnrollments={canReadEnrollments}
+          initialSectionCapacities={
+            capacitiesResult?.ok
+              ? capacitiesResult.data.sectionCapacities.map(
+                  ({ sectionId, capacity, activeEnrollmentsCount }) => ({
+                    sectionId,
+                    capacity,
+                    activeEnrollmentsCount,
+                  }),
+                )
+              : null
+          }
         />
       ) : null}
     </SchoolShell>

@@ -114,6 +114,11 @@ export function getInitials(displayName: string): string {
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 }
 
+function isRealAcademicDate(value: string) {
+  const date = new Date(value + "T00:00:00Z");
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
 export const createAcademicYearSchema = z
   .object({
     code: z
@@ -128,10 +133,12 @@ export const createAcademicYearSchema = z
       .max(120, "Máximo 120 caracteres."),
     startDate: z
       .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/, "Indique una fecha de inicio válida (AAAA-MM-DD)."),
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Indique una fecha de inicio válida (AAAA-MM-DD).")
+      .refine(isRealAcademicDate, "Indique una fecha de inicio válida."),
     endDate: z
       .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/, "Indique una fecha de cierre válida (AAAA-MM-DD)."),
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Indique una fecha de cierre válida (AAAA-MM-DD).")
+      .refine(isRealAcademicDate, "Indique una fecha de cierre válida."),
   })
   .refine((values) => values.endDate > values.startDate, {
     message: "La fecha de cierre debe ser posterior a la fecha de inicio.",
@@ -144,7 +151,11 @@ export const createGradeLevelSchema = z.object({
   stage: z.enum(["EarlyChildhood", "Primary", "Secondary"], {
     message: "Seleccione un nivel educativo oficial.",
   }),
-  officialGradeNumber: z.number().int().min(1, "Mínimo grado 1.").max(12, "Máximo grado 12."),
+  officialGradeNumber: z
+    .number({ error: "Indique un número de grado válido." })
+    .int("Indique un número entero de grado.")
+    .min(1, "Mínimo grado 1.")
+    .max(12, "Máximo grado 12."),
   code: z
     .string()
     .trim()
@@ -171,8 +182,8 @@ export const createSchoolSectionSchema = z.object({
     message: "Seleccione una tanda escolar.",
   }),
   capacity: z
-    .number()
-    .int()
+    .number({ error: "Indique una capacidad válida." })
+    .int("Indique una capacidad entera.")
     .min(1, "La capacidad mínima es 1 estudiante.")
     .max(120, "La capacidad máxima por aula es 120 estudiantes."),
 });
@@ -199,8 +210,8 @@ export const assignTeacherSchema = z.object({
   subjectId: z.string().uuid("Seleccione una asignatura del catálogo."),
   teacherMembershipId: z.string().uuid("Seleccione un docente miembro de la institución."),
   weeklyHours: z
-    .number()
-    .int()
+    .number({ error: "Indique un número válido de horas semanales." })
+    .int("Indique un número entero de horas semanales.")
     .min(1, "Mínimo 1 hora pedagógica semanal.")
     .max(40, "Máximo 40 horas pedagógicas semanales."),
 });

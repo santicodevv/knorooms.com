@@ -1,66 +1,117 @@
-import { SchoolField, schoolSelectClass } from "../../components/school-ui";
 import { Input } from "@/components/ui/input";
+import { SchoolFormField } from "../../components/school-form-field";
+import { AcademicIcon } from "./academic-icon";
+import type { AcademicMember } from "../schemas/academic-view";
 import type { AcademicState } from "../hooks/use-academic-workspace";
-import type { MemberDto } from "@/lib/api/types";
+import styles from "./academic.module.css";
 export function TeacherAssignmentFields({
   state: s,
   members,
 }: {
   state: AcademicState;
-  members: MemberDto[];
+  members: AcademicMember[];
 }) {
+  const f = s.assignmentForm,
+    e = f.formState.errors;
   return (
     <>
-      <SchoolField label="Sección *" error={s.assignmentForm.formState.errors.sectionId?.message}>
-        <select className={schoolSelectClass} {...s.assignmentForm.register("sectionId")}>
-          <option value="">Seleccionar sección</option>
-          {s.overview.sections
-            .filter(
-              (sec) => !s.overview.academicYears.find((y) => y.id === sec.academicYearId)?.isClosed,
-            )
-            .map((sec) => (
-              <option key={sec.id} value={sec.id}>
-                {sec.academicYearCode} · {sec.gradeLevelName} {sec.code}
-              </option>
-            ))}
-        </select>
-      </SchoolField>
-      <SchoolField label="Materia *" error={s.assignmentForm.formState.errors.subjectId?.message}>
-        <select className={schoolSelectClass} {...s.assignmentForm.register("subjectId")}>
-          <option value="">Seleccionar materia</option>
-          {s.overview.subjects.map((sub) => (
-            <option key={sub.id} value={sub.id}>
-              {sub.name}
-            </option>
-          ))}
-        </select>
-      </SchoolField>
-      <SchoolField
-        label="Docente institucional *"
-        error={s.assignmentForm.formState.errors.teacherMembershipId?.message}
+      <SchoolFormField
+        id="academic-assignment-section"
+        label="Sección *"
+        error={e.sectionId?.message}
       >
-        <select className={schoolSelectClass} {...s.assignmentForm.register("teacherMembershipId")}>
-          <option value="">Seleccionar docente</option>
-          {members
-            .filter((m) => m.status === "Active")
-            .map((m) => (
-              <option key={m.membershipId} value={m.membershipId}>
-                {m.displayName}
+        <div className={styles.fieldSelect}>
+          <select
+            id="academic-assignment-section"
+            disabled={s.isPending}
+            aria-invalid={!!e.sectionId}
+            aria-describedby={e.sectionId ? "academic-assignment-section-error" : undefined}
+            {...f.register("sectionId")}
+          >
+            <option value="">Selecciona una sección</option>
+            {s.availableSections.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.academicYearCode} · {item.gradeLevelName} {item.code}
               </option>
             ))}
-        </select>
-      </SchoolField>
-      <SchoolField
+          </select>
+          <span>
+            <AcademicIcon name="select-down" />
+          </span>
+        </div>
+      </SchoolFormField>
+      <SchoolFormField
+        id="academic-assignment-subject"
+        label="Materia *"
+        error={e.subjectId?.message}
+      >
+        <div className={styles.fieldSelect}>
+          <select
+            id="academic-assignment-subject"
+            disabled={s.isPending}
+            aria-invalid={!!e.subjectId}
+            aria-describedby={e.subjectId ? "academic-assignment-subject-error" : undefined}
+            {...f.register("subjectId")}
+          >
+            <option value="">Selecciona una materia</option>
+            {s.overview.subjects.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name}
+              </option>
+            ))}
+          </select>
+          <span>
+            <AcademicIcon name="select-down" />
+          </span>
+        </div>
+      </SchoolFormField>
+      <SchoolFormField
+        id="academic-assignment-member"
+        label="Docente institucional *"
+        error={e.teacherMembershipId?.message}
+      >
+        <div className={styles.fieldSelect}>
+          <select
+            id="academic-assignment-member"
+            disabled={s.isPending}
+            aria-invalid={!!e.teacherMembershipId}
+            aria-describedby={
+              e.teacherMembershipId ? "academic-assignment-member-error" : undefined
+            }
+            {...f.register("teacherMembershipId")}
+          >
+            <option value="">Selecciona un docente</option>
+            {members
+              .filter((item) => item.status === "Active")
+              .map((item) => (
+                <option key={item.membershipId} value={item.membershipId}>
+                  {item.displayName}
+                </option>
+              ))}
+          </select>
+          <span>
+            <AcademicIcon name="select-down" />
+          </span>
+        </div>
+      </SchoolFormField>
+      <SchoolFormField
+        id="academic-assignment-hours"
         label="Horas semanales *"
-        error={s.assignmentForm.formState.errors.weeklyHours?.message}
+        error={e.weeklyHours?.message}
+        hint="Horas pedagógicas por semana"
       >
         <Input
+          id="academic-assignment-hours"
           type="number"
           min={1}
           max={40}
-          {...s.assignmentForm.register("weeklyHours", { valueAsNumber: true })}
+          placeholder="1 a 40"
+          disabled={s.isPending}
+          aria-invalid={!!e.weeklyHours}
+          aria-describedby={"academic-assignment-hours-" + (e.weeklyHours ? "error" : "hint")}
+          {...f.register("weeklyHours", { valueAsNumber: true })}
         />
-      </SchoolField>
+      </SchoolFormField>
     </>
   );
 }

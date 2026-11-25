@@ -1,0 +1,58 @@
+.panelForm {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.panelHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.5rem 1.75rem;
+  border-bottom: 1px solid var(--color-school-border);
+}
+.panelBody {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1.5rem 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.panelFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  border-top: 1px solid var(--color-school-border);
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.field label {
+  font-size: var(--text-school-button);
+  font-weight: 500;
+  color: var(--color-school-ink);
+}
+.field input,
+.field select {
+  height: var(--school-field-height, 3rem);
+}
+.field select {
+  appearance: auto;
+  border: 1.5px solid var(--color-school-border);
+  padding: 0 1rem;
+  border-radius: var(--radius-school-control);
+  background: var(--color-school-surface);
+  font-size: var(--text-school-body);
+}
+@media (max-width: 767px) {
+  .panelHeader,
+  .panelBody {
+    padding: 1.25rem;
+  }
+}
