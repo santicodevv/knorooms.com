@@ -14,6 +14,7 @@ const twMerge = extendTailwindMerge({
         "school-button",
       ],
       font: ["school"],
+      radius: ["school-control", "school-segment", "school-card", "school-panel"],
     },
   },
 });

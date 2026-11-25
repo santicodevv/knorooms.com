@@ -1,15 +1,9 @@
-import { schoolViewKey, getSchoolCapabilities } from "./school-context";
-import { headers } from "next/headers";
+import "server-only";
+import { schoolViewKey, getSchoolCapabilities, getSchoolContext } from "./school-context";
 import { SchoolShell } from "@/components/school/school-shell";
 import { StudentsWorkspace } from "@/features/school/students/components/students-workspace";
 import { serverApiFetch } from "@/lib/api/server-api";
-import type {
-  EnrollmentsOverviewDto,
-  StudentDirectoryOverviewDto,
-  TenantContextDto,
-} from "@/lib/api/types";
-import { getServerSession } from "@/lib/auth/session-store";
-import { resolveHost } from "@/lib/tenancy/host";
+import type { EnrollmentsOverviewDto, StudentDirectoryOverviewDto } from "@/lib/api/types";
 
 const EMPTY_DIRECTORY: StudentDirectoryOverviewDto = {
   students: [],
@@ -22,26 +16,20 @@ const EMPTY_ENROLLMENTS: EnrollmentsOverviewDto = {
 };
 
 export async function SchoolStudentsPage({ path = [] }: { path?: string[] } = {}) {
-  const incomingHeaders = await headers();
-  const rawHost =
-    incomingHeaders.get("x-forwarded-host") ??
-    incomingHeaders.get("host") ??
-    "colegio.localhost:3000";
-  const resolution = resolveHost(rawHost);
-  const slug = resolution.kind === "tenant" ? resolution.slug : "";
-
-  const session = await getServerSession();
-  const contextResult = session
-    ? await serverApiFetch<TenantContextDto>("/api/tenant/context")
-    : null;
-
+  const { session, contextResult, rawHost, slug } = await getSchoolContext();
   const capabilities = session && contextResult?.ok ? await getSchoolCapabilities() : null;
+  const readable = (code: string) =>
+    Boolean(
+      capabilities?.ok && capabilities.data.modules.some((m) => m.code === code && m.canRead),
+    );
   const writable = (code: string) =>
     Boolean(
       capabilities?.ok && capabilities.data.modules.some((m) => m.code === code && m.canWrite),
     );
   const canReadStudents = Boolean(
-    contextResult?.ok && contextResult.data.permissions.includes("institution.students.read"),
+    contextResult?.ok &&
+    contextResult.data.permissions.includes("institution.students.read") &&
+    readable("students"),
   );
   const canManageStudents = Boolean(
     contextResult?.ok &&
@@ -49,7 +37,9 @@ export async function SchoolStudentsPage({ path = [] }: { path?: string[] } = {}
     writable("students"),
   );
   const canReadEnrollments = Boolean(
-    contextResult?.ok && contextResult.data.permissions.includes("institution.enrollments.read"),
+    contextResult?.ok &&
+    contextResult.data.permissions.includes("institution.enrollments.read") &&
+    readable("enrollments"),
   );
   const canManageEnrollments = Boolean(
     contextResult?.ok &&
@@ -70,6 +60,7 @@ export async function SchoolStudentsPage({ path = [] }: { path?: string[] } = {}
       : [null, null];
 
   const initialProblem =
+    (capabilities && !capabilities.ok ? capabilities.problem : null) ??
     (directoryResult && !directoryResult.ok ? directoryResult.problem : null) ??
     (enrollmentsResult && !enrollmentsResult.ok ? enrollmentsResult.problem : null);
 
@@ -94,6 +85,8 @@ export async function SchoolStudentsPage({ path = [] }: { path?: string[] } = {}
             path,
             directoryResult?.ok ? directoryResult.data : null,
             enrollmentsResult?.ok ? enrollmentsResult.data : null,
+            capabilities,
+            contextResult.data.permissions,
           )}
           path={path}
           initialDirectory={directoryResult?.ok ? directoryResult.data : EMPTY_DIRECTORY}
@@ -102,6 +95,10 @@ export async function SchoolStudentsPage({ path = [] }: { path?: string[] } = {}
           csrfToken={session.csrfToken}
           canManageStudents={canManageStudents}
           canManageEnrollments={canManageEnrollments}
+          canReadStudents={canReadStudents}
+          canReadEnrollments={canReadEnrollments}
+          directoryAvailable={directoryResult?.ok === true}
+          enrollmentsAvailable={enrollmentsResult?.ok === true}
         />
       ) : null}
     </SchoolShell>

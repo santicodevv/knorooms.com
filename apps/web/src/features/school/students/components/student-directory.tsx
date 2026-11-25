@@ -1,10 +1,7 @@
-import { StudentDirectoryCards } from "./student-directory-cards";
-import { studentProfileHref } from "../student-navigation";
 import Link from "next/link";
-import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ButtonLink } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableHeader,
@@ -14,21 +11,34 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/shared/empty-state";
-import { SchoolPanel, schoolSelectClass } from "../../components/school-ui";
 import { SchoolPagination } from "../../components/school-pagination";
-import { useSchoolList } from "../../hooks/use-school-list";
+import { useStudentDirectory } from "../hooks/use-student-directory";
+import { studentInitials } from "../schemas/student-directory";
+import { studentProfileHref } from "../student-navigation";
+import { StudentIcon } from "./student-icon";
+import { StudentDirectoryCards } from "./student-directory-cards";
 import type { ReturnTypeOfStudents, StudentStatusFilter } from "../hooks/use-students-workspace";
-export function StudentDirectory({ state: s }: { state: ReturnTypeOfStudents }) {
-  const list = useSchoolList(s.filteredStudents);
+import styles from "./students.module.css";
+export function StudentDirectory({
+  state: s,
+  canCreate = false,
+}: {
+  state: ReturnTypeOfStudents;
+  canCreate?: boolean;
+}) {
+  const list = useStudentDirectory(s.filteredStudents);
+  const href = (id: string) =>
+    studentProfileHref(id, s.studentSearchQuery, s.studentStatusFilter, list.page);
   return (
-    <SchoolPanel>
-      <div className="flex flex-wrap gap-3 p-5">
-        <div className="relative min-w-48 flex-1">
-          <Search className="text-muted absolute top-3 left-3 size-4" />
+    <section className={styles.directory} aria-label="Directorio de estudiantes">
+      <div className={styles.filters}>
+        <div className={styles.search}>
+          <span className={styles.searchIcon}>
+            <StudentIcon name="search" />
+          </span>
           <Input
             aria-label="Buscar estudiantes"
             placeholder="Buscar nombre, código o SIGERD"
-            className="pl-9"
             value={s.studentSearchQuery}
             onChange={(e) => {
               s.setStudentSearchQuery(e.target.value);
@@ -36,28 +46,42 @@ export function StudentDirectory({ state: s }: { state: ReturnTypeOfStudents }) 
             }}
           />
         </div>
-        <select
-          aria-label="Estado del estudiante"
-          className={schoolSelectClass + " sm:max-w-52"}
-          value={s.studentStatusFilter}
-          onChange={(e) => {
-            s.setStudentStatusFilter(e.target.value as StudentStatusFilter);
-            list.setPage(1);
-          }}
-        >
-          <option value="all">Todos los expedientes</option>
-          <option value="active">Activos</option>
-          <option value="inactive">Inactivos</option>
-          <option value="unassigned">Sin matrícula</option>
-        </select>
-      </div>
-      {list.total === 0 ? (
-        <div className="p-8">
-          <EmptyState
-            title="Sin estudiantes coincidentes"
-            description="Prueba otra búsqueda o crea el primer expediente."
-          />
+        <div className={styles.selectWrap}>
+          <select
+            className={styles.select}
+            aria-label="Estado del estudiante"
+            value={s.studentStatusFilter}
+            onChange={(e) => {
+              s.setStudentStatusFilter(e.target.value as StudentStatusFilter);
+              list.setPage(1);
+            }}
+          >
+            <option value="all">Todos los expedientes</option>
+            <option value="active">Activos</option>
+            <option value="inactive">Inactivos</option>
+            <option value="unassigned">Sin matrícula</option>
+          </select>
+          <span className={styles.selectIcon}>
+            <StudentIcon name="down" />
+          </span>
         </div>
+      </div>
+      {!list.total ? (
+        <EmptyState
+          variant="school"
+          className="flex-1"
+          icon={<StudentIcon name="empty-students" />}
+          title="Sin estudiantes coincidentes"
+          description="Prueba otra búsqueda o crea el primer expediente."
+          action={
+            canCreate ? (
+              <Button onClick={() => s.toggleDrawer("student")}>
+                <StudentIcon name="plus" />
+                Crear primer expediente
+              </Button>
+            ) : undefined
+          }
+        />
       ) : (
         <>
           <StudentDirectoryCards
@@ -67,73 +91,63 @@ export function StudentDirectory({ state: s }: { state: ReturnTypeOfStudents }) 
             page={list.page}
           />
           <div className="hidden md:block">
-            <Table>
-              <TableHeader>
+            <Table className={styles.table}>
+              <colgroup>
+                <col className="w-[35%]" />
+                <col className="w-[14%]" />
+                <col className="w-[23%]" />
+                <col className="w-[15%]" />
+                <col />
+              </colgroup>
+              <TableHeader className="school:bg-school-surface school:border-t-0">
                 <TableRow>
                   <TableHead>Estudiante</TableHead>
-                  <TableHead>Código de expediente</TableHead>
-                  <TableHead>Matrícula actual</TableHead>
+                  <TableHead>Grado y sección</TableHead>
+                  <TableHead>Responsable</TableHead>
                   <TableHead>Estado</TableHead>
-                  <TableHead>Acción</TableHead>
+                  <TableHead>
+                    <span className="sr-only">Ver ficha</span>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {list.rows.map((student) => (
                   <TableRow key={student.id}>
                     <TableCell>
-                      <Link
-                        href={studentProfileHref(
-                          student.id,
-                          s.studentSearchQuery,
-                          s.studentStatusFilter,
-                          list.page,
-                        )}
-                        className="flex items-center gap-3"
-                      >
-                        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-blue-50 text-xs font-bold text-blue-800">
-                          {student.firstName[0]}
-                          {student.lastName[0]}
-                        </span>
-                        <span>
-                          <strong className="block text-xs text-slate-900">
-                            {student.fullName}
-                          </strong>
-                          <small className="text-muted mt-1 block text-[11px]">
-                            {student.sigerdExternalId
-                              ? "SIGERD: " + student.sigerdExternalId
-                              : "Sin ID externo SIGERD"}
-                          </small>
+                      <Link className={styles.studentCell} href={href(student.id)}>
+                        <span className={styles.avatar}>{studentInitials(student.fullName)}</span>
+                        <span className="min-w-0">
+                          <span className={styles.name}>{student.fullName}</span>
+                          <span className={styles.meta + " block"}>{student.studentCode}</span>
                         </span>
                       </Link>
                     </TableCell>
-                    <TableCell>{student.studentCode}</TableCell>
                     <TableCell>
                       {student.latestEnrollment?.status === "Active" ? (
-                        student.latestEnrollment.gradeLevelName +
-                        " · " +
-                        student.latestEnrollment.sectionCode
+                        <span className="text-school-ink">
+                          {student.latestEnrollment.gradeLevelName}{" "}
+                          {student.latestEnrollment.sectionCode}
+                        </span>
+                      ) : student.isActive ? (
+                        "Sin sección"
                       ) : (
-                        <Badge variant="warning">Pendiente</Badge>
+                        "—"
                       )}
                     </TableCell>
+                    <TableCell>{student.guardians[0]?.fullName ?? "—"}</TableCell>
                     <TableCell>
                       <Badge variant={student.isActive ? "success" : "secondary"}>
                         {student.isActive ? "Activo" : "Inactivo"}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <ButtonLink
-                        size="sm"
-                        variant="outline"
-                        href={studentProfileHref(
-                          student.id,
-                          s.studentSearchQuery,
-                          s.studentStatusFilter,
-                          list.page,
-                        )}
+                      <Link
+                        aria-label={`Ver ficha de ${student.fullName}`}
+                        href={href(student.id)}
+                        className="ui-button flex min-h-11 min-w-8 items-center justify-end"
                       >
-                        Ver ficha
-                      </ButtonLink>
+                        <StudentIcon name="chevron" />
+                      </Link>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -142,7 +156,8 @@ export function StudentDirectory({ state: s }: { state: ReturnTypeOfStudents }) 
           </div>
         </>
       )}
-      <SchoolPagination {...list} onPage={list.setPage} />
-    </SchoolPanel>
+      {list.total > 0 && <div className="flex-1" />}
+      <SchoolPagination variant="school" {...list} onPage={list.setPage} />
+    </section>
   );
 }
