@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Shield, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { APP_SIDEBAR_ICONS, type AppSidebarProps } from "./sidebar-types";
+import { SchoolSidebarContent } from "./school-sidebar-content";
 export function SidebarContent({
   variant = "platform",
   brandName,
@@ -14,6 +15,21 @@ export function SidebarContent({
   navAriaLabel,
   onNavigate,
 }: AppSidebarProps & { onNavigate?: () => void }) {
+  if (variant === "school")
+    return (
+      <SchoolSidebarContent
+        variant={variant}
+        brandName={brandName}
+        brandSubtitle={brandSubtitle}
+        brandIcon={brandIcon}
+        navItems={navItems}
+        activeKey={activeKey}
+        user={user}
+        footer={footer}
+        navAriaLabel={navAriaLabel}
+        onNavigate={onNavigate}
+      />
+    );
   const BrandIcon: LucideIcon = APP_SIDEBAR_ICONS[brandIcon];
 
   return (

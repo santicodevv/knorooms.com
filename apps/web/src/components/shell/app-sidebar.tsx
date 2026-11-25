@@ -3,12 +3,18 @@ import { Menu, X } from "lucide-react";
 import { SidebarContent } from "./sidebar-content";
 import { useMobileSidebar } from "./hooks/use-mobile-sidebar";
 import type { AppSidebarProps } from "./sidebar-types";
+import { cn } from "@/lib/utils";
 export type { AppSidebarProps, AppSidebarIconName, AppSidebarNavItem } from "./sidebar-types";
 export function AppSidebar(props: AppSidebarProps) {
   const { setMobileOpen, dialogRef } = useMobileSidebar();
   return (
     <>
-      <aside className="border-divider fixed inset-y-0 left-0 z-30 hidden w-[222px] border-r md:block xl:w-[246px]">
+      <aside
+        className={cn(
+          "border-divider fixed inset-y-0 left-0 z-30 hidden w-[222px] border-r md:block xl:w-[246px]",
+          props.variant === "school" && "border-school-border w-school-sidebar xl:w-school-sidebar",
+        )}
+      >
         <SidebarContent {...props} />
       </aside>
       <button
@@ -34,7 +40,12 @@ export function AppSidebar(props: AppSidebarProps) {
           aria-label="Cerrar fondo del menú"
           onClick={() => setMobileOpen(false)}
         />
-        <div className="absolute inset-y-0 left-0 w-[250px] max-w-[88%] border-r border-slate-200 shadow-xl">
+        <div
+          className={cn(
+            "absolute inset-y-0 left-0 w-[250px] max-w-[88%] border-r border-slate-200 shadow-xl",
+            props.variant === "school" && "w-school-sidebar border-school-border",
+          )}
+        >
           <button
             type="button"
             onClick={() => setMobileOpen(false)}

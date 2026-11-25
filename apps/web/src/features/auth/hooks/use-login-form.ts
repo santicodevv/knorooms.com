@@ -10,10 +10,12 @@ import type { ProblemDetails } from "@/lib/api/types";
 
 interface UseLoginFormParams {
   returnTo: string;
+  toastError?: boolean;
 }
 
-export function useLoginForm({ returnTo }: UseLoginFormParams) {
+export function useLoginForm({ returnTo, toastError = true }: UseLoginFormParams) {
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
+  const [passwordVisible, setPasswordVisible] = useState(false);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -37,12 +39,15 @@ export function useLoginForm({ returnTo }: UseLoginFormParams) {
     }
 
     setProblem(result.problem);
-    toast.error(result.problem.detail ?? result.problem.title ?? "No se pudo iniciar sesión.");
+    if (toastError)
+      toast.error(result.problem.detail ?? result.problem.title ?? "No se pudo iniciar sesión.");
   }
 
   return {
     form,
     problem,
     onSubmit,
+    passwordVisible,
+    togglePassword: () => setPasswordVisible((visible) => !visible),
   };
 }

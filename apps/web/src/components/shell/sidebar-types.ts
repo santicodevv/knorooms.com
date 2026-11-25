@@ -14,6 +14,11 @@ import {
   Server,
   ShieldAlert,
   Users,
+  Home,
+  UserRound,
+  Heart,
+  SlidersHorizontal,
+  CalendarDays,
 } from "lucide-react";
 export const APP_SIDEBAR_ICONS = {
   building: Building2,
@@ -30,6 +35,11 @@ export const APP_SIDEBAR_ICONS = {
   clipboardCheck: ClipboardCheck,
   users: Users,
   shieldAlert: ShieldAlert,
+  home: Home,
+  userRound: UserRound,
+  heart: Heart,
+  sliders: SlidersHorizontal,
+  calendarDays: CalendarDays,
 } as const;
 
 export type AppSidebarIconName = keyof typeof APP_SIDEBAR_ICONS;
