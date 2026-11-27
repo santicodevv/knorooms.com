@@ -1,11 +1,7 @@
 import { Skeleton } from "@/components/ui/skeleton";
 export function SchoolHomeLoading() {
   return (
-    <div
-      role="status"
-      aria-label="Cargando el portal"
-      className="bg-school-app md:px-school-content-x md:py-school-content-y min-h-dvh p-6"
-    >
+    <div role="status" aria-label="Cargando el portal" className="bg-school-app">
       <span className="sr-only">Cargando el portal…</span>
       <Skeleton className="mb-3 h-10 w-64 max-w-full" />
       <Skeleton className="mb-6 h-5 w-96 max-w-full" />

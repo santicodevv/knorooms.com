@@ -1,6 +1,6 @@
 import "server-only";
 import { schoolViewKey, getSchoolCapabilities, getSchoolContext } from "./school-context";
-import { SchoolShell } from "@/components/school/school-shell";
+import { SchoolPageAccess } from "@/components/school/school-page-access";
 import { AcademicWorkspace } from "@/features/school/academic/components/academic-workspace";
 import { serverApiFetch } from "@/lib/api/server-api";
 import type {
@@ -48,7 +48,7 @@ export async function SchoolAcademicPage({ path = [] }: { path?: string[] } = {}
     (membersResult && !membersResult.ok ? membersResult.problem : null) ??
     (capacitiesResult && !capacitiesResult.ok ? capacitiesResult.problem : null);
   return (
-    <SchoolShell {...context} returnTo={"/" + path.join("/")} activeTab="academic">
+    <SchoolPageAccess {...context} returnTo={"/" + path.join("/")} activeTab="academic">
       {session && contextResult?.ok ? (
         <AcademicWorkspace
           key={schoolViewKey(
@@ -91,6 +91,6 @@ export async function SchoolAcademicPage({ path = [] }: { path?: string[] } = {}
           }
         />
       ) : null}
-    </SchoolShell>
+    </SchoolPageAccess>
   );
 }

@@ -1,6 +1,6 @@
 import { schoolViewKey, getSchoolCapabilities } from "./school-context";
 import { headers } from "next/headers";
-import { SchoolShell } from "@/components/school/school-shell";
+import { SchoolPageAccess } from "@/components/school/school-page-access";
 import { EvaluationsWorkspace } from "@/features/school/evaluations/components/evaluations-workspace";
 import { serverApiFetch } from "@/lib/api/server-api";
 import type {
@@ -130,7 +130,7 @@ export async function SchoolEvaluationsPage({ path = [] }: { path?: string[] } =
     (reportCardsRes && !reportCardsRes.ok ? reportCardsRes.problem : null);
 
   return (
-    <SchoolShell
+    <SchoolPageAccess
       session={session}
       rawHost={rawHost}
       slug={slug}
@@ -168,6 +168,6 @@ export async function SchoolEvaluationsPage({ path = [] }: { path?: string[] } =
           canPublishReportCards={canPublishReportCards}
         />
       ) : null}
-    </SchoolShell>
+    </SchoolPageAccess>
   );
 }

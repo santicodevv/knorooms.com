@@ -1,8 +1,22 @@
+import { LoaderCircle } from "lucide-react";
+
 export default function Loading() {
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 px-4 py-12">
-      <div className="size-8 animate-spin rounded-full border-2 border-slate-300 border-t-slate-900" />
-      <p className="text-sm font-medium text-slate-600">Cargando información...</p>
+    <div
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      className="bg-school-app text-school-secondary flex min-h-dvh w-full flex-1 items-center justify-center px-6 py-10"
+    >
+      <div className="flex flex-col items-center gap-4 text-center">
+        <LoaderCircle
+          size={28}
+          strokeWidth={1.5}
+          className="motion-safe:animate-spin"
+          aria-hidden="true"
+        />
+        <p className="text-sm leading-5 font-medium">Cargando información…</p>
+      </div>
     </div>
   );
 }

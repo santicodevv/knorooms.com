@@ -1,5 +1,5 @@
 import "server-only";
-import { SchoolShell } from "@/components/school/school-shell";
+import { SchoolPageAccess } from "@/components/school/school-page-access";
 import { SchoolDashboard } from "../components/school-dashboard";
 import { SchoolCommercialStatus } from "@/features/subscriptions/components/school-commercial-status";
 import { getSchoolCapabilities, getSchoolContext, schoolViewKey } from "./school-context";
@@ -42,7 +42,7 @@ export async function SchoolHomeContent() {
   if (enrollments && !enrollments.ok)
     problems.push({ source: "enrollments", problem: enrollments.problem });
   return (
-    <SchoolShell {...data} returnTo="/" activeTab="overview" hideCommercialStatus>
+    <SchoolPageAccess {...data} returnTo="/" activeTab="overview" hideCommercialStatus>
       {context && data.session && (
         <SchoolDashboard
           key={schoolViewKey(["home"], academic, directory, enrollments, capabilities)}
@@ -101,6 +101,6 @@ export async function SchoolHomeContent() {
           }
         />
       )}
-    </SchoolShell>
+    </SchoolPageAccess>
   );
 }

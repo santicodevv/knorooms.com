@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import { MembersManager } from "@/components/school/members-manager";
-import { SchoolShell } from "@/components/school/school-shell";
+import { SchoolPageAccess } from "@/components/school/school-page-access";
 import { StaffInvitationsPanel } from "@/features/school/components/staff-invitations-panel";
 import { SchoolRouteBoundary } from "@/features/school/components/school-route-boundary";
 import { getServerSession } from "@/lib/auth/session-store";
@@ -48,7 +48,7 @@ async function SchoolMembersPage() {
       : [];
 
   return (
-    <SchoolShell
+    <SchoolPageAccess
       session={session}
       rawHost={rawHost}
       slug={slug}
@@ -80,7 +80,7 @@ async function SchoolMembersPage() {
           ) : null}
         </div>
       ) : null}
-    </SchoolShell>
+    </SchoolPageAccess>
   );
 }
 

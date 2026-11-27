@@ -1,6 +1,6 @@
 import "server-only";
 import { schoolViewKey, getSchoolCapabilities, getSchoolContext } from "./school-context";
-import { SchoolShell } from "@/components/school/school-shell";
+import { SchoolPageAccess } from "@/components/school/school-page-access";
 import { StudentsWorkspace } from "@/features/school/students/components/students-workspace";
 import { serverApiFetch } from "@/lib/api/server-api";
 import type { EnrollmentsOverviewDto, StudentDirectoryOverviewDto } from "@/lib/api/types";
@@ -65,7 +65,7 @@ export async function SchoolStudentsPage({ path = [] }: { path?: string[] } = {}
     (enrollmentsResult && !enrollmentsResult.ok ? enrollmentsResult.problem : null);
 
   return (
-    <SchoolShell
+    <SchoolPageAccess
       session={session}
       rawHost={rawHost}
       slug={slug}
@@ -101,6 +101,6 @@ export async function SchoolStudentsPage({ path = [] }: { path?: string[] } = {}
           enrollmentsAvailable={enrollmentsResult?.ok === true}
         />
       ) : null}
-    </SchoolShell>
+    </SchoolPageAccess>
   );
 }

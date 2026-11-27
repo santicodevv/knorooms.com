@@ -11,7 +11,7 @@ vi.mock("./school-context", () => ({
   schoolViewKey: () => "clave-de-vista-de-prueba",
 }));
 vi.mock("@/lib/api/server-api", () => ({ serverApiFetch: mocks.api }));
-vi.mock("@/components/school/school-shell", () => ({ SchoolShell: () => null }));
+vi.mock("@/components/school/school-page-access", () => ({ SchoolPageAccess: () => null }));
 vi.mock("@/features/school/students/components/students-workspace", () => ({
   StudentsWorkspace: () => null,
 }));

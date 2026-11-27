@@ -1,5 +1,5 @@
 import "server-only";
-import { SchoolShell } from "@/components/school/school-shell";
+import { SchoolPageAccess } from "@/components/school/school-page-access";
 import { EnrollmentsWorkspace } from "../enrollments/components/enrollments-workspace";
 import { getSchoolContext, getSchoolCapabilities, schoolViewKey } from "./school-context";
 import { serverApiFetch } from "@/lib/api/server-api";
@@ -118,10 +118,10 @@ export async function SchoolEnrollmentsPage() {
     csrfToken: context.session?.csrfToken ?? "",
   };
   return (
-    <SchoolShell {...context} returnTo="/enrollments" activeTab="enrollments">
+    <SchoolPageAccess {...context} returnTo="/enrollments" activeTab="enrollments">
       {context.session && context.contextResult?.ok && (
         <EnrollmentsWorkspace key={schoolViewKey(["enrollments"], data)} data={data} />
       )}
-    </SchoolShell>
+    </SchoolPageAccess>
   );
 }
