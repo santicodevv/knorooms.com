@@ -1,8 +1,9 @@
-import Image from "next/image";
+import { Eye, EyeOff } from "lucide-react";
 import type { FieldErrors, UseFormRegister } from "react-hook-form";
 import { FormFieldError } from "@/components/shared/form-field-error";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useRetainedFieldError } from "@/features/auth/hooks/use-retained-field-error";
 import type { LoginFormValues } from "@/features/auth/schemas/auth-schemas";
 import styles from "@/features/auth/components/school-login.module.css";
 
@@ -21,6 +22,9 @@ export function SchoolLoginFields({
   passwordVisible,
   onTogglePassword,
 }: SchoolLoginFieldsProps) {
+  const emailError = useRetainedFieldError(errors.email?.message);
+  const passwordError = useRetainedFieldError(errors.password?.message);
+
   return (
     <div className={styles.fields}>
       <div className={styles.field}>
@@ -41,11 +45,16 @@ export function SchoolLoginFields({
           aria-invalid={Boolean(errors.email)}
           aria-describedby={errors.email ? "school-login-email-error" : undefined}
         />
-        {errors.email?.message && (
-          <div className={styles.fieldError} id="school-login-email-error">
-            <FormFieldError message={errors.email.message} />
+        <div
+          className={styles.fieldError}
+          id="school-login-email-error"
+          data-visible={emailError.visible}
+          aria-hidden={!emailError.visible}
+        >
+          <div className={styles.fieldErrorContent}>
+            <FormFieldError message={emailError.message} />
           </div>
-        )}
+        </div>
       </div>
       <div className={styles.field}>
         <Label className={styles.fieldLabel} htmlFor="school-login-password">
@@ -72,14 +81,20 @@ export function SchoolLoginFields({
             aria-pressed={passwordVisible}
             aria-controls="school-login-password"
           >
-            <Image src="/images/auth/login-eye.svg" width={18} height={12} alt="" unoptimized />
+            <Eye className={styles.eyeIcon} size={20} strokeWidth={1.75} aria-hidden="true" />
+            <EyeOff className={styles.eyeOffIcon} size={20} strokeWidth={1.75} aria-hidden="true" />
           </button>
         </div>
-        {errors.password?.message && (
-          <div className={styles.fieldError} id="school-login-password-error">
-            <FormFieldError message={errors.password.message} />
+        <div
+          className={styles.fieldError}
+          id="school-login-password-error"
+          data-visible={passwordError.visible}
+          aria-hidden={!passwordError.visible}
+        >
+          <div className={styles.fieldErrorContent}>
+            <FormFieldError message={passwordError.message} />
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

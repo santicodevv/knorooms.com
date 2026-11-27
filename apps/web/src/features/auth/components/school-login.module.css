@@ -8,7 +8,6 @@
   --login-note-line: 1.125rem;
   --login-field-gap: 1rem;
   --login-submit-gap: 1.5rem;
-  --login-focus-shadow: 0 0 0 4px rgb(0 0 0 / 8%);
   display: flex;
   min-height: 100dvh;
   flex-direction: column;
@@ -108,27 +107,34 @@
 .field {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
 }
 .fieldLabel {
+  margin-bottom: 0.5rem;
   color: var(--color-school-ink);
   font-size: var(--login-label-text);
   line-height: var(--login-label-line);
   font-weight: 500;
 }
 .input {
+  --login-input-border-width: 1.5px;
   min-height: var(--login-input-height);
   height: var(--login-input-height);
+  border-width: var(--login-input-border-width);
   border-color: var(--color-school-cream-border);
+  padding: calc(0.5rem + 1.5px - var(--login-input-border-width))
+    calc(1rem + 1.5px - var(--login-input-border-width));
   font-size: var(--login-input-text);
   line-height: var(--login-input-line);
+  outline: none;
+  box-shadow: none;
+  transition: border-color 160ms var(--ease-school-out);
 }
 .input:hover {
   border-color: var(--color-school-cream-border);
 }
-.input:focus-visible {
-  border-color: var(--color-school-ink);
-  box-shadow: var(--login-focus-shadow);
+.input:focus {
+  --login-input-border-width: 2.5px;
+  border-color: var(--color-school-secondary);
 }
 .input[aria-invalid="true"],
 .input[aria-invalid="true"]:hover {
@@ -143,7 +149,7 @@
   position: relative;
 }
 .passwordInput {
-  padding-right: 3.5rem;
+  padding-right: calc(3.5rem + 1.5px - var(--login-input-border-width));
 }
 .passwordToggle {
   position: absolute;
@@ -155,12 +161,49 @@
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-school-control);
+  color: var(--color-school-secondary);
+  transition: color 160ms var(--ease-school-out);
+}
+.eyeIcon,
+.eyeOffIcon {
+  position: absolute;
+  transition: opacity 120ms var(--ease-school-out);
+}
+.eyeOffIcon,
+.passwordToggle[aria-pressed="true"] .eyeIcon {
+  opacity: 0;
+}
+.passwordToggle[aria-pressed="true"] .eyeOffIcon {
+  opacity: 1;
 }
 .passwordToggle:disabled {
   cursor: not-allowed;
   opacity: 0.6;
 }
-.fieldError > p {
+.fieldError {
+  display: grid;
+  grid-template-rows: 0fr;
+  margin-top: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    grid-template-rows 180ms var(--ease-school-out),
+    margin-top 180ms var(--ease-school-out),
+    opacity 120ms var(--ease-school-out),
+    visibility 0s linear 180ms;
+}
+.fieldError[data-visible="true"] {
+  grid-template-rows: 1fr;
+  margin-top: 0.5rem;
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0s;
+}
+.fieldErrorContent {
+  min-height: 0;
+  overflow: hidden;
+}
+.fieldErrorContent > p {
   color: var(--color-school-error);
   font-size: var(--text-school-small);
   line-height: var(--text-school-small--line-height);
@@ -172,6 +215,9 @@
   gap: 0.625rem;
   font-size: var(--login-input-text);
   line-height: var(--login-input-line);
+}
+.root .submit {
+  transition: opacity 160ms var(--ease-school-out);
 }
 .submit:disabled {
   border-color: transparent;
@@ -201,6 +247,49 @@
   color: var(--color-school-ink);
   font-size: var(--login-label-text);
   line-height: 1.25rem;
+}
+@media (hover: hover) and (pointer: fine) {
+  .input:not(:disabled):not(:focus):not([aria-invalid="true"]):hover {
+    border-color: var(--color-school-secondary);
+  }
+  .passwordToggle:not(:disabled):hover {
+    color: var(--color-school-ink);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .formContent {
+    animation: login-enter 240ms var(--ease-school-out);
+  }
+  .root .submit,
+  .root .passwordToggle {
+    transition:
+      background-color 160ms var(--ease-school-out),
+      color 160ms var(--ease-school-out),
+      opacity 160ms var(--ease-school-out),
+      transform 120ms var(--ease-school-out);
+  }
+  .root .submit:not(:disabled):active,
+  .root .passwordToggle:not(:disabled):active {
+    transform: scale(0.98);
+  }
+  .submit[disabled] img {
+    animation: login-spin 800ms linear infinite;
+  }
+}
+@keyframes login-enter {
+  from {
+    opacity: 0.7;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes login-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 @media (min-width: 1024px) {
   .root {
