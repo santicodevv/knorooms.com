@@ -92,7 +92,15 @@ export const createStudentSchema = z.object({
     .max(100, "Máximo 100 caracteres."),
   birthDate: z
     .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "Indique una fecha de nacimiento válida (AAAA-MM-DD)."),
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Indique una fecha de nacimiento válida (AAAA-MM-DD).")
+    .refine((value) => {
+      const date = new Date(value + "T00:00:00Z");
+      return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+    }, "Indique una fecha de nacimiento válida.")
+    .refine(
+      (value) => value >= "1995-01-01" && value <= new Date().toISOString().slice(0, 10),
+      "La fecha debe estar entre 1995 y hoy.",
+    ),
   sigerdExternalId: z.string().trim().max(64, "Máximo 64 caracteres.").optional(),
 });
 

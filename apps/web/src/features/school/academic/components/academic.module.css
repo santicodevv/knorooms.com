@@ -1,0 +1,294 @@
+.workspace {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--spacing-school-unit) * 6);
+  min-height: calc(100dvh - var(--spacing-school-content-y) * 2);
+}
+.surface {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius-school-card);
+  background: var(--color-school-surface);
+}
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--spacing-school-unit) * 3);
+  align-items: center;
+}
+.select {
+  position: relative;
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  min-height: 2.75rem;
+  max-width: 100%;
+  padding: 0.5rem 2.75rem 0.5rem 1rem;
+  border: 1.5px solid var(--color-school-border);
+  border-radius: var(--radius-school-control);
+  background: var(--color-school-surface);
+}
+.select > span:first-child {
+  color: var(--color-school-secondary);
+  font-size: var(--text-school-label);
+  white-space: nowrap;
+}
+.select select {
+  min-width: 0;
+  max-width: 100%;
+  appearance: none;
+  background: transparent;
+  color: var(--color-school-ink);
+  font-size: var(--text-school-button);
+  font-weight: 600;
+}
+.selectIcon {
+  pointer-events: none;
+  position: absolute;
+  right: 1rem;
+  display: flex;
+}
+.year {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  align-items: center;
+  padding: 1.5rem;
+  border-radius: var(--radius-school-card);
+  background: var(--color-school-surface);
+}
+.yearInfo {
+  flex: 1;
+  min-width: 0;
+}
+.yearProgress {
+  width: 18.75rem;
+  max-width: 100%;
+  flex-shrink: 0;
+}
+.yearProgress progress {
+  display: block;
+  width: 100%;
+  height: 0.5rem;
+  margin-top: 0.5rem;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0.25rem;
+  background: var(--color-school-subtle);
+}
+.yearProgress progress::-webkit-progress-bar {
+  background: var(--color-school-subtle);
+}
+.yearProgress progress::-webkit-progress-value {
+  border-radius: 0.25rem;
+  background: var(--color-school-ink);
+}
+.yearProgress progress::-moz-progress-bar {
+  background: var(--color-school-ink);
+}
+.yearClosed progress::-webkit-progress-value {
+  background: var(--color-school-muted);
+}
+.yearClosed progress::-moz-progress-bar {
+  background: var(--color-school-muted);
+}
+.gradeLayout {
+  display: grid;
+  flex: 1;
+  min-height: 32rem;
+  gap: 1rem;
+  grid-template-columns: 21.25rem minmax(0, 1fr);
+}
+.panelHeading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.125rem 1.375rem;
+  border-bottom: 1px solid var(--color-school-border);
+}
+.gradeList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+}
+.gradeItem {
+  min-height: 4.25rem;
+  padding: 0.875rem;
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-school-control);
+  text-align: left;
+}
+.gradeItem[aria-pressed="true"] {
+  border-color: var(--color-school-ink);
+  background: var(--color-school-app);
+}
+.sections {
+  display: grid;
+  align-content: start;
+  grid-template-columns: repeat(auto-fill, minmax(0, 18.75rem));
+  gap: 1rem;
+  padding: 1.5rem;
+}
+.section {
+  min-width: 0;
+  padding: 1.125rem;
+  border-radius: var(--radius-school-card);
+  background: var(--color-school-app);
+}
+.section progress {
+  width: 100%;
+  height: 0.375rem;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0.25rem;
+}
+.section progress::-webkit-progress-bar {
+  background: var(--color-school-border);
+}
+.section progress::-webkit-progress-value {
+  background: var(--color-school-ink);
+}
+.search {
+  position: relative;
+  margin: 1.25rem;
+}
+.search > span {
+  position: absolute;
+  left: 1rem;
+  top: 0.875rem;
+  pointer-events: none;
+}
+.search input {
+  height: 2.875rem;
+  padding-left: 2.875rem;
+  background: var(--color-school-app);
+  border: 0;
+}
+.table thead th {
+  padding: 0.875rem 1.5rem;
+  color: var(--color-school-muted);
+  font-size: var(--text-school-label);
+  font-weight: 500;
+}
+.table tbody td {
+  height: 3.875rem;
+  padding: 1rem 1.5rem;
+  color: var(--color-school-ink);
+  font-size: var(--text-school-small);
+}
+.table tbody tr {
+  border-color: var(--color-school-border);
+}
+.teacherHeader {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 1.125rem 1.5rem;
+  border-bottom: 1px solid var(--color-school-border);
+}
+.teacherAvatar {
+  display: flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--color-school-subtle);
+  font-size: var(--text-school-label);
+  font-weight: 600;
+}
+.teacherAssignment {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 1rem;
+  padding: 0.875rem 1.5rem;
+  border-bottom: 1px solid var(--color-school-border);
+  font-size: var(--text-school-small);
+}
+.teacherAssignment:last-child {
+  border-bottom: 0;
+}
+.fieldGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.fieldSelect select[id] {
+  width: 100%;
+  appearance: none;
+  background: var(--color-school-surface);
+  border: 1.5px solid var(--color-school-border);
+  border-radius: var(--radius-school-control);
+  padding: 0 2.75rem 0 1rem;
+  color: var(--color-school-ink);
+  font-size: var(--text-school-body);
+}
+.fieldSelect select[id]:focus-visible {
+  outline: 2px solid var(--color-school-ink);
+  outline-offset: 2px;
+}
+.fieldSelect select[id][aria-invalid="true"] {
+  border-color: var(--color-school-error);
+}
+.fieldSelect {
+  position: relative;
+}
+.fieldSelect > span {
+  position: absolute;
+  top: 0.9375rem;
+  right: 1rem;
+  pointer-events: none;
+  display: flex;
+}
+.fieldDate {
+  position: relative;
+}
+.fieldDate > span {
+  position: absolute;
+  right: 1rem;
+  top: 0.9375rem;
+  pointer-events: none;
+  display: flex;
+}
+.fieldDate input {
+  padding-right: 2.75rem;
+}
+.fieldDate input::-webkit-calendar-picker-indicator {
+  opacity: 0;
+}
+.fieldHelp {
+  color: var(--color-school-secondary);
+  font-size: var(--text-school-label);
+  line-height: 1.4;
+}
+@media (max-width: 1023px) {
+  .gradeLayout {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+  .yearProgress {
+    width: 100%;
+  }
+}
+@media (max-width: 767px) {
+  .workspace {
+    min-height: calc(100dvh - 6rem);
+  }
+  .select {
+    width: 100%;
+  }
+  .fieldGrid {
+    grid-template-columns: 1fr;
+  }
+  .teacherAssignment {
+    grid-template-columns: 1fr;
+    gap: 0.375rem;
+  }
+}

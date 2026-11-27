@@ -1,152 +1,159 @@
 "use client";
-import { Input } from "@/components/ui/input";
-import { ButtonLink } from "@/components/ui/button";
-import { ProblemAlert } from "@/components/api/problem-alert";
+import { Button } from "@/components/ui/button";
+import { SchoolIcon } from "@/components/shared/school-icon";
 import { EmptyState } from "@/components/shared/empty-state";
-import {
-  SchoolPageHeading,
-  SchoolTabs,
-  SchoolFormFrame,
-  schoolSelectClass,
-} from "../../components/school-ui";
+import { ProblemAlert } from "@/components/api/problem-alert";
 import { useSchoolFeedback } from "../../hooks/use-school-feedback";
 import { useUnsavedChanges } from "@/features/platform/hooks/use-unsaved-changes";
-import { useAcademicWorkspace } from "../hooks/use-academic-workspace";
+import { useAcademicWorkspace, type AcademicDrawerKind } from "../hooks/use-academic-workspace";
 import { AcademicDirectory } from "./academic-directory";
 import { AcademicRecordForm } from "./academic-record-form";
-import type { AcademicStructureOverviewDto, MemberDto, ProblemDetails } from "@/lib/api/types";
+import { AcademicYearConfirmation } from "./academic-year-confirmation";
+import type { AcademicMember, AcademicSectionCapacity } from "../schemas/academic-view";
+import type { AcademicStructureOverviewDto, ProblemDetails } from "@/lib/api/types";
+import styles from "./academic.module.css";
 interface Props {
   path?: string[];
   initialOverview: AcademicStructureOverviewDto;
   initialProblem: ProblemDetails | null;
-  members: MemberDto[];
   csrfToken: string;
+  members: AcademicMember[];
+  canReadAcademic: boolean;
   canManageAcademic: boolean;
+  overviewAvailable: boolean;
+  canReadMembers: boolean;
+  membersAvailable: boolean;
+  canReadEnrollments: boolean;
+  initialSectionCapacities: AcademicSectionCapacity[] | null;
 }
-const tabs = [
-  { key: "years", label: "Años escolares" },
-  { key: "grades", label: "Grados y secciones" },
-  { key: "subjects", label: "Materias" },
-  { key: "assignments", label: "Carga docente" },
-].map((i) => ({ ...i, href: "/academic/" + i.key }));
-const titles: Record<string, string> = {
-  years: "Crear año escolar",
-  grades: "Registrar grado",
-  sections: "Crear sección",
-  subjects: "Registrar materia",
-  assignments: "Asignar docente",
+const views: Record<
+  string,
+  { title: string; description: string; create: string; kind: Exclude<AcademicDrawerKind, null> }
+> = {
+  years: {
+    title: "Años escolares",
+    description: "Define el período en el que se matricula y se califica.",
+    create: "Crear año escolar",
+    kind: "year",
+  },
+  grades: {
+    title: "Grados y secciones",
+    description: "Los grados oficiales y sus secciones por año escolar.",
+    create: "Registrar grado",
+    kind: "grade",
+  },
+  sections: {
+    title: "Grados y secciones",
+    description: "Los grados oficiales y sus secciones por año escolar.",
+    create: "Registrar grado",
+    kind: "section",
+  },
+  subjects: {
+    title: "Materias",
+    description: "El catálogo de asignaturas que se imparten en el colegio.",
+    create: "Registrar materia",
+    kind: "subject",
+  },
+  assignments: {
+    title: "Carga docente",
+    description: "Qué docente da cada materia en cada sección.",
+    create: "Asignar docente",
+    kind: "assignment",
+  },
 };
 export function AcademicWorkspace({
   path = ["academic", "years"],
   canManageAcademic,
   members,
+  canReadMembers,
+  membersAvailable,
   ...data
 }: Props) {
-  const s = useAcademicWorkspace(data),
-    view = path[1] ?? "years",
+  const view = path[1] ?? "years",
+    config = views[view] ?? views.years,
     creating = path[2] === "new";
+  const s = useAcademicWorkspace(data);
+  const manage = canManageAcademic && s.canReadAcademic && s.overviewAvailable;
+  const drawer = creating ? config.kind : s.openDrawer;
   useSchoolFeedback(s.feedback);
   useUnsavedChanges(
-    creating &&
+    Boolean(drawer) &&
       (s.yearForm.formState.isDirty ||
         s.gradeForm.formState.isDirty ||
         s.sectionForm.formState.isDirty ||
         s.subjectForm.formState.isDirty ||
         s.assignmentForm.formState.isDirty),
   );
-  const error = s.problem ? (
-    <ProblemAlert problem={s.problem} />
-  ) : s.feedback?.tone === "error" ? (
-    <p role="alert" className="mb-4 rounded-lg bg-red-50 p-4 text-xs text-red-800">
-      {s.feedback.title} · {s.feedback.detail}
-    </p>
-  ) : null;
-  if (creating)
-    return (
-      <>
-        {error}
-        {canManageAcademic ? (
-          <SchoolFormFrame
-            title={titles[view]}
-            description="Organiza la estructura del colegio con datos propios de esta institución."
-            back={"/academic/" + (view === "sections" ? "grades" : view)}
-          >
-            <AcademicRecordForm kind={view} state={s} members={members} />
-          </SchoolFormFrame>
-        ) : (
-          <EmptyState title="No tienes permiso para modificar la estructura académica" />
-        )}
-      </>
-    );
+  const problem =
+    s.problem ??
+    (s.feedback?.tone === "error"
+      ? { title: s.feedback.title, status: s.feedback.status ?? 500, detail: s.feedback.detail }
+      : null);
   return (
-    <>
-      {error}
-      <SchoolPageHeading
-        onRefresh={s.handleRefresh}
-        refreshing={s.isPending}
-        title="Organización académica"
-        description="Configura la estructura del colegio antes de matricular y asignar docentes."
-        actions={
-          canManageAcademic ? (
-            <ButtonLink href={"/academic/" + view + "/new"}>{titles[view]}</ButtonLink>
-          ) : undefined
-        }
-      />
-      <SchoolTabs items={tabs} active={view} />
-      {["grades", "assignments"].includes(view) && (
-        <div className="mb-5 max-w-60">
-          <label
-            className="text-muted mb-2 block text-xs font-semibold"
-            htmlFor="academic-year-view"
-          >
-            Año escolar
-          </label>
-          <select
-            id="academic-year-view"
-            className={schoolSelectClass}
-            value={s.selectedAcademicYearId}
-            onChange={(e) => s.setSelectedAcademicYearId(e.target.value)}
-          >
-            <option value="all">Todos los años</option>
-            {s.overview.academicYears.map((y) => (
-              <option key={y.id} value={y.id}>
-                {y.code}
-              </option>
-            ))}
-          </select>
+    <div className={styles.workspace} aria-busy={s.isPending}>
+      <header className="flex flex-wrap items-center gap-4">
+        <div className="min-w-0 basis-full lg:flex-1 lg:basis-0">
+          <h1 className="text-school-page">{config.title}</h1>
+          <p className="text-school-body text-school-secondary mt-1.5">{config.description}</p>
         </div>
-      )}
-      {view === "subjects" && (
-        <div className="mb-5 max-w-sm">
-          <Input
-            aria-label="Buscar materias"
-            placeholder="Buscar código o nombre de materia"
-            value={s.subjectSearchQuery}
-            onChange={(e) => s.setSubjectSearchQuery(e.target.value)}
+        <Button variant="outline" disabled={s.isPending} onClick={s.handleRefresh}>
+          <SchoolIcon name="refresh" />
+          {s.isPending ? "Actualizando…" : "Actualizar"}
+        </Button>
+        {manage && (
+          <Button onClick={() => s.toggleDrawer(config.kind)}>
+            <SchoolIcon name="plus" />
+            {config.create}
+          </Button>
+        )}
+      </header>
+      {problem && <ProblemAlert problem={problem} />}
+      {!s.overviewAvailable ? (
+        <section className={styles.surface}>
+          <EmptyState
+            variant="school"
+            title={
+              problem
+                ? "No se pudo cargar la información"
+                : !s.canReadAcademic
+                  ? "Sin permiso para consultar la estructura académica"
+                  : "Información no disponible"
+            }
+            description={
+              problem
+                ? "Vuelve a intentarlo para obtener los registros del colegio."
+                : "Tu equipo de administración puede revisar los accesos de tu cuenta."
+            }
+            action={
+              problem ? (
+                <Button variant="outline" disabled={s.isPending} onClick={s.handleRefresh}>
+                  Reintentar
+                </Button>
+              ) : undefined
+            }
           />
-        </div>
+        </section>
+      ) : creating && !manage ? (
+        <section className={styles.surface}>
+          <EmptyState
+            variant="school"
+            title="Sin permiso para modificar la estructura académica"
+            description="Tu cuenta necesita permiso de gestión y el módulo habilitado para crear registros."
+          />
+        </section>
+      ) : (
+        <AcademicDirectory view={view} state={s} canManage={manage} />
       )}
-      {view === "grades" && (
-        <div className="mb-5 max-w-60">
-          <label className="text-muted mb-2 block text-xs font-semibold" htmlFor="grade-view">
-            Grado
-          </label>
-          <select
-            id="grade-view"
-            className={schoolSelectClass}
-            value={s.selectedGradeLevelId}
-            onChange={(e) => s.setSelectedGradeLevelId(e.target.value)}
-          >
-            <option value="all">Todos los grados</option>
-            {s.overview.gradeLevels.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.displayName}
-              </option>
-            ))}
-          </select>
-        </div>
+      {drawer && manage && (
+        <AcademicRecordForm
+          kind={drawer}
+          state={s}
+          members={members}
+          canReadMembers={canReadMembers}
+          membersAvailable={membersAvailable}
+        />
       )}
-      <AcademicDirectory view={view} state={s} canManage={canManageAcademic} />
-    </>
+      {s.confirmation && manage && <AcademicYearConfirmation state={s} />}
+    </div>
   );
 }

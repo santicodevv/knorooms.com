@@ -1,0 +1,194 @@
+.workspace {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--spacing-school-unit) * 6);
+  min-height: calc(100dvh - var(--spacing-school-content-y) * 2);
+}
+.content {
+  --enrollment-sections-width: 21.25rem;
+  display: grid;
+  grid-template-columns: var(--enrollment-sections-width) minmax(0, 1fr);
+  flex: 1;
+  gap: calc(var(--spacing-school-unit) * 4);
+  min-height: 32rem;
+}
+.panel {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius-school-card);
+  background: var(--color-school-surface);
+}
+.sectionsHeader,
+.rosterHeader {
+  border-bottom: 1px solid var(--color-school-border);
+  padding: calc(var(--spacing-school-unit) * 4.5) calc(var(--spacing-school-unit) * 5);
+}
+.sectionsTitle,
+.rosterTitle {
+  color: var(--color-school-ink);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.005em;
+}
+.rosterTitle {
+  font-size: 1.125rem;
+}
+.description {
+  margin-top: 0.125rem;
+  color: var(--color-school-secondary);
+  font-size: var(--text-school-small);
+  line-height: 1.3;
+}
+.sectionList {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--spacing-school-unit) * 2);
+  padding: calc(var(--spacing-school-unit) * 3);
+}
+.section {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: calc(var(--spacing-school-unit) * 2.5);
+  border: 1.5px solid transparent;
+  border-radius: 0.75rem;
+  padding: calc(var(--spacing-school-unit) * 3.5);
+  font-size: var(--text-school-button);
+  line-height: 1.3;
+  color: var(--color-school-ink);
+}
+.section:hover {
+  background: var(--color-school-app);
+}
+.sectionSelected {
+  border-color: var(--color-school-ink);
+  background: var(--color-school-app);
+}
+.progress {
+  width: 100%;
+  height: calc(var(--spacing-school-unit) * 1.5);
+  overflow: hidden;
+  border: 0;
+  border-radius: calc(var(--spacing-school-unit) * 0.75);
+  background: var(--color-school-border);
+}
+.progress::-webkit-progress-bar {
+  background: var(--color-school-border);
+}
+.progress::-webkit-progress-value {
+  background: var(--color-school-ink);
+}
+.progress::-moz-progress-bar {
+  background: var(--color-school-ink);
+}
+.rosterHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(var(--spacing-school-unit) * 3);
+  padding-inline: calc(var(--spacing-school-unit) * 6);
+}
+.search {
+  position: relative;
+  width: 16.25rem;
+  max-width: 100%;
+}
+.search input {
+  height: 2.625rem;
+  min-height: 0;
+  border: 0;
+  padding-left: 2.5rem;
+  background: var(--color-school-app);
+  font-size: var(--text-school-small);
+}
+.searchIcon {
+  position: absolute;
+  z-index: 1;
+  left: 0.875rem;
+  top: 0.8125rem;
+}
+.year {
+  display: flex;
+  min-height: 2.75rem;
+  max-width: 100%;
+  align-items: center;
+  gap: 0.625rem;
+  border: 1.5px solid var(--color-school-border);
+  border-radius: var(--radius-school-control);
+  padding-inline: 1rem;
+  background: var(--color-school-surface);
+  color: var(--color-school-secondary);
+  font-size: var(--text-school-small);
+}
+.year select {
+  min-width: 0;
+  appearance: none;
+  background: transparent;
+  font-size: var(--text-school-button);
+  font-weight: 600;
+  color: var(--color-school-ink);
+}
+.selectWrap,
+.fieldIcon,
+.readonlyField {
+  position: relative;
+  width: 100%;
+}
+.fieldIcon > span {
+  position: absolute;
+  z-index: 1;
+  left: 1rem;
+  top: 0.9375rem;
+}
+.fieldIcon input {
+  padding-left: 2.75rem;
+}
+.selectWrap .select {
+  width: 100%;
+  min-width: 0;
+  appearance: none;
+  border: 1.5px solid var(--color-school-border);
+  border-radius: var(--radius-school-control);
+  padding: 0 2.75rem 0 1rem;
+  background: var(--color-school-surface);
+  color: var(--color-school-ink);
+  font-size: var(--text-school-body);
+}
+.selectIcon,
+.readonlyField > span {
+  position: absolute;
+  right: 1rem;
+  top: 0.9375rem;
+  pointer-events: none;
+}
+.readonlyField input {
+  padding-right: 2.75rem;
+  font-size: var(--text-school-small);
+}
+@media (max-width: 1199px) {
+  .content {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 767px) {
+  .workspace {
+    min-height: calc(100dvh - 6rem);
+  }
+  .content {
+    min-height: 0;
+  }
+  .rosterHeader {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .search {
+    width: 100%;
+  }
+  .panel {
+    min-height: 15rem;
+  }
+}

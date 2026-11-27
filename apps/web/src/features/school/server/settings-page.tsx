@@ -5,7 +5,7 @@ import {
   type EditablePermission,
 } from "../components/role-permissions-editor";
 import Link from "next/link";
-import { SchoolShell } from "@/components/school/school-shell";
+import { SchoolPageAccess } from "@/components/school/school-page-access";
 import { Badge } from "@/components/ui/badge";
 import { SchoolPageHeading, SchoolPanel } from "../components/school-ui";
 import { getSchoolContext, getSchoolCapabilities } from "./school-context";
@@ -24,7 +24,7 @@ export async function SchoolSettingsPage({ moodle = false }: { moodle?: boolean 
       ])
     : [null, null];
   return (
-    <SchoolShell
+    <SchoolPageAccess
       {...data}
       activeTab={moodle ? "moodle" : "settings"}
       returnTo={moodle ? "/moodle" : "/settings"}
@@ -131,6 +131,6 @@ export async function SchoolSettingsPage({ moodle = false }: { moodle?: boolean 
           )}
         </>
       )}
-    </SchoolShell>
+    </SchoolPageAccess>
   );
 }

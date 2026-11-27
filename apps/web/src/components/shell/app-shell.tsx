@@ -2,11 +2,20 @@ import { AppSidebar, type AppSidebarProps } from "@/components/shell/app-sidebar
 
 export interface AppShellProps {
   sidebar: AppSidebarProps;
-  topbar: React.ReactNode;
+  topbar?: React.ReactNode;
   children: React.ReactNode;
 }
 
 export function AppShell({ sidebar, topbar, children }: AppShellProps) {
+  if (sidebar.variant === "school")
+    return (
+      <div className="bg-school-app min-h-dvh">
+        <AppSidebar {...sidebar} />
+        <main className="md:ml-school-sidebar md:px-school-content-x md:py-school-content-y px-4 pt-18 pb-6">
+          {children}
+        </main>
+      </div>
+    );
   return (
     <div className="bg-canvas min-h-dvh">
       <AppSidebar {...sidebar} />

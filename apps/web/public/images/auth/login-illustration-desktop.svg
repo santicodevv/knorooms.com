@@ -1,0 +1,38 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="560" height="360" viewBox="0 0 560 360" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Illustration">
+<line id="Line" x1="21.5" y1="328.5" x2="538.5" y2="328.5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke="black"/>
+<mask id="stroke0_0_6" fill="white">
+<path d="M130 180H430V330H130V180Z"/>
+</mask>
+<rect id="Rectangle" x="130" y="180" width="300" height="150" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" stroke="black" mask="url(#stroke0_0_6)"/>
+<mask id="stroke1_0_6" fill="white">
+<path d="M280 90L427.224 157.5H132.776L280 90Z"/>
+</mask>
+<path id="Polygon" d="M280 90L427.224 157.5H132.776L280 90Z" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" stroke="black" mask="url(#stroke1_0_6)"/>
+<circle id="Ellipse" cx="280" cy="142" r="15.5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke="black"/>
+<line id="Line_2" x1="111.5" y1="340.5" x2="448.5" y2="340.5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke="black"/>
+<line id="Line_3" x1="91.5" y1="352.5" x2="468.5" y2="352.5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke="black"/>
+<path id="Polygon_2" d="M281 41L255.5 50.5263V31.4737L281 41Z" fill="black"/>
+<mask id="stroke2_0_6" fill="white">
+<path d="M500 210L513.156 214.788L478.954 308.758L465.798 303.969L500 210Z"/>
+</mask>
+<path id="Rectangle_2" d="M500 210L513.156 214.788L478.954 308.758L465.798 303.969L500 210Z" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" stroke="black" mask="url(#stroke2_0_6)"/>
+<mask id="stroke3_0_6" fill="white">
+<path d="M453.422 309.606L452.343 294.847L463.736 298.993L453.422 309.606Z"/>
+</mask>
+<path id="Polygon_3" d="M453.422 309.606L452.343 294.847L463.736 298.993L453.422 309.606Z" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" stroke="black" mask="url(#stroke3_0_6)"/>
+<rect id="Rectangle_3" x="25.5" y="315.5" width="77" height="13" rx="1.5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke="black"/>
+<rect id="Rectangle_4" x="31.5" y="301.5" width="63" height="11" rx="1.5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke="black"/>
+<path id="Star" d="M82 120L84.1213 129.879L94 132L84.1213 134.121L82 144L79.8787 134.121L70 132L79.8787 129.879L82 120Z" fill="black"/>
+<path id="Star_2" d="M512 120L514.121 129.879L524 132L514.121 134.121L512 144L509.879 134.121L500 132L509.879 129.879L512 120Z" fill="black"/>
+<path id="Star_3" d="M52 230L54.1213 239.879L64 242L54.1213 244.121L52 254L49.8787 244.121L40 242L49.8787 239.879L52 230Z" fill="black"/>
+<rect id="Rectangle_5" x="181.5" y="206.5" width="17" height="107" stroke-width="3" stroke-linecap="round" stroke="black"/>
+<rect id="Rectangle_6" x="221.5" y="206.5" width="17" height="107" stroke-width="3" stroke-linecap="round" stroke="black"/>
+<rect id="Rectangle_7" x="321.5" y="206.5" width="17" height="107" stroke-width="3" stroke-linecap="round" stroke="black"/>
+<rect id="Rectangle_8" x="361.5" y="206.5" width="17" height="107" stroke-width="3" stroke-linecap="round" stroke="black"/>
+<path id="Rectangle_9" d="M256 292C256 278.745 266.745 268 280 268V268C293.255 268 304 278.745 304 292V330H256V292Z" fill="black"/>
+<rect id="Pole" x="278.5" y="28" width="3" height="62" fill="black"/>
+<rect id="Rectangle_10" x="278.75" y="133" width="2.5" height="10" fill="black"/>
+<rect id="Rectangle_11" x="279" y="141" width="8" height="2.5" fill="black"/>
+</g>
+</svg>

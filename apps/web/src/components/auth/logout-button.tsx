@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 
 interface LogoutButtonProps {
   csrfToken: string;
+  className?: string;
 }
 
-export function LogoutButton({ csrfToken }: LogoutButtonProps) {
+export function LogoutButton({ csrfToken, className }: LogoutButtonProps) {
   const [loading, setLoading] = useState(false);
 
   async function handleLogout() {
@@ -40,7 +41,14 @@ export function LogoutButton({ csrfToken }: LogoutButtonProps) {
   }
 
   return (
-    <Button type="button" variant="outline" size="sm" onClick={handleLogout} disabled={loading}>
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      className={className}
+      onClick={handleLogout}
+      disabled={loading}
+    >
       <LogOut className="size-4" />
       {loading ? "Cerrando sesión..." : "Cerrar sesión"}
     </Button>

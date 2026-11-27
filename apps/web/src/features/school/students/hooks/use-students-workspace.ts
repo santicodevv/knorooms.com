@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { filterStudents } from "../schemas/student-directory";
 import {
   activateStudent,
   createGuardian,
@@ -46,6 +47,8 @@ export interface StudentsFeedbackState {
   tone: "success" | "error";
   title: string;
   detail?: string;
+  studentId?: string;
+  status?: number;
 }
 
 interface UseStudentsWorkspaceParams {
@@ -54,6 +57,10 @@ interface UseStudentsWorkspaceParams {
   initialProblem: ProblemDetails | null;
   csrfToken: string;
   studentId?: string;
+  canReadStudents?: boolean;
+  canReadEnrollments?: boolean;
+  directoryAvailable?: boolean;
+  enrollmentsAvailable?: boolean;
 }
 
 export function useStudentsWorkspace({
@@ -62,6 +69,10 @@ export function useStudentsWorkspace({
   initialProblem,
   csrfToken,
   studentId,
+  canReadStudents = false,
+  canReadEnrollments = false,
+  directoryAvailable: initialDirectoryAvailable = false,
+  enrollmentsAvailable: initialEnrollmentsAvailable = false,
 }: UseStudentsWorkspaceParams) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -87,6 +98,13 @@ export function useStudentsWorkspace({
   );
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [directoryAvailable, setDirectoryAvailable] = useState(initialDirectoryAvailable);
+  const [enrollmentsAvailable, setEnrollmentsAvailable] = useState(initialEnrollmentsAvailable);
+  const [confirmation, setConfirmation] = useState<
+    | { kind: "student"; id: string; name: string; active: boolean }
+    | { kind: "withdraw"; id: string; name: string }
+    | null
+  >(null);
 
   useEffect(() => {
     if (window.location.pathname !== "/students") return;
@@ -127,10 +145,10 @@ export function useStudentsWorkspace({
   const linkGuardianForm = useForm<LinkStudentGuardianFormValues>({
     resolver: zodResolver(linkStudentGuardianSchema),
     defaultValues: {
-      guardianId: initialDirectory.guardians[0]?.id ?? "",
+      guardianId: "",
       relationshipType: "Madre",
       hasAcademicAccess: true,
-      hasFinancialResponsibility: true,
+      hasFinancialResponsibility: false,
       hasPickupAuthorization: true,
     },
   });
@@ -152,51 +170,37 @@ export function useStudentsWorkspace({
 
   const refreshAll = useCallback(async () => {
     const [dirRes, enrRes] = await Promise.all([
-      fetchStudentDirectoryOverview(),
-      fetchEnrollmentsOverview(),
+      canReadStudents ? fetchStudentDirectoryOverview() : Promise.resolve(null),
+      canReadEnrollments ? fetchEnrollmentsOverview() : Promise.resolve(null),
     ]);
-
-    if (dirRes.ok) {
+    setProblem(null);
+    if (dirRes?.ok) {
       setDirectory(dirRes.data);
-      setProblem(null);
-    } else {
+      setDirectoryAvailable(true);
+    } else if (dirRes) {
       setProblem(dirRes.problem);
+      setDirectoryAvailable(false);
     }
-
-    if (enrRes.ok) {
+    if (enrRes?.ok) {
       setEnrollmentsOverview(enrRes.data);
+      setEnrollmentsAvailable(true);
+    } else if (enrRes) {
+      setProblem(enrRes.problem);
+      setEnrollmentsAvailable(false);
     }
-  }, []);
+  }, [canReadStudents, canReadEnrollments]);
 
   const handleRefresh = useCallback(() => {
     startTransition(async () => {
-      await refreshAll();
+      if (canReadStudents || canReadEnrollments) await refreshAll();
+      router.refresh();
     });
-  }, [refreshAll]);
+  }, [canReadStudents, canReadEnrollments, refreshAll, router]);
 
-  const filteredStudents = useMemo(() => {
-    const query = studentSearchQuery.trim().toLowerCase();
-
-    return directory.students.filter((student) => {
-      if (studentStatusFilter === "inactive" && student.isActive) return false;
-      if (studentStatusFilter === "active" && !student.isActive) {
-        return false;
-      }
-      if (studentStatusFilter === "unassigned" && student.latestEnrollment?.status === "Active") {
-        return false;
-      }
-
-      if (!query) {
-        return true;
-      }
-
-      return (
-        student.studentCode.toLowerCase().includes(query) ||
-        student.fullName.toLowerCase().includes(query) ||
-        (student.sigerdExternalId?.toLowerCase().includes(query) ?? false)
-      );
-    });
-  }, [directory.students, studentSearchQuery, studentStatusFilter]);
+  const filteredStudents = useMemo(
+    () => filterStudents(directory.students, studentSearchQuery, studentStatusFilter),
+    [directory.students, studentSearchQuery, studentStatusFilter],
+  );
 
   const selectedStudent = useMemo(() => {
     if (selectedStudentId) {
@@ -205,8 +209,8 @@ export function useStudentsWorkspace({
         return match;
       }
     }
-    return filteredStudents[0] ?? directory.students[0] ?? null;
-  }, [directory.students, filteredStudents, selectedStudentId]);
+    return studentId ? null : (filteredStudents[0] ?? directory.students[0] ?? null);
+  }, [directory.students, filteredStudents, selectedStudentId, studentId]);
 
   const filteredEnrollments = useMemo(() => {
     if (selectedSectionFilterId === "all") {
@@ -228,15 +232,10 @@ export function useStudentsWorkspace({
             enrollForm.setValue("sectionId", availableSections[0].sectionId);
           }
         }
-        if (next === "link-guardian" && directory.guardians[0]?.id) {
-          if (!linkGuardianForm.getValues("guardianId")) {
-            linkGuardianForm.setValue("guardianId", directory.guardians[0].id);
-          }
-        }
         return next;
       });
     },
-    [availableSections, directory.guardians, enrollForm, linkGuardianForm, selectedStudent],
+    [availableSections, enrollForm, selectedStudent],
   );
 
   const openQuickEnrollForStudent = useCallback(
@@ -282,10 +281,12 @@ export function useStudentsWorkspace({
       );
 
       if (result.ok) {
+        setConfirmation(null);
         setFeedback({
           tone: "success",
           title: `Expediente ${result.data.studentCode} creado`,
           detail: `${result.data.fullName} quedó registrado en el padrón permanente del colegio.`,
+          studentId: result.data.id,
         });
         setSelectedStudentId(result.data.id);
         setOpenDrawer(null);
@@ -297,11 +298,13 @@ export function useStudentsWorkspace({
           sigerdExternalId: "",
         });
         await refreshAll();
-        router.push("/students/" + result.data.id);
+        if (window.location.pathname.endsWith("/new"))
+          router.replace("/students?created=" + result.data.id);
       } else {
         setFeedback({
           tone: "error",
           title: result.problem.title,
+          status: result.problem.status,
           detail: result.problem.detail,
         });
       }
@@ -310,12 +313,6 @@ export function useStudentsWorkspace({
 
   const handleToggleStudentActive = useCallback(
     (studentId: string, studentCode: string, currentlyActive: boolean) => {
-      if (
-        !window.confirm(
-          `¿${currentlyActive ? "Desactivar" : "Activar"} el expediente ${studentCode}?`,
-        )
-      )
-        return;
       setFeedback(null);
       setActionLoadingId(studentId);
       startTransition(async () => {
@@ -325,6 +322,7 @@ export function useStudentsWorkspace({
         setActionLoadingId(null);
 
         if (result.ok) {
+          setConfirmation(null);
           setFeedback({
             tone: "success",
             title: currentlyActive
@@ -339,6 +337,7 @@ export function useStudentsWorkspace({
           setFeedback({
             tone: "error",
             title: result.problem.title,
+            status: result.problem.status,
             detail: result.problem.detail,
           });
         }
@@ -360,6 +359,7 @@ export function useStudentsWorkspace({
       );
 
       if (result.ok) {
+        setConfirmation(null);
         setFeedback({
           tone: "success",
           title: "Responsable familiar registrado",
@@ -374,6 +374,7 @@ export function useStudentsWorkspace({
         setFeedback({
           tone: "error",
           title: result.problem.title,
+          status: result.problem.status,
           detail: result.problem.detail,
         });
       }
@@ -388,6 +389,7 @@ export function useStudentsWorkspace({
     startTransition(async () => {
       const result = await linkStudentGuardian(selectedStudent.id, values, csrfToken);
       if (result.ok) {
+        setConfirmation(null);
         setFeedback({
           tone: "success",
           title: "Vínculo familiar establecido",
@@ -399,6 +401,7 @@ export function useStudentsWorkspace({
         setFeedback({
           tone: "error",
           title: result.problem.title,
+          status: result.problem.status,
           detail: result.problem.detail,
         });
       }
@@ -410,6 +413,7 @@ export function useStudentsWorkspace({
     startTransition(async () => {
       const result = await enrollStudent(values, csrfToken);
       if (result.ok) {
+        setConfirmation(null);
         setFeedback({
           tone: "success",
           title: `Matrícula confirmada en ${result.data.gradeLevelCode}-${result.data.sectionCode}`,
@@ -421,6 +425,7 @@ export function useStudentsWorkspace({
         setFeedback({
           tone: "error",
           title: result.problem.title,
+          status: result.problem.status,
           detail: result.problem.detail,
         });
       }
@@ -435,6 +440,7 @@ export function useStudentsWorkspace({
     startTransition(async () => {
       const result = await transferStudentSection(transferringEnrollment.id, values, csrfToken);
       if (result.ok) {
+        setConfirmation(null);
         setFeedback({
           tone: "success",
           title: "Traslado de sección completado",
@@ -447,6 +453,7 @@ export function useStudentsWorkspace({
         setFeedback({
           tone: "error",
           title: result.problem.title,
+          status: result.problem.status,
           detail: result.problem.detail,
         });
       }
@@ -455,12 +462,6 @@ export function useStudentsWorkspace({
 
   const handleWithdrawEnrollment = useCallback(
     (enrollmentId: string, studentFullName: string) => {
-      if (
-        !window.confirm(
-          `¿Retirar la matrícula de ${studentFullName}? Se liberará su cupo y se conservará el historial.`,
-        )
-      )
-        return;
       setFeedback(null);
       setActionLoadingId(enrollmentId);
       startTransition(async () => {
@@ -468,6 +469,7 @@ export function useStudentsWorkspace({
         setActionLoadingId(null);
 
         if (result.ok) {
+          setConfirmation(null);
           setFeedback({
             tone: "success",
             title: "Matrícula retirada",
@@ -478,6 +480,7 @@ export function useStudentsWorkspace({
           setFeedback({
             tone: "error",
             title: result.problem.title,
+            status: result.problem.status,
             detail: result.problem.detail,
           });
         }
@@ -512,7 +515,45 @@ export function useStudentsWorkspace({
     };
   }, [directory.guardians.length, directory.students, enrollmentsOverview]);
 
+  const confirmationEnrollment =
+    confirmation?.kind === "withdraw"
+      ? enrollmentsOverview.enrollments.find((item) => item.id === confirmation.id)
+      : undefined;
+  const confirmationStudent =
+    confirmation?.kind === "student"
+      ? directory.students.find((item) => item.id === confirmation.id)
+      : undefined;
+  const confirmationContext = confirmationEnrollment
+    ? `${confirmationEnrollment.gradeLevelName} ${confirmationEnrollment.sectionCode} · ${confirmationEnrollment.academicYearCode}`
+    : (confirmationStudent?.studentCode ?? null);
+
   return {
+    directoryAvailable,
+    enrollmentsAvailable,
+    canReadStudents,
+    canReadEnrollments,
+    confirmation,
+    confirmationContext,
+    createdStudent: directory.students.find(
+      (student) => student.id === (feedback?.studentId ?? searchParams.get("created")),
+    ),
+    closeConfirmation: () => {
+      if (!isPending) setConfirmation(null);
+    },
+    confirmAction: () => {
+      if (!confirmation || isPending) return;
+      if (confirmation.kind === "student")
+        handleToggleStudentActive(confirmation.id, confirmation.name, confirmation.active);
+      else handleWithdrawEnrollment(confirmation.id, confirmation.name);
+    },
+    closeCreatePanel: () => {
+      if (isPending) return;
+      setOpenDrawer(null);
+      if (window.location.pathname.endsWith("/new"))
+        router.replace(
+          window.location.pathname.startsWith("/guardians") ? "/guardians" : "/students",
+        );
+    },
     directory,
     enrollmentsOverview,
     availableSections,
@@ -542,8 +583,10 @@ export function useStudentsWorkspace({
     isPending,
     actionLoadingId,
     handleRefresh,
-    handleToggleStudentActive,
-    handleWithdrawEnrollment,
+    handleToggleStudentActive: (id: string, name: string, active: boolean) =>
+      setConfirmation({ kind: "student", id, name, active }),
+    handleWithdrawEnrollment: (id: string, name: string) =>
+      setConfirmation({ kind: "withdraw", id, name }),
     studentForm,
     submitCreateStudent,
     guardianForm,

@@ -1,9 +1,8 @@
 "use client";
-
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useMemo, useState, useTransition } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import {
   assignTeacher,
   closeAcademicYear,
@@ -13,7 +12,7 @@ import {
   createSubject,
   fetchAcademicOverview,
   reopenAcademicYear,
-} from "@/features/school/academic/api/academic-api";
+} from "../api/academic-api";
 import {
   assignTeacherSchema,
   createAcademicYearSchema,
@@ -25,353 +24,252 @@ import {
   type CreateGradeLevelFormValues,
   type CreateSchoolSectionFormValues,
   type CreateSubjectFormValues,
-} from "@/features/school/academic/schemas/academic-schemas";
-import type { AcademicStructureOverviewDto, ProblemDetails } from "@/lib/api/types";
+} from "../schemas/academic-schemas";
+import {
+  filterAcademicSubjects,
+  groupTeacherAssignments,
+  selectAcademicSections,
+  type AcademicSectionCapacity,
+} from "../schemas/academic-view";
+import type { AcademicStructureOverviewDto, ApiResult, ProblemDetails } from "@/lib/api/types";
 
 export type AcademicWorkspaceView = "grades-sections" | "years" | "subjects" | "assignments";
-
 export type AcademicDrawerKind = "year" | "grade" | "section" | "subject" | "assignment" | null;
-
 export interface AcademicFeedbackState {
   tone: "success" | "error";
   title: string;
   detail?: string;
+  status?: number;
 }
-
 interface UseAcademicWorkspaceParams {
   initialOverview: AcademicStructureOverviewDto;
   initialProblem: ProblemDetails | null;
   csrfToken: string;
+  canReadAcademic?: boolean;
+  overviewAvailable?: boolean;
+  initialSectionCapacities?: AcademicSectionCapacity[] | null;
 }
-
 export function useAcademicWorkspace({
   initialOverview,
   initialProblem,
   csrfToken,
+  canReadAcademic = false,
+  overviewAvailable: initialAvailable = false,
+  initialSectionCapacities = null,
 }: UseAcademicWorkspaceParams) {
   const router = useRouter();
-  const [overview, setOverview] = useState<AcademicStructureOverviewDto>(initialOverview);
-  const [problem, setProblem] = useState<ProblemDetails | null>(initialProblem);
+  const [overview, setOverview] = useState(initialOverview);
+  const [overviewAvailable, setOverviewAvailable] = useState(initialAvailable);
+  const [problem, setProblem] = useState(initialProblem);
   const [feedback, setFeedback] = useState<AcademicFeedbackState | null>(null);
-  const [activeView, setActiveView] = useState<AcademicWorkspaceView>("grades-sections");
+  const [activeView, setActiveView] = useState<AcademicWorkspaceView>("years");
   const [openDrawer, setOpenDrawer] = useState<AcademicDrawerKind>(null);
   const [subjectSearchQuery, setSubjectSearchQuery] = useState("");
-  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [assignmentView, setAssignmentView] = useState("section");
+  const [confirmation, setConfirmation] = useState<{
+    id: string;
+    code: string;
+    closed: boolean;
+  } | null>(null);
   const [isPending, startTransition] = useTransition();
-
-  const defaultAcademicYearId = useMemo(() => {
-    const openYear = overview.academicYears.find((year) => !year.isClosed);
-    return openYear?.id ?? overview.academicYears[0]?.id ?? "";
-  }, [overview.academicYears]);
-
-  const [selectedAcademicYearId, setSelectedAcademicYearId] = useState<string>(
-    () => defaultAcademicYearId || "all",
+  const defaultYear =
+    initialOverview.academicYears.find((item) => !item.isClosed)?.id ??
+    initialOverview.academicYears[0]?.id ??
+    "";
+  const [selectedAcademicYearId, setSelectedAcademicYearId] = useState(defaultYear);
+  const [selectedGradeLevelId, setSelectedGradeLevelId] = useState(
+    initialOverview.gradeLevels[0]?.id ?? "",
   );
-  const [selectedGradeLevelId, setSelectedGradeLevelId] = useState<string>("all");
-
+  const [gradeFilterId, setGradeFilterId] = useState("all");
   const yearForm = useForm<CreateAcademicYearFormValues>({
     resolver: zodResolver(createAcademicYearSchema),
-    defaultValues: {
-      code: "2026-2027",
-      name: "Año Escolar 2026-2027",
-      startDate: "2026-08-24",
-      endDate: "2027-06-25",
-    },
+    defaultValues: { code: "", name: "", startDate: "", endDate: "" },
   });
-
   const gradeForm = useForm<CreateGradeLevelFormValues>({
     resolver: zodResolver(createGradeLevelSchema),
-    defaultValues: {
-      stage: "Secondary",
-      officialGradeNumber: 7,
-      code: "S1",
-      displayName: "1.º de Secundaria",
-    },
+    defaultValues: { stage: undefined, officialGradeNumber: undefined, code: "", displayName: "" },
   });
-
   const sectionForm = useForm<CreateSchoolSectionFormValues>({
     resolver: zodResolver(createSchoolSectionSchema),
     defaultValues: {
-      academicYearId: defaultAcademicYearId,
-      gradeLevelId: overview.gradeLevels[0]?.id ?? "",
-      code: "A",
+      academicYearId: defaultYear,
+      gradeLevelId: initialOverview.gradeLevels[0]?.id ?? "",
+      code: "",
       shift: "Morning",
-      capacity: 30,
+      capacity: undefined,
     },
   });
-
   const subjectForm = useForm<CreateSubjectFormValues>({
     resolver: zodResolver(createSubjectSchema),
-    defaultValues: {
-      code: "",
-      name: "",
-    },
+    defaultValues: { code: "", name: "" },
   });
-
   const assignmentForm = useForm<AssignTeacherFormValues>({
     resolver: zodResolver(assignTeacherSchema),
     defaultValues: {
-      sectionId: overview.sections[0]?.id ?? "",
-      subjectId: overview.subjects[0]?.id ?? "",
+      sectionId: "",
+      subjectId: "",
       teacherMembershipId: "",
-      weeklyHours: 4,
+      weeklyHours: undefined,
     },
   });
-
-  useEffect(() => {
-    const activeYearId =
-      selectedAcademicYearId !== "all" ? selectedAcademicYearId : defaultAcademicYearId;
-    if (activeYearId) {
-      sectionForm.setValue("academicYearId", activeYearId);
-    }
-  }, [defaultAcademicYearId, sectionForm, selectedAcademicYearId]);
-
-  useEffect(() => {
-    if (selectedGradeLevelId !== "all") {
-      sectionForm.setValue("gradeLevelId", selectedGradeLevelId);
-    } else if (overview.gradeLevels[0]?.id && !sectionForm.getValues("gradeLevelId")) {
-      sectionForm.setValue("gradeLevelId", overview.gradeLevels[0].id);
-    }
-  }, [overview.gradeLevels, sectionForm, selectedGradeLevelId]);
-
+  const gradeStage = useWatch({ control: gradeForm.control, name: "stage" });
   const refresh = useCallback(async () => {
+    if (!canReadAcademic) {
+      router.refresh();
+      return;
+    }
     const result = await fetchAcademicOverview();
     if (result.ok) {
       setOverview(result.data);
+      setOverviewAvailable(true);
       setProblem(null);
     } else {
-      setProblem(result.problem);
+      setProblem({ ...result.problem, status: result.status });
+      setOverviewAvailable(false);
     }
-  }, []);
-
-  const handleRefresh = useCallback(() => {
+  }, [canReadAcademic, router]);
+  const handleRefresh = () =>
     startTransition(async () => {
       await refresh();
+      router.refresh();
     });
-  }, [refresh]);
-
-  const toggleDrawer = useCallback((drawer: Exclude<AcademicDrawerKind, null>) => {
+  function closeDrawer() {
+    if (isPending) return;
+    setOpenDrawer(null);
+    if (window.location.pathname.endsWith("/new")) {
+      const area = window.location.pathname.split("/")[2];
+      router.replace("/academic/" + (area === "sections" ? "grades" : area));
+    }
+  }
+  const toggleDrawer = (drawer: Exclude<AcademicDrawerKind, null>) => {
     setFeedback(null);
-    setOpenDrawer((current) => (current === drawer ? null : drawer));
-  }, []);
-
-  const submitCreateYear = yearForm.handleSubmit((values) => {
+    if (drawer === "section") {
+      sectionForm.setValue(
+        "academicYearId",
+        selectedAcademicYearId === "all"
+          ? (overview.academicYears.find((item) => !item.isClosed)?.id ?? "")
+          : selectedAcademicYearId,
+      );
+      sectionForm.setValue(
+        "gradeLevelId",
+        selectedGradeLevelId === "all" ? (overview.gradeLevels[0]?.id ?? "") : selectedGradeLevelId,
+      );
+    }
+    setOpenDrawer(drawer);
+  };
+  function runMutation<T>(
+    operation: () => Promise<ApiResult<T>>,
+    title: (data: T) => string,
+    after?: (data: T) => void,
+  ) {
+    if (isPending) return;
     setFeedback(null);
     startTransition(async () => {
-      const result = await createAcademicYear(values, csrfToken);
-      if (result.ok) {
-        setFeedback({
-          tone: "success",
-          title: `Año escolar ${result.data.code} inaugurado`,
-          detail: `${result.data.name} (${result.data.startDate} → ${result.data.endDate}) quedó activo para estructurar secciones.`,
-        });
-        setSelectedAcademicYearId(result.data.id);
-        setOpenDrawer(null);
-        yearForm.reset({
-          code: "",
-          name: "",
-          startDate: values.startDate,
-          endDate: values.endDate,
-        });
-        await refresh();
-        router.push("/academic/years");
-      } else {
+      const result = await operation();
+      if (!result.ok) {
         setFeedback({
           tone: "error",
           title: result.problem.title,
           detail: result.problem.detail,
+          status: result.status,
         });
-      }
-    });
-  });
-
-  const handleToggleYearStatus = useCallback(
-    (yearId: string, yearCode: string, currentlyClosed: boolean) => {
-      if (!window.confirm(`¿${currentlyClosed ? "Reabrir" : "Cerrar"} el año escolar ${yearCode}?`))
         return;
-      setFeedback(null);
-      setActionLoadingId(yearId);
-      startTransition(async () => {
-        const result = currentlyClosed
-          ? await reopenAcademicYear(yearId, csrfToken)
-          : await closeAcademicYear(yearId, csrfToken);
-        setActionLoadingId(null);
-
-        if (result.ok) {
-          setFeedback({
-            tone: "success",
-            title: currentlyClosed
-              ? `Año escolar ${yearCode} reabierto`
-              : `Año escolar ${yearCode} cerrado`,
-            detail: currentlyClosed
-              ? "Se habilitaron nuevamente las modificaciones estructurales en este año lectivo."
-              : "El año lectivo quedó protegido contra aperturas accidentales de nuevas secciones.",
-          });
-          await refresh();
-        } else {
-          setFeedback({
-            tone: "error",
-            title: result.problem.title,
-            detail: result.problem.detail,
-          });
-        }
-      });
-    },
-    [csrfToken, refresh],
+      }
+      setFeedback({ tone: "success", title: title(result.data) });
+      after?.(result.data);
+      setOpenDrawer(null);
+      setConfirmation(null);
+      await refresh();
+      if (window.location.pathname.endsWith("/new")) {
+        const area = window.location.pathname.split("/")[2];
+        router.replace("/academic/" + (area === "sections" ? "grades" : area));
+      }
+    });
+  }
+  const submitCreateYear = yearForm.handleSubmit((values) =>
+    runMutation(
+      () => createAcademicYear(values, csrfToken),
+      (item) => "Año escolar " + item.code + " creado",
+      (item) => {
+        setSelectedAcademicYearId(item.id);
+        yearForm.reset();
+      },
+    ),
   );
-
-  const submitCreateGradeLevel = gradeForm.handleSubmit((values) => {
+  const submitCreateGradeLevel = gradeForm.handleSubmit((values) =>
+    runMutation(
+      () => createGradeLevel(values, csrfToken),
+      (item) => "Grado " + item.code + " registrado",
+      (item) => {
+        setSelectedGradeLevelId(item.id);
+        gradeForm.reset();
+      },
+    ),
+  );
+  const submitCreateSection = sectionForm.handleSubmit((values) =>
+    runMutation(
+      () => createSchoolSection(values, csrfToken),
+      (item) => "Sección " + item.code + " creada",
+      () => sectionForm.reset(),
+    ),
+  );
+  const submitCreateSubject = subjectForm.handleSubmit((values) =>
+    runMutation(
+      () => createSubject(values, csrfToken),
+      (item) => "Materia " + item.name + " registrada",
+      () => subjectForm.reset(),
+    ),
+  );
+  const submitAssignTeacher = assignmentForm.handleSubmit((values) =>
+    runMutation(
+      () => assignTeacher(values, csrfToken),
+      () => "Docente asignado",
+      () => assignmentForm.reset(),
+    ),
+  );
+  const handleToggleYearStatus = (id: string, code: string, closed: boolean) => {
     setFeedback(null);
-    startTransition(async () => {
-      const result = await createGradeLevel(values, csrfToken);
-      if (result.ok) {
-        setFeedback({
-          tone: "success",
-          title: `Grado ${result.data.code} registrado`,
-          detail: `${result.data.displayName} se incorporó a la estructura oficial del colegio.`,
-        });
-        setSelectedGradeLevelId(result.data.id);
-        setOpenDrawer(null);
-        gradeForm.reset({
-          stage: values.stage,
-          officialGradeNumber: Math.min(12, values.officialGradeNumber + 1),
-          code: "",
-          displayName: "",
-        });
-        await refresh();
-        router.push("/academic/grades");
-      } else {
-        setFeedback({
-          tone: "error",
-          title: result.problem.title,
-          detail: result.problem.detail,
-        });
-      }
-    });
-  });
-
-  const submitCreateSection = sectionForm.handleSubmit((values) => {
-    setFeedback(null);
-    startTransition(async () => {
-      const result = await createSchoolSection(values, csrfToken);
-      if (result.ok) {
-        setFeedback({
-          tone: "success",
-          title: `Sección ${result.data.gradeLevelCode}-${result.data.code} habilitada`,
-          detail: `${result.data.gradeLevelName} · Cupo máximo de ${result.data.capacity} estudiantes.`,
-        });
-        setOpenDrawer(null);
-        sectionForm.reset({
-          ...values,
-          code: "",
-        });
-        await refresh();
-        router.push("/academic/grades");
-      } else {
-        setFeedback({
-          tone: "error",
-          title: result.problem.title,
-          detail: result.problem.detail,
-        });
-      }
-    });
-  });
-
-  const submitCreateSubject = subjectForm.handleSubmit((values) => {
-    setFeedback(null);
-    startTransition(async () => {
-      const result = await createSubject(values, csrfToken);
-      if (result.ok) {
-        setFeedback({
-          tone: "success",
-          title: `Asignatura ${result.data.code} agregada al catálogo`,
-          detail: `${result.data.name} ya puede asignarse a las secciones activas.`,
-        });
-        setOpenDrawer(null);
-        subjectForm.reset({ code: "", name: "" });
-        await refresh();
-        router.push("/academic/subjects");
-      } else {
-        setFeedback({
-          tone: "error",
-          title: result.problem.title,
-          detail: result.problem.detail,
-        });
-      }
-    });
-  });
-
-  const submitAssignTeacher = assignmentForm.handleSubmit((values) => {
-    setFeedback(null);
-    startTransition(async () => {
-      const result = await assignTeacher(values, csrfToken);
-      if (result.ok) {
-        setFeedback({
-          tone: "success",
-          title: "Carga académica docente asignada",
-          detail: `${result.data.teacherDisplayName} asumió ${result.data.subjectName} en ${result.data.gradeLevelName} (${result.data.sectionCode}) con ${result.data.weeklyHours}h/semana.`,
-        });
-        setOpenDrawer(null);
-        await refresh();
-        router.push("/academic/assignments");
-      } else {
-        setFeedback({
-          tone: "error",
-          title: result.problem.title,
-          detail: result.problem.detail,
-        });
-      }
-    });
-  });
-
-  const activeAcademicYear = useMemo(() => {
-    if (selectedAcademicYearId === "all") {
-      return (
-        overview.academicYears.find((year) => !year.isClosed) ?? overview.academicYears[0] ?? null
+    setConfirmation({ id, code, closed });
+  };
+  const confirmYearStatus = () => {
+    if (confirmation)
+      runMutation(
+        () =>
+          confirmation.closed
+            ? reopenAcademicYear(confirmation.id, csrfToken)
+            : closeAcademicYear(confirmation.id, csrfToken),
+        () => (confirmation.closed ? "Año escolar reabierto" : "Año escolar cerrado"),
       );
-    }
-    return overview.academicYears.find((year) => year.id === selectedAcademicYearId) ?? null;
-  }, [overview.academicYears, selectedAcademicYearId]);
-
-  const filteredSections = useMemo(() => {
-    return overview.sections.filter((section) => {
-      const matchesYear =
-        selectedAcademicYearId === "all" || section.academicYearId === selectedAcademicYearId;
-      const matchesGrade =
-        selectedGradeLevelId === "all" || section.gradeLevelId === selectedGradeLevelId;
-      return matchesYear && matchesGrade;
-    });
-  }, [overview.sections, selectedAcademicYearId, selectedGradeLevelId]);
-
-  const filteredAssignments = useMemo(() => {
-    return overview.teacherAssignments.filter((assignment) => {
-      return (
-        selectedAcademicYearId === "all" || assignment.academicYearId === selectedAcademicYearId
-      );
-    });
-  }, [overview.teacherAssignments, selectedAcademicYearId]);
-
-  const filteredSubjects = useMemo(() => {
-    const query = subjectSearchQuery.trim().toLowerCase();
-    if (!query) {
-      return overview.subjects;
-    }
-    return overview.subjects.filter(
-      (subject) =>
-        subject.code.toLowerCase().includes(query) || subject.name.toLowerCase().includes(query),
-    );
-  }, [overview.subjects, subjectSearchQuery]);
-
-  const totalSeatCapacity = useMemo(() => {
-    return filteredSections.reduce((acc, section) => acc + section.capacity, 0);
-  }, [filteredSections]);
-
-  const totalWeeklyHoursAssigned = useMemo(() => {
-    return filteredAssignments.reduce((acc, item) => acc + item.weeklyHours, 0);
-  }, [filteredAssignments]);
-
+  };
+  const activeAcademicYear =
+    overview.academicYears.find((item) => item.id === selectedAcademicYearId) ?? null;
+  const filteredSections = useMemo(
+    () => selectAcademicSections(overview.sections, selectedAcademicYearId, selectedGradeLevelId),
+    [overview.sections, selectedAcademicYearId, selectedGradeLevelId],
+  );
+  const filteredAssignments = useMemo(
+    () =>
+      overview.teacherAssignments.filter(
+        (item) =>
+          selectedAcademicYearId === "all" || item.academicYearId === selectedAcademicYearId,
+      ),
+    [overview.teacherAssignments, selectedAcademicYearId],
+  );
+  const filteredSubjects = useMemo(
+    () => filterAcademicSubjects(overview.subjects, subjectSearchQuery),
+    [overview.subjects, subjectSearchQuery],
+  );
+  const teacherGroups = useMemo(
+    () => groupTeacherAssignments(filteredAssignments),
+    [filteredAssignments],
+  );
+  const availableSections = overview.sections.filter((item) =>
+    overview.academicYears.some((year) => year.id === item.academicYearId && !year.isClosed),
+  );
   return {
     overview,
+    overviewAvailable,
+    canReadAcademic,
     problem,
     feedback,
     activeView,
@@ -379,25 +277,39 @@ export function useAcademicWorkspace({
     openDrawer,
     setOpenDrawer,
     toggleDrawer,
+    closeDrawer,
     selectedAcademicYearId,
     setSelectedAcademicYearId,
     selectedGradeLevelId,
     setSelectedGradeLevelId,
+    gradeFilterId,
+    setGradeFilterId,
     subjectSearchQuery,
     setSubjectSearchQuery,
+    assignmentView,
+    setAssignmentView,
     activeAcademicYear,
     filteredSections,
     filteredAssignments,
     filteredSubjects,
-    totalSeatCapacity,
-    totalWeeklyHoursAssigned,
+    teacherGroups,
+    availableSections,
+    sectionCapacities: initialSectionCapacities,
+    totalSeatCapacity: filteredSections.reduce((sum, item) => sum + item.capacity, 0),
+    totalWeeklyHoursAssigned: filteredAssignments.reduce((sum, item) => sum + item.weeklyHours, 0),
     isPending,
-    actionLoadingId,
+    actionLoadingId: isPending ? (confirmation?.id ?? null) : null,
     handleRefresh,
     handleToggleYearStatus,
+    confirmation,
+    confirmYearStatus,
+    closeConfirmation: () => {
+      if (!isPending) setConfirmation(null);
+    },
     yearForm,
     submitCreateYear,
     gradeForm,
+    gradeStage,
     submitCreateGradeLevel,
     sectionForm,
     submitCreateSection,
@@ -407,5 +319,4 @@ export function useAcademicWorkspace({
     submitAssignTeacher,
   };
 }
-
 export type AcademicState = ReturnType<typeof useAcademicWorkspace>;

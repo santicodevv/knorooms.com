@@ -39,3 +39,21 @@ next-env.d.ts
 Thumbs.db
 .idea/
 *.swp
+
+# Configuración local de asistentes y documentos privados
+.agents/
+.codex/
+.claude/
+.impeccable/
+AGENTS.md
+CLAUDE.md
+*.docx
+*.doc
+*.docm
+*.dotx
+*.dotm
+
+# Artefactos locales de trabajo
+/output/
+/tmp/
+/nul

@@ -1,28 +1,36 @@
-import { serverApiFetch } from "@/lib/api/server-api";
+import { Info } from "lucide-react";
+import { getSchoolCapabilities } from "@/features/school/server/school-context";
 import { ProblemAlert } from "@/components/api/problem-alert";
+import { Badge } from "@/components/ui/badge";
 import { statusLabels, type EffectiveAccess } from "../schemas/subscription-schemas";
-export async function SchoolCommercialStatus() {
-  const result = await serverApiFetch<EffectiveAccess>("/api/tenant/capabilities");
+import type { ApiResult } from "@/lib/api/types";
+export async function SchoolCommercialStatus({
+  accessResult,
+}: { accessResult?: ApiResult<EffectiveAccess> } = {}) {
+  const result = accessResult ?? (await getSchoolCapabilities());
   if (!result.ok) return <ProblemAlert problem={result.problem} />;
   const access = result.data;
-  const restricted = access.modules.filter((m) => m.canRead && !m.canWrite);
+  const restricted = access.modules.filter((item) => item.canRead && !item.canWrite);
   if (restricted.length === 0) return null;
   return (
     <section
       aria-label="Módulos de la institución"
-      className="mb-4 rounded-lg border bg-white p-4 text-sm"
+      className="bg-school-surface rounded-school-card flex items-center gap-3.5 px-4.5 py-4"
     >
-      <strong>Acceso: {statusLabels[access.status]}</strong>
-      {restricted.length > 0 ? (
-        <p className="mt-1 text-slate-600">
-          Consulta histórica disponible. Sin cambios en: {restricted.map((m) => m.name).join(", ")}.
-          Contacte a administración para revisar los módulos habilitados.
+      <Info className="text-school-warning size-5 shrink-0" aria-hidden="true" />
+      <div className="min-w-0 flex-1">
+        <p className="text-school-ink text-school-small font-semibold">
+          Acceso: {statusLabels[access.status] ?? access.status}
         </p>
-      ) : (
-        <p className="mt-1 text-slate-600">
-          Módulos académicos habilitados según la configuración del colegio y sus permisos.
+        <p className="text-school-secondary text-school-label mt-0.5 font-normal">
+          Consulta histórica disponible. Sin cambios en:{" "}
+          {restricted.map((item) => item.name).join(", ")}. Contacta a administración para revisar
+          los módulos habilitados.
         </p>
-      )}
+      </div>
+      <Badge variant="warning" className="school:px-2.5 school:py-1">
+        Solo consulta
+      </Badge>
     </section>
   );
 }

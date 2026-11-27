@@ -1,0 +1,38 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="300" height="192.857" viewBox="0 0 300 192.857" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Illustration">
+<line id="Line" x1="11.5179" y1="175.982" x2="288.482" y2="175.982" stroke-width="1.60714" stroke-linecap="round" stroke-linejoin="round" stroke="black"/>
+<mask id="stroke0_0_6" fill="white">
+<path d="M69.6429 96.4286H230.357V176.786H69.6429V96.4286Z"/>
+</mask>
+<rect id="Rectangle" x="69.6429" y="96.4286" width="160.714" height="80.3571" stroke-width="3.21429" stroke-linecap="round" stroke-linejoin="round" stroke="black" mask="url(#stroke0_0_6)"/>
+<mask id="stroke1_0_6" fill="white">
+<path d="M150 48.2143L228.87 84.375H71.1298L150 48.2143Z"/>
+</mask>
+<path id="Polygon" d="M150 48.2143L228.87 84.375H71.1298L150 48.2143Z" stroke-width="3.21429" stroke-linecap="round" stroke-linejoin="round" stroke="black" mask="url(#stroke1_0_6)"/>
+<circle id="Ellipse" cx="150" cy="76.0714" r="8.30357" stroke-width="1.60714" stroke-linecap="round" stroke-linejoin="round" stroke="black"/>
+<line id="Line_2" x1="59.7321" y1="182.411" x2="240.268" y2="182.411" stroke-width="1.60714" stroke-linecap="round" stroke-linejoin="round" stroke="black"/>
+<line id="Line_3" x1="49.0179" y1="188.839" x2="250.982" y2="188.839" stroke-width="1.60714" stroke-linecap="round" stroke-linejoin="round" stroke="black"/>
+<path id="Polygon_2" d="M150.536 21.9643L136.875 27.0676V16.8609L150.536 21.9643Z" fill="black"/>
+<mask id="stroke2_0_6" fill="white">
+<path d="M267.857 112.5L274.905 115.065L256.582 165.406L249.535 162.841L267.857 112.5Z"/>
+</mask>
+<path id="Rectangle_2" d="M267.857 112.5L274.905 115.065L256.582 165.406L249.535 162.841L267.857 112.5Z" stroke-width="3.21429" stroke-linecap="round" stroke-linejoin="round" stroke="black" mask="url(#stroke2_0_6)"/>
+<mask id="stroke3_0_6" fill="white">
+<path d="M242.905 165.86L242.327 157.954L248.43 160.175L242.905 165.86Z"/>
+</mask>
+<path id="Polygon_3" d="M242.905 165.86L242.327 157.954L248.43 160.175L242.905 165.86Z" stroke-width="3.21429" stroke-linecap="round" stroke-linejoin="round" stroke="black" mask="url(#stroke3_0_6)"/>
+<rect id="Rectangle_3" x="13.6607" y="169.018" width="41.25" height="6.96429" rx="0.803571" stroke-width="1.60714" stroke-linecap="round" stroke-linejoin="round" stroke="black"/>
+<rect id="Rectangle_4" x="16.875" y="161.518" width="33.75" height="5.89286" rx="0.803571" stroke-width="1.60714" stroke-linecap="round" stroke-linejoin="round" stroke="black"/>
+<path id="Star" d="M43.9286 64.2857L45.065 69.5779L50.3571 70.7143L45.065 71.8507L43.9286 77.1429L42.7921 71.8507L37.5 70.7143L42.7921 69.5779L43.9286 64.2857Z" fill="black"/>
+<path id="Star_2" d="M274.286 64.2857L275.422 69.5779L280.714 70.7143L275.422 71.8507L274.286 77.1429L273.149 71.8507L267.857 70.7143L273.149 69.5779L274.286 64.2857Z" fill="black"/>
+<path id="Star_3" d="M27.8571 123.214L28.9936 128.506L34.2857 129.643L28.9936 130.779L27.8571 136.071L26.7207 130.779L21.4286 129.643L26.7207 128.506L27.8571 123.214Z" fill="black"/>
+<rect id="Rectangle_5" x="97.2321" y="110.625" width="9.10714" height="57.3214" stroke-width="1.60714" stroke-linecap="round" stroke="black"/>
+<rect id="Rectangle_6" x="118.661" y="110.625" width="9.10714" height="57.3214" stroke-width="1.60714" stroke-linecap="round" stroke="black"/>
+<rect id="Rectangle_7" x="172.232" y="110.625" width="9.10714" height="57.3214" stroke-width="1.60714" stroke-linecap="round" stroke="black"/>
+<rect id="Rectangle_8" x="193.661" y="110.625" width="9.10714" height="57.3214" stroke-width="1.60714" stroke-linecap="round" stroke="black"/>
+<path id="Rectangle_9" d="M137.143 156.429C137.143 149.328 142.899 143.571 150 143.571V143.571C157.101 143.571 162.857 149.328 162.857 156.429V176.786H137.143V156.429Z" fill="black"/>
+<rect id="Pole" x="149.196" y="15" width="1.60714" height="33.2143" fill="black"/>
+<rect id="Rectangle_10" x="149.33" y="71.25" width="1.33929" height="5.35714" fill="black"/>
+<rect id="Rectangle_11" x="149.464" y="75.5357" width="4.28571" height="1.33929" fill="black"/>
+</g>
+</svg>

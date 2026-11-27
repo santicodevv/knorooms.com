@@ -1,0 +1,390 @@
+.root {
+  --login-input-height: 3.25rem;
+  --login-input-text: 1rem;
+  --login-input-line: 1.5rem;
+  --login-label-text: 0.875rem;
+  --login-label-line: 1.125rem;
+  --login-note-text: 0.75rem;
+  --login-note-line: 1.125rem;
+  --login-field-gap: 1rem;
+  --login-submit-gap: 1.5rem;
+  display: flex;
+  min-height: 100dvh;
+  flex-direction: column;
+  background: var(--color-school-cream);
+}
+.brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 4rem 1.5rem 1.5rem;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  font-size: 1.1875rem;
+  font-weight: 700;
+  line-height: 1.5rem;
+  letter-spacing: -0.01em;
+}
+.mark {
+  display: flex;
+  width: 2.25rem;
+  height: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.6875rem;
+  background: var(--color-school-ink);
+  color: var(--color-school-surface);
+  font-size: 1.25rem;
+}
+.message {
+  max-width: 100%;
+}
+.mobileIllustration {
+  width: 300px;
+  height: 194px;
+  max-width: 100%;
+}
+.mobileImage {
+  max-width: 100%;
+  height: auto;
+}
+.desktopIllustration,
+.brandTitle,
+.brandDescription,
+.brandFooter,
+.desktopDescription {
+  display: none;
+}
+.formPanel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.75rem 1.5rem;
+  border-radius: 1.75rem 1.75rem 0 0;
+  background: var(--color-school-surface);
+}
+.formContent {
+  width: 100%;
+  max-width: 25rem;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3125rem 0.875rem 0.3125rem 0.75rem;
+  border-radius: 100px;
+  background: var(--color-school-cream);
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 500;
+}
+.title {
+  margin-top: 0.875rem;
+  font-size: 1.75rem;
+  line-height: 2.125rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.description {
+  margin-top: 0.375rem;
+  color: var(--color-school-secondary);
+  font-size: var(--text-school-body);
+  line-height: var(--text-school-body--line-height);
+}
+.form {
+  margin-top: 1.5rem;
+}
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--login-field-gap);
+}
+.field {
+  display: flex;
+  flex-direction: column;
+}
+.fieldLabel {
+  margin-bottom: 0.5rem;
+  color: var(--color-school-ink);
+  font-size: var(--login-label-text);
+  line-height: var(--login-label-line);
+  font-weight: 500;
+}
+.input {
+  --login-input-border-width: 1.5px;
+  min-height: var(--login-input-height);
+  height: var(--login-input-height);
+  border-width: var(--login-input-border-width);
+  border-color: var(--color-school-cream-border);
+  padding: calc(0.5rem + 1.5px - var(--login-input-border-width))
+    calc(1rem + 1.5px - var(--login-input-border-width));
+  font-size: var(--login-input-text);
+  line-height: var(--login-input-line);
+  outline: none;
+  box-shadow: none;
+  transition: border-color 160ms var(--ease-school-out);
+}
+.input:hover {
+  border-color: var(--color-school-cream-border);
+}
+.input:focus {
+  --login-input-border-width: 2.5px;
+  border-color: var(--color-school-secondary);
+}
+.input[aria-invalid="true"],
+.input[aria-invalid="true"]:hover {
+  border-color: var(--color-school-error);
+}
+.input:disabled {
+  background: var(--color-school-surface);
+  color: var(--color-school-ink);
+  opacity: 0.6;
+}
+.passwordControl {
+  position: relative;
+}
+.passwordInput {
+  padding-right: calc(3.5rem + 1.5px - var(--login-input-border-width));
+}
+.passwordToggle {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  bottom: 0.25rem;
+  width: 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-school-control);
+  color: var(--color-school-secondary);
+  transition: color 160ms var(--ease-school-out);
+}
+.eyeIcon,
+.eyeOffIcon {
+  position: absolute;
+  transition: opacity 120ms var(--ease-school-out);
+}
+.eyeOffIcon,
+.passwordToggle[aria-pressed="true"] .eyeIcon {
+  opacity: 0;
+}
+.passwordToggle[aria-pressed="true"] .eyeOffIcon {
+  opacity: 1;
+}
+.passwordToggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.fieldError {
+  display: grid;
+  grid-template-rows: 0fr;
+  margin-top: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    grid-template-rows 180ms var(--ease-school-out),
+    margin-top 180ms var(--ease-school-out),
+    opacity 120ms var(--ease-school-out),
+    visibility 0s linear 180ms;
+}
+.fieldError[data-visible="true"] {
+  grid-template-rows: 1fr;
+  margin-top: 0.5rem;
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0s;
+}
+.fieldErrorContent {
+  min-height: 0;
+  overflow: hidden;
+}
+.fieldErrorContent > p {
+  color: var(--color-school-error);
+  font-size: var(--text-school-small);
+  line-height: var(--text-school-small--line-height);
+}
+.submit {
+  width: 100%;
+  min-height: 3.5rem;
+  margin-top: var(--login-submit-gap);
+  gap: 0.625rem;
+  font-size: var(--login-input-text);
+  line-height: var(--login-input-line);
+}
+.root .submit {
+  transition: opacity 160ms var(--ease-school-out);
+}
+.submit:disabled {
+  border-color: transparent;
+  background: var(--color-school-ink);
+  color: var(--color-school-surface);
+  opacity: 0.9;
+}
+.accessNote {
+  margin-top: 1.25rem;
+  color: var(--color-school-muted);
+  font-size: var(--login-note-text);
+  line-height: var(--login-note-line);
+  text-align: center;
+}
+.problem {
+  margin-bottom: 1.25rem;
+  padding: 0.875rem 1rem;
+  border-color: var(--color-school-error);
+  border-radius: var(--radius-school-control);
+  font-size: var(--login-label-text);
+}
+.problemTitle {
+  margin-bottom: 0.25rem;
+  line-height: 1.125rem;
+}
+.problemDescription {
+  color: var(--color-school-ink);
+  font-size: var(--login-label-text);
+  line-height: 1.25rem;
+}
+@media (hover: hover) and (pointer: fine) {
+  .input:not(:disabled):not(:focus):not([aria-invalid="true"]):hover {
+    border-color: var(--color-school-secondary);
+  }
+  .passwordToggle:not(:disabled):hover {
+    color: var(--color-school-ink);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .formContent {
+    animation: login-enter 240ms var(--ease-school-out);
+  }
+  .root .submit,
+  .root .passwordToggle {
+    transition:
+      background-color 160ms var(--ease-school-out),
+      color 160ms var(--ease-school-out),
+      opacity 160ms var(--ease-school-out),
+      transform 120ms var(--ease-school-out);
+  }
+  .root .submit:not(:disabled):active,
+  .root .passwordToggle:not(:disabled):active {
+    transform: scale(0.98);
+  }
+  .submit[disabled] img {
+    animation: login-spin 800ms linear infinite;
+  }
+}
+@keyframes login-enter {
+  from {
+    opacity: 0.7;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes login-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (min-width: 1024px) {
+  .root {
+    --login-input-height: 3.375rem;
+    --login-note-text: 0.8125rem;
+    --login-note-line: 1.25rem;
+    --login-field-gap: 1.25rem;
+    --login-submit-gap: 1.75rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    background: var(--color-school-surface);
+  }
+  .brand {
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 2rem;
+    padding: 4rem 5rem;
+    background: var(--color-school-cream);
+  }
+  .logo {
+    gap: 0.75rem;
+    font-size: 1.375rem;
+    line-height: 1.75rem;
+  }
+  .mark {
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 0.875rem;
+    font-size: 1.5rem;
+  }
+  .message {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    width: 100%;
+  }
+  .desktopIllustration {
+    display: block;
+    width: 100%;
+    max-width: 560px;
+    height: auto;
+  }
+  .brandTitle {
+    display: block;
+    font-size: 2.75rem;
+    line-height: 3.25rem;
+    letter-spacing: -0.02em;
+    font-weight: 600;
+  }
+  .brandDescription {
+    display: block;
+    color: var(--color-school-secondary);
+    font-size: 1.0625rem;
+    line-height: 1.625rem;
+  }
+  .brandFooter {
+    display: block;
+    color: var(--color-school-muted);
+    font-size: 0.875rem;
+    line-height: 1.125rem;
+  }
+  .mobileIllustration,
+  .mobileDescription {
+    display: none;
+  }
+  .desktopDescription {
+    display: inline;
+  }
+  .formPanel {
+    justify-content: center;
+    padding: 3rem 4rem;
+    border-radius: 0;
+  }
+  .badge {
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
+    font-size: 0.8125rem;
+    line-height: 1.0625rem;
+  }
+  .title {
+    margin-top: 1.25rem;
+    font-size: 2.125rem;
+    line-height: 2.625rem;
+  }
+  .description {
+    margin-top: 0.625rem;
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+  .form {
+    margin-top: 2.25rem;
+  }
+  .accessNote {
+    margin-top: 1.75rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--color-school-cream-border);
+  }
+}

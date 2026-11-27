@@ -4,7 +4,9 @@ Referencia del propietario: `school-portal-reference.html`, copia de `KNOROOMS-P
 
 ## Diseño y navegación
 
-Se conserva la dirección visual del HTML: barra lateral agrupada, azul como color principal, tarjetas blancas, fondos suaves, estados con contraste y fuente del sistema. Tailwind CSS y componentes propios; no se añade shadcn ni una biblioteca visual nueva.
+El propietario aprobó el 24/11/2026 sustituir la dirección visual del HTML por el diseño de Figma documentado en [figma-implementation.md](figma-implementation.md). La fase 0 se implementa bajo KNO-72: grises neutros, negro e IBM Plex Sans con pesos 400, 500, 600 y 700, cargada mediante `next/font`, descargada durante la compilación y servida desde el dominio propio. Esta aprobación reemplaza la preferencia anterior por azul y fuente del sistema únicamente en el portal del colegio; la administración global conserva su presentación y fuente del sistema.
+
+La implementación continúa por fases con aprobación del propietario entre entregas. El propietario aprobó expresamente la fase 1 el 24/11/2026, bajo KNO-74, y posteriormente la fase 2, bajo KNO-75. Se mantienen Tailwind CSS v4, componentes propios y todas las reglas funcionales de este documento; no se añade shadcn ni una biblioteca visual nueva.
 
 Las pantallas dejan de concentrar formularios y consultas distintas en una sola vista:
 
@@ -47,7 +49,7 @@ La aprobación de notas conserva la separación de actores del backend. Publicar
 
 Las acciones de escritura requieren permisos y capacidad de escritura del módulo. El BFF, CSRF, sesiones del servidor y aislamiento institucional se conservan. La administración global sigue usando su propia presentación. No hay migraciones ni cambios de reglas académicas para este rediseño.
 
-## Verificación realizada
+## Verificación anterior (23/10/2026)
 
 - Formato, ESLint y TypeScript sin errores.
 - Suite del frontend: 58 pruebas en 14 archivos, todas aprobadas.
@@ -57,3 +59,71 @@ Las acciones de escritura requieren permisos y capacidad de escritura del módul
 - Revisión móvil a 390 px: menú, tarjetas de estudiantes y ausencia de desbordamiento horizontal de la página.
 
 Los registros de prueba no se insertaron en la base habitual del propietario. No se desplegó a producción. Moodle y la validación normativa del modelo de evaluación continúan siendo trabajo funcional pendiente, independiente de este diseño.
+
+## Fundamentos visuales — fase 0 (KNO-72)
+
+Los tokens escolares se definen en `apps/web/src/app/globals.css` mediante `@theme static`, para conservar también los valores que utilizarán fases posteriores. El layout escolar aplica `.school-theme` y la variable de IBM Plex Sans; la fuente del documento raíz sigue siendo la del sistema. Las primitivas compartidas utilizan la variante `school:*`, manteniendo su apariencia previa fuera del portal. Las extensiones escolares de tamaño o color en `className` deben usar la misma variante.
+
+Se añaden `MenuItem`, `Checkbox`, `Switch`, `SegmentedControl`, `Skeleton`, `Dialog` y `SidePanel`. Los controles conservan semántica HTML nativa y reciben sus etiquetas del consumidor. `SegmentedControl` recibe la selección y el callback por propiedades; el estado de cada funcionalidad pertenece a su hook. Los diálogos se abren con `showModal()` mediante una referencia, lo que conserva modalidad, Escape y restauración del foco; su título se vincula mediante `aria-labelledby`.
+
+La revisión de diseño verificó una galería temporal a 1440 px: tipografía, colores, foco, controles, diálogo de 520 px y panel lateral de 480 px. La galería se retiró del árbol de rutas antes de la verificación final. El token `muted` conserva el valor de Figma (`#7F8790`), con contraste de 3,64:1 sobre blanco; no acredita conformidad AA para texto pequeño. Los textos funcionales deben priorizar `secondary` o `ink` cuando necesiten ese contraste.
+
+Verificación inicial de esta entrega (24/11/2026): `pnpm format:check`, `pnpm lint`, `pnpm typecheck` y `pnpm test` terminaron correctamente; 77 pruebas en 18 archivos, incluidas 13 nuevas de semántica de primitivas y regresión de `cn`. `pnpm build` compiló 24 páginas y terminó con código 0 en el reintento normal. El primer intento se detuvo con `SecurityFatalError` por la versión instalada de Next.js 16.4.3; el reintento conservó el aviso de actualización. No se suprimieron controles.
+
+El propietario autorizó corregir las dependencias mediante KNO-73. Se actualizaron Next.js y su configuración de ESLint a 16.4.5, Vitest y cobertura V8 a 4.1.12, junto con las resoluciones transitivas afectadas; ver [verificación de dependencias](../testing/frontend-dependencies.md). La instalación del conjunto se reprodujo con `pnpm install --frozen-lockfile` y `pnpm audit` terminó con código 0, sin vulnerabilidades conocidas, frente a los 16 avisos iniciales. No se añadieron excepciones ni se suprimieron comprobaciones.
+
+Verificación final conjunta de KNO-72 y KNO-73: `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm test` y `pnpm build` terminaron con código 0. El build de Next.js 16.4.5 completó 24 páginas sin el aviso de vulnerabilidad. `pnpm test:coverage` y el resumen de CI también terminaron con código 0: 77 pruebas correctas en 18 archivos, sin fallos ni omisiones. No se cambiaron umbrales ni se excluyeron pruebas para completar la migración. La fase 0 queda terminada localmente, sin despliegue a producción.
+
+## Login, shell e Inicio — fase 1 (KNO-74)
+
+El Login escolar reproduce los estados normal, foco, validación, credenciales rechazadas y envío del Figma, en escritorio y móvil. Las ilustraciones e iconos se sirven como SVG locales. La contraseña permite alternar su visibilidad con un control etiquetado; los errores se vinculan a sus campos y el envío se anuncia sin permitir peticiones duplicadas. El formulario de plataforma conserva su presentación anterior. La autenticación sigue usando las API existentes del BFF, sin modificar contratos, sesiones ni backend.
+
+El shell incorpora el sidebar escolar agrupado, la ruta activa, la identidad real y el cierre de sesión existente. Las entradas dependen de permisos y capacidades. Roles, asignación de usuarios, soporte y auditoría continúan ocultos. La adaptación móvil conserva el menú existente; la navegación inferior de la fase 7 queda pendiente.
+
+El Inicio carga estructura académica, estudiantes y matrículas en el servidor, comprobando permiso y capacidad antes de cada consulta. Solo proyecta los campos necesarios para calcular los indicadores; excluye responsables, nombres de estudiantes y el identificador institucional. Ofrece selección de año, métricas, registros mensuales, ocupación y tareas derivadas de datos reales. Los meses con cero registros no dibujan barras mínimas ficticias. Los errores de capacidades o consultas se presentan con reintento; un dato no disponible se distingue de cero. El aviso de consulta refleja los módulos que el servidor permite leer pero no modificar. El contador de boletas pendientes se omite porque no tiene una fuente suficiente en los contratos actuales.
+
+La regla de Turbopack para Tailwind se limita a `globals.css`. Aplicarla a todos los archivos CSS convertía también los CSS Modules en CSS global e impedía cargar los estilos del Login y el Inicio, pese a superar la comprobación de tipos. Las capturas reales verifican el resultado del navegador además de las pruebas de componentes.
+
+Verificación final del 24/11/2026: `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm test` y `pnpm build` terminaron con código 0. Pasaron 110 pruebas en 22 archivos, incluidas 33 nuevas de esta fase, sin omisiones; el build completó 24 páginas. `pnpm test:coverage` y el resumen de CI también terminaron con código 0, sin modificar umbrales.
+
+La QA de navegador usó una API sin cambios y PostgreSQL 17/Redis temporales, con el rol institucional sin bypass RLS. Se verificaron Inicio sin estructura, con estructura sin matrículas, con una matrícula persistida mediante el BFF y con un módulo en solo consulta configurado mediante la API existente. Las cifras observadas fueron 1 estudiante, 1 matrícula, 1 sección y 19 de 20 cupos disponibles. El sidebar se expandió y navegó a una ruta existente, manteniendo un único `aria-current` y el grupo activo abierto. No hubo desbordamiento horizontal a 1440 ni a 390 px, ni excepciones de JavaScript.
+
+La respuesta de Login solo incluyó `authenticated` y `returnTo`; la cookie de sesión fue HttpOnly y limitada al host. El HTML no incluyó tokens Bearer, `TenantId`, nombres ni fechas de nacimiento de estudiantes. Un cierre con CSRF inválido devolvió 403 y conservó la sesión; el botón real de cierre la revocó y volvió al Login. La auditoría de seguridad cerró sin veto. Los servicios y registros temporales de QA se retiraron al terminar, sin cambiar la base habitual del propietario ni desplegar a producción. El propietario aprobó después iniciar la fase 2.
+
+## Estudiantes y responsables — fase 2 (KNO-75)
+
+El propietario autorizó esta fase después de revisar la entrega KNO-74. Su alcance comprende las secciones 3 y 4 del Figma: directorios, altas, ficha y acciones respaldadas por los contratos existentes. Esta autorización no incluye la fase 3, edición avanzada, documentos del expediente ni nuevos contratos de backend.
+
+Los directorios reutilizan las API existentes, con búsqueda, estado y paginación sobre los registros recibidos. La búsqueda de estudiantes considera nombre, código y SIGERD; la de responsables, nombre y correo. Los vínculos familiares se obtienen de los expedientes reales. La ficha conserva las tres vistas de resumen, responsables y matrículas; su selector reutiliza radios nativos etiquetados, con selección única y navegación por flechas.
+
+Las altas y los vínculos utilizan paneles laterales de 480 px; las confirmaciones, diálogos de 520 px. Se conservan el foco, Escape, etiquetas visibles, errores asociados y bloqueo durante el envío. Registrar un responsable guarda sus datos de contacto, sin crear una cuenta. La validación de nacimiento comprueba una fecha real dentro del intervalo ya exigido por el backend (1995–hoy). Los SVG de Figma se sirven desde `public/images/students`.
+
+El servidor comprueba permiso y capacidad de lectura antes de consultar cada módulo. Los fallos conservan su error y disponibilidad, en lugar de convertirse en directorios vacíos. La escritura depende del permiso de gestión y de la capacidad vigente; las rutas de alta abiertas directamente sin gestión muestran un estado explícito. Las confirmaciones identifican el expediente por nombre y código, o la matrícula por estudiante, sección y año. El traslado conserva el identificador de matrícula; retirar conserva el historial y libera el cupo; desactivar el expediente impide nuevas matrículas sin retirar las existentes.
+
+La adaptación móvil mantiene el menú existente, directorios en tarjetas y encabezados con las acciones debajo del texto. No incorpora la navegación inferior de la fase 7. La revisión detectó y corrigió un radio heredado en los paneles: `cn` reconoce ahora los tokens de radio escolares, de modo que `rounded-none` sustituye al radio del diálogo base. También se ajustaron el fondo del grupo de interruptores y el contexto de las confirmaciones conforme al Figma.
+
+Verificación final del 25/11/2026: `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm test` y `pnpm build` terminaron con código 0. Pasaron 172 pruebas en 27 archivos, incluidas 62 nuevas de esta fase; el build completó 24 páginas. No se modificaron dependencias ni contratos de backend.
+
+La QA real utilizó PostgreSQL 17 y Redis temporales, una API compilada sin cambios y el BFF local. Las altas por formulario, los vínculos con autorizaciones desmarcadas, el traslado con el mismo identificador, el retiro con liberación del cupo y la desactivación quedaron persistidos. Se comprobaron paneles de 480 px, diálogos de 520 px, Escape, restauración del foco, errores vinculados y navegación por teclado. Un CSRF inválido devolvió 403 sin mutar; Dirección recibió 403 al forzar el alta; el colegio B conservó sus directorios vacíos y no obtuvo el expediente del colegio A. Las respuestas del navegador no incluyeron tokens de autenticación ni `TenantId`, y la cookie de sesión mantuvo HttpOnly y alcance limitado al host.
+
+Las capturas posteriores al build definitivo confirmaron radio efectivo de 0 px en los paneles, encabezados legibles sin superposición a 390 px y contexto real en ambas confirmaciones. `pnpm test:coverage` y el resumen de CI terminaron con código 0, con las mismas 172 pruebas correctas. Las revisiones de diseño y seguridad cerraron sin hallazgos bloqueantes. El propietario aprobó después iniciar la fase 3.
+
+## Académico y matrículas — fase 3 (KNO-76)
+
+El propietario autorizó esta fase el 25/11/2026, después de la entrega KNO-75. Su alcance comprende las secciones 5 a 9 del Figma: años escolares y cierre, grados y secciones, materias, carga docente y matrículas, con los contratos existentes. La agrupación de carga por docente se calcula en el cliente. La fase 4 sigue pendiente de aprobación.
+
+La fecha de matrícula no es editable: el backend asigna `enrolledAtUtc` y no recibe una fecha en el contrato de alta. El panel explica que se registra automáticamente, sin copiar el valor de ejemplo del diseño ni añadir un contrato nuevo. Los paneles conservan los 480 px definidos por esta guía y las primitivas aprobadas. La ocupación procede de las matrículas reales; si falta permiso o falla la consulta, se distingue de cero.
+
+Cerrar un año conserva su estructura y bloquea nuevas secciones, asignaciones docentes y matrículas según el backend actual. La confirmación no promete bloquear escrituras de asistencia o calificaciones, cuyos endpoints no aplican esa comprobación. Asignar un docente utiliza una membresía activa admitida por el backend, sin inventar un requisito de rol adicional.
+
+La organización académica dispone de vistas separadas para años, grados y secciones, materias y carga docente. Los cinco formularios reutilizan el panel escolar y los campos con etiquetas y errores asociados. Cerrar y reabrir un año requieren confirmación y conservan su código visible. La carga se filtra por año y sección o se agrupa por membresía docente, sumando únicamente las horas y asignaciones recibidas. Las tandas muestran su etiqueta, sin presentar horarios genéricos como datos del colegio. El catálogo de materias ofrece acceso a la carga docente existente, sin añadir una edición que no tenga contrato.
+
+Matrículas utiliza una feature y un cargador de servidor propios. La consulta proyecta sólo los datos necesarios de años, secciones y matrículas; el directorio de estudiantes se consulta cuando hay gestión de matrícula y permiso de lectura. El panel permite elegir un estudiante activo sin un registro previo en ese año y una sección abierta con cupos. La exclusión incluye las matrículas retiradas porque el contrato de persistencia vigente mantiene su unicidad por estudiante y año. Los errores, la falta de permisos y la consulta parcial conservan estados diferenciados.
+
+`SchoolIcon`, `SchoolSidePanel`, `SchoolFormField` y `useSchoolDialog` son compartidos entre estas vistas y Estudiantes. Los adaptadores anteriores preservan sus propiedades, identificadores y comportamiento, incluida la restauración del foco. Se conservan los SVG existentes cuando coinciden exactamente con el slot; los iconos nuevos se sirven localmente desde `public/images/academic` y `public/images/enrollments`. Las versiones negras de «+» se usan en botones de contorno, con tamaño intrínseco de 18 o 16 px según el frame.
+
+Verificación final del 25/11/2026: `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm test` y `pnpm build` terminaron con código 0. Pasaron 262 pruebas en 35 archivos, incluidas 90 nuevas de esta fase; el build completó 24 páginas. La cobertura y el resumen local de CI también terminaron con código 0, sin omitir pruebas ni modificar umbrales. No se modificaron backend, autenticación, BFF ni dependencias.
+
+La QA real utilizó una API compilada sin cambios, PostgreSQL 17 y Redis temporales. Persistió año, grado, secciones, materias, asignaciones y matrícula mediante los formularios y contratos existentes. La agrupación observada reunió 3 asignaciones, 12 horas y 2 secciones; la matrícula dejó 19 cupos en la sección de 20. Cerrar el año devolvió 409 al intentar crear sección, asignación y matrícula; la reapertura volvió a persistir mediante el botón de la interfaz. La extracción de los componentes comunes conservó el panel de Estudiantes de 480 px y su cierre con Escape.
+
+La QA de seguridad rechazó CSRF inválido y escrituras sin permisos con 403, sin mutar registros. El colegio B devolvió sus listas vacías y no recibió identificadores del colegio A. Se verificaron cookies HttpOnly limitadas al host, ausencia de tokens y `TenantId` en las respuestas públicas y RLS forzado en las siete tablas del alcance, con el rol de aplicación sin superusuario ni bypass. Las recapturas confirmaron selectores de 424 px con una sola flecha, SVG nuevos cargados a su tamaño intrínseco y adaptación a 390 px sin colisiones. La revisión de diseño aprobó los 16 estados y la auditoría de seguridad cerró sin veto. El entorno temporal de QA se retiró sin modificar la base habitual del propietario. La fase 4 sigue pendiente de autorización.

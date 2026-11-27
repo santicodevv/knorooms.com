@@ -73,3 +73,12 @@ El adaptador Resend poseía un HttpClient registrado como singleton y era devuel
 El adaptador ahora tiene duración scoped, acorde con su propiedad del cliente HTTP. La regresión `Resend_RemainsUsableAfterAnEarlierRequestScopeIsDisposed` reproduce la secuencia petición finalizada → envío desde otro ámbito, sin conexión externa. Fallaba con ObjectDisposedException antes de corregir el registro.
 
 Se añadieron registros por etapa de entrega, sin correos, credenciales ni enlaces de activación. La invitación afectada se entregó y fue aceptada; se concilió su estado de entrega con la confirmación de Resend.
+
+
+## Seguimiento de rechazo del proveedor (14 de noviembre de 2026)
+
+La prueba más reciente registrada en KNO-28 creó una invitación en la base local aislada con remitente `invitaciones@knorooms.com`, pero Resend la dejó en estado `Failed`. Este resultado prevalece para el estado actual sobre la prueba de entrega y aceptación descrita en la sección histórica del 23 de octubre; no se considera validado el envío real vigente.
+
+El adaptador ahora conserva en la excepción únicamente el estado HTTP y, si Resend lo devuelve, un identificador de error de formato seguro (`name` o `code`). No conserva ni registra el cuerpo completo de la respuesta, el correo, la clave API ni el enlace de aceptación. La prueba automatizada cubre el rechazo y comprueba que el mensaje sensible del proveedor no se expone.
+
+**Pendiente para cerrar KNO-28:** consultar Resend → Logs para el intento del 14/11 y contrastar el código HTTP y el identificador de error; verificar el remitente/dominio con el propietario; repetir el flujo real solo cuando exista autorización y configuración válida; confirmar recepción y aceptación de punta a punta.

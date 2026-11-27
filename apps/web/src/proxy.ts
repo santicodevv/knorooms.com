@@ -15,6 +15,7 @@ export function proxy(request: NextRequest): NextResponse {
   }
 
   const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-knorooms-pathname", request.nextUrl.pathname);
   if (rawHost) {
     requestHeaders.set("x-forwarded-host", rawHost);
   }
