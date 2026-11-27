@@ -10,6 +10,17 @@ permissions:
   contents: read
 
 jobs:
+  repository-files:
+    name: Política de archivos del repositorio
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obtener repositorio
+        uses: actions/checkout@v7
+      - name: Verificar archivos versionados
+        run: node .github/scripts/check-repository-files.mjs
+      - name: Probar bloqueos de commit y push
+        run: node --test .github/scripts/check-repository-files.test.mjs
+
   backend:
     name: Backend (.NET 10 Build + Unit & PostgreSQL RLS Tests)
     runs-on: ubuntu-latest

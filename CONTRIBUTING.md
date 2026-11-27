@@ -37,6 +37,26 @@ test(attendance): KNO-9 cubrir registro duplicado por fecha
 - Se necesita 1 aprobación; un commit nuevo descarta la aprobación anterior y todas las conversaciones deben quedar resueltas.
 - Al abrir el PR el ticket pasa solo a **En revisión**; al mergearlo pasa a **Finalizado** con un comentario que enlaza el PR.
 
+## Archivos locales y protección de Git
+
+Las configuraciones de asistentes (`.agents`, `.codex`, `.claude`, `.impeccable`,
+`AGENTS.md` y `CLAUDE.md`), los documentos Word y las carpetas raíz `output` y
+`tmp` se conservan exclusivamente en cada equipo. No deben versionarse.
+
+Después de clonar, activa los bloqueos de commit y push (requieren Node.js):
+
+```bash
+git config core.hooksPath .githooks
+node .github/scripts/check-repository-files.mjs
+```
+
+Revisa siempre `git diff --cached --stat` y `git diff --cached` antes de hacer
+commit; añade rutas explícitas con `git add <archivo>`. Los hooks comprueban el
+índice antes del commit y los árboles que se envían antes del push. CI vuelve a
+comprobar los archivos versionados, incluso si se omiten los hooks locales.
+Las exclusiones no borran archivos del historial anterior; retirarlos del
+seguimiento conserva la copia local con `git rm --cached`.
+
 ## Verificación local
 
 ```bash
