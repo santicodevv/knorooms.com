@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Net.Mail;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using Knorooms.Modules.Modules.Identity.Contracts;
 using Microsoft.Extensions.Options;
 namespace Knorooms.Modules.Modules.Identity.Infrastructure;
@@ -25,6 +26,38 @@ internal sealed class ResendInvitationEmailSender(HttpClient http, IOptions<Invi
             text = "Ha recibido una invitación para administrar su colegio. Abra el enlace para establecer su contraseña o confirmar la actual si ya tiene cuenta. El enlace vence en 48 horas y es de un solo uso.\n\n" + acceptanceUrl
         });
         using var response = await http.SendAsync(request, cancellationToken);
-        if (!response.IsSuccessStatusCode) throw new InvalidOperationException("No se pudo entregar la invitación mediante Resend.");
+        if (!response.IsSuccessStatusCode)
+        {
+            var providerCode = await ReadSafeProviderCodeAsync(response, cancellationToken);
+            var detail = providerCode is null ? string.Empty : $", código: {providerCode}";
+            throw new InvalidOperationException($"Resend rechazó la solicitud (HTTP {(int)response.StatusCode}{detail}).");
+        }
+    }
+
+    private static async Task<string?> ReadSafeProviderCodeAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+            if (!document.RootElement.TryGetProperty("name", out var name) &&
+                !document.RootElement.TryGetProperty("code", out name))
+                return null;
+
+            var value = name.GetString();
+            return !string.IsNullOrWhiteSpace(value) &&
+                   value.Length <= 64 &&
+                   value.All(c => char.IsAsciiLetterOrDigit(c) || c is '_' or '-')
+                ? value
+                : null;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
+        }
     }
 }
